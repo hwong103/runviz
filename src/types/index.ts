@@ -28,6 +28,7 @@ export interface Activity {
     average_cadence?: number;
     suffer_score?: number;
     calories?: number;
+    kilojoules?: number;
     has_heartrate: boolean;
     map?: {
         id: string;

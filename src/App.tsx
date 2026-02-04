@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
 import { StatsOverview } from './components/StatsOverview';
@@ -7,6 +7,8 @@ import { ActivityList } from './components/ActivityList';
 import { FitnessChart } from './components/FitnessChart';
 import { ActivityScatterChart } from './components/ActivityScatterChart';
 import { MileageTrendChart } from './components/MileageTrendChart';
+import { RunDetails } from './components/RunDetails';
+import type { Activity } from './types';
 
 interface ViewPeriod {
   mode: 'all' | 'year' | 'month';
@@ -27,6 +29,8 @@ function App() {
     year: new Date().getFullYear(),
     month: new Date().getMonth(),
   });
+
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
 
   // Calculate available years from activities
   const availableYears = useMemo(() => {
@@ -54,6 +58,17 @@ function App() {
     });
   }, [activities, viewPeriod]);
 
+  const handleSelectDay = useCallback((dateStr: string) => {
+    // Find activity on this date
+    const activity = activities.find(a => {
+      if (a.type !== 'Run' && a.sport_type !== 'Run') return false;
+      return a.start_date_local.startsWith(dateStr);
+    });
+    if (activity) {
+      setSelectedActivity(activity);
+    }
+  }, [activities]);
+
   // --- Conditional Returns MUST happen after all Hooks ---
 
   // Loading state
@@ -73,7 +88,7 @@ function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10 shadow-2xl">
+          <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
             <h1 className="text-5xl font-extrabold text-white mb-2 tracking-tight italic">
               <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
                 RUNVIZ
@@ -112,6 +127,15 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#0a0c10] text-gray-200">
+      {/* Run Details Modal */}
+      {selectedActivity && (
+        <RunDetails
+          activity={selectedActivity}
+          allActivities={activities}
+          onClose={() => setSelectedActivity(null)}
+        />
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0a0c10]/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -207,11 +231,11 @@ function App() {
         {/* Charts & Visualizations */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="lg:col-span-2">
-            <MileageTrendChart activities={activities} viewMode={viewPeriod.mode} />
+            <MileageTrendChart activities={activities} period={viewPeriod} />
           </div>
 
           <ActivityScatterChart activities={filteredActivities} />
-          <FitnessChart activities={activities} />
+          <FitnessChart activities={activities} period={viewPeriod} />
 
           <div className="lg:col-span-2">
             <div className="bg-white/5 rounded-[2.5rem] p-8 border border-white/10">
@@ -223,12 +247,14 @@ function App() {
                 activities={activities}
                 year={viewPeriod.mode !== 'all' ? viewPeriod.year : undefined}
                 month={viewPeriod.mode === 'month' ? (viewPeriod.month ?? undefined) : undefined}
+                onSelectDay={handleSelectDay}
+                selectedDate={selectedActivity?.start_date_local.split('T')[0]}
               />
             </div>
           </div>
 
           <div className="lg:col-span-2">
-            <ActivityList activities={filteredActivities} limit={50} />
+            <ActivityList activities={filteredActivities} limit={50} onSelect={setSelectedActivity} />
           </div>
         </div>
       </main>

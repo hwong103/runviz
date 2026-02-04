@@ -5,9 +5,17 @@ interface CalendarHeatmapProps {
     activities: Activity[];
     year?: number;
     month?: number;
+    onSelectDay?: (date: string) => void;
+    selectedDate?: string | null;
 }
 
-export function CalendarHeatmap({ activities, year = new Date().getFullYear(), month }: CalendarHeatmapProps) {
+export function CalendarHeatmap({
+    activities,
+    year = new Date().getFullYear(),
+    month,
+    onSelectDay,
+    selectedDate
+}: CalendarHeatmapProps) {
     const { weeks, monthLabels, maxDistance } = useMemo(() => {
         // Build daily distance map
         const dailyDistances = new Map<string, number>();
@@ -80,7 +88,8 @@ export function CalendarHeatmap({ activities, year = new Date().getFullYear(), m
         return { weeks, monthLabels: months, maxDistance: max };
     }, [activities, year, month]);
 
-    const getColor = (distance: number, isActive: boolean): string => {
+    const getColor = (distance: number, isActive: boolean, isSelected: boolean): string => {
+        if (isSelected) return 'bg-white ring-2 ring-emerald-400';
         if (!isActive) return 'bg-white/[0.02]';
         if (distance === 0) return 'bg-white/5';
         const intensity = Math.min(distance / maxDistance, 1);
@@ -126,8 +135,9 @@ export function CalendarHeatmap({ activities, year = new Date().getFullYear(), m
                                 {week.map((day, dayIdx) => (
                                     <div
                                         key={dayIdx}
-                                        className={`w-3 h-3 rounded-[2px] transition-all duration-200 ${day ? getColor(day.distance, day.currentMonth) : 'bg-transparent'
-                                            } ${day?.currentMonth ? 'hover:ring-2 hover:ring-white/30 cursor-pointer' : ''}`}
+                                        onClick={() => day?.currentMonth && onSelectDay?.(day.date)}
+                                        className={`w-3 h-3 rounded-[2px] transition-all duration-200 ${day ? getColor(day.distance, day.currentMonth, selectedDate === day.date) : 'bg-transparent'
+                                            } ${day?.currentMonth ? 'hover:scale-125 cursor-pointer' : ''}`}
                                         title={day ? `${day.date}: ${day.distance.toFixed(1)} km` : ''}
                                     />
                                 ))}
@@ -137,14 +147,21 @@ export function CalendarHeatmap({ activities, year = new Date().getFullYear(), m
                 </div>
 
                 {/* Legend */}
-                <div className="flex items-center gap-2 mt-6 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-                    <span>Less</span>
-                    <div className="w-3 h-3 rounded-[2px] bg-white/5" />
-                    <div className="w-3 h-3 rounded-[2px] bg-emerald-900/60" />
-                    <div className="w-3 h-3 rounded-[2px] bg-emerald-700/70" />
-                    <div className="w-3 h-3 rounded-[2px] bg-emerald-500/80" />
-                    <div className="w-3 h-3 rounded-[2px] bg-emerald-400" />
-                    <span>More</span>
+                <div className="flex items-center gap-6 mt-6">
+                    <div className="flex items-center gap-2 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                        <span>Less</span>
+                        <div className="w-3 h-3 rounded-[2px] bg-white/5" />
+                        <div className="w-3 h-3 rounded-[2px] bg-emerald-900/60" />
+                        <div className="w-3 h-3 rounded-[2px] bg-emerald-700/70" />
+                        <div className="w-3 h-3 rounded-[2px] bg-emerald-500/80" />
+                        <div className="w-3 h-3 rounded-[2px] bg-emerald-400" />
+                        <span>More</span>
+                    </div>
+                    {onSelectDay && (
+                        <div className="text-[10px] text-emerald-400/70 italic">
+                            Click a day to view run details
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -13,7 +13,7 @@ import {
     Filler,
 } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
-import { format, subDays, startOfDay, eachDayOfInterval } from 'date-fns';
+import { format, subDays, startOfDay, eachDayOfInterval, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
 import type { Activity } from '../types';
 
 ChartJS.register(
@@ -31,38 +31,51 @@ ChartJS.register(
 
 interface MileageTrendChartProps {
     activities: Activity[];
-    viewMode: 'month' | 'year' | 'all';
+    period: {
+        mode: 'all' | 'year' | 'month';
+        year: number;
+        month: number | null;
+    };
 }
 
-export function MileageTrendChart({ activities, viewMode }: MileageTrendChartProps) {
+export function MileageTrendChart({ activities, period }: MileageTrendChartProps) {
     const data = useMemo(() => {
-        const now = startOfDay(new Date());
-        let intervalDays = 30;
+        let startDate: Date;
+        let endDate: Date;
         let trailingDays = 7;
 
-        if (viewMode === 'year') {
-            intervalDays = 365;
+        if (period.mode === 'month' && period.month !== null) {
+            startDate = startOfMonth(new Date(period.year, period.month));
+            endDate = endOfMonth(startDate);
+            trailingDays = 7;
+        } else if (period.mode === 'year') {
+            startDate = startOfYear(new Date(period.year, 0));
+            endDate = endOfYear(startDate);
             trailingDays = 90;
-        } else if (viewMode === 'all') {
-            intervalDays = 730; // Last 2 years
+        } else {
+            // All time - show last 2 years from now
+            endDate = startOfDay(new Date());
+            startDate = subDays(endDate, 730);
             trailingDays = 365;
         }
 
-        const startDate = subDays(now, intervalDays);
-        const dateRange = eachDayOfInterval({ start: startDate, end: now });
+        const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
 
         // Group activities by date
         const dailyMileage = new Map<string, number>();
         activities.forEach(a => {
             if (a.type !== 'Run' && a.sport_type !== 'Run') return;
-            const dateStr = format(new Date(a.start_date_local), 'yyyy-MM-dd');
-            dailyMileage.set(dateStr, (dailyMileage.get(dateStr) || 0) + a.distance / 1000);
+            const date = new Date(a.start_date_local);
+            if (isWithinInterval(date, { start: startDate, end: endDate })) {
+                const dateStr = format(date, 'yyyy-MM-dd');
+                dailyMileage.set(dateStr, (dailyMileage.get(dateStr) || 0) + a.distance / 1000);
+            }
         });
 
-        const labels = dateRange.map(d => format(d, 'MMM d'));
+        const labels = dateRange.map(d => format(d, period.mode === 'month' ? 'd' : 'MMM d'));
         const dailyData = dateRange.map(d => dailyMileage.get(format(d, 'yyyy-MM-dd')) || 0);
 
-        // Calculate trailing moving sum
+        // Calculate trailing moving sum (using ALL activities for accurate rolling totals)
         const allRuns = activities
             .filter(a => a.type === 'Run' || a.sport_type === 'Run')
             .sort((a, b) => new Date(a.start_date_local).getTime() - new Date(b.start_date_local).getTime());
@@ -106,7 +119,7 @@ export function MileageTrendChart({ activities, viewMode }: MileageTrendChartPro
                 },
             ],
         };
-    }, [activities, viewMode]);
+    }, [activities, period]);
 
     const options = {
         responsive: true,
@@ -141,7 +154,7 @@ export function MileageTrendChart({ activities, viewMode }: MileageTrendChartPro
                     color: 'rgba(255, 255, 255, 0.5)',
                     maxRotation: 0,
                     autoSkip: true,
-                    maxTicksLimit: 10,
+                    maxTicksLimit: period.mode === 'month' ? 31 : 12,
                 },
             },
             y: {
@@ -179,7 +192,7 @@ export function MileageTrendChart({ activities, viewMode }: MileageTrendChartPro
     return (
         <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10 h-[400px]">
             <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2">
-                <span>📈</span> Mileage Trends
+                <span>📈</span> Mileage Trends ({period.mode === 'all' ? 'Overall' : period.mode === 'year' ? period.year : format(new Date(period.year, period.month!), 'MMMM yyyy')})
             </h3>
             <div className="h-[300px]">
                 <Chart type="bar" data={data} options={options} />
