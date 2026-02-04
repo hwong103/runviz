@@ -75,12 +75,22 @@ function App() {
           <div className="flex items-center gap-4">
             {/* Sync button */}
             <button
-              onClick={() => sync()}
+              onClick={() => {
+                console.log('Manual sync triggered');
+                sync();
+              }}
               disabled={syncing}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 transition-all disabled:opacity-50"
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${syncing
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : 'bg-white/5 hover:bg-white/10 text-gray-300'
+                }`}
             >
-              <span className={syncing ? 'animate-spin' : ''}>🔄</span>
-              <span className="hidden sm:inline">{syncing ? 'Syncing...' : 'Sync'}</span>
+              <span className={syncing ? 'animate-spin' : ''}>
+                {syncing ? '⌛' : '🔄'}
+              </span>
+              <span className="hidden sm:inline">
+                {syncing ? 'Syncing...' : 'Sync'}
+              </span>
             </button>
 
             {/* Profile */}
