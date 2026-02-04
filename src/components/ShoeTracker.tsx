@@ -29,7 +29,7 @@ function BrandLogo({ brandName, className }: { brandName?: string; className?: s
         <img
             src={logoUrl}
             alt={brandName || 'Brand'}
-            className={`${className} w-8 h-8 object-contain mr-1`}
+            className={`${className} object-contain`}
             onError={() => setHasError(true)}
         />
     );
@@ -147,17 +147,21 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1 min-w-0 mr-2">
-                                    <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight truncate flex items-center gap-2">
-                                        <div className="flex items-center justify-center w-8 h-8 shrink-0">
-                                            <BrandLogo brandName={shoe.brand_name} className="opacity-70" />
+                                    <div className="flex gap-3 items-start">
+                                        <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-white/5 rounded-xl border border-white/5 p-1.5 group-hover:border-emerald-500/30 transition-colors">
+                                            <BrandLogo brandName={shoe.brand_name} className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity" />
                                         </div>
-                                        <div className="flex flex-col justify-center">
-                                            <span className="leading-tight">{shoe.name}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight truncate leading-tight">
+                                                {shoe.name}
+                                            </h4>
+                                            {shoe.brand_name && (
+                                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest block truncate mt-1">
+                                                    {shoe.brand_name}
+                                                </span>
+                                            )}
                                         </div>
-                                    </h4>
-                                    {shoe.brand_name && (
-                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest block truncate pl-7">{shoe.brand_name}</span>
-                                    )}
+                                    </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
                                     {shoe.primary && (
