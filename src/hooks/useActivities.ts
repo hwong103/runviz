@@ -73,7 +73,7 @@ export function useActivities() {
 
                 // Find activities we don't have in cache yet
                 const newOnPage = response.activities.filter(
-                    (a) => !currentActivities.find((existing) => existing.id === a.id)
+                    (a: Activity) => !currentActivities.find((existing) => existing.id === a.id)
                 );
 
                 if (newOnPage.length > 0) {
