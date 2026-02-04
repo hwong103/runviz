@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { auth } from '../services/api';
+import { auth, athlete as athleteApi } from '../services/api';
 import type { Athlete } from '../types';
 
 interface AuthState {
@@ -24,12 +24,23 @@ export function useAuth() {
     async function checkSession() {
         try {
             const session = await auth.getSession();
-            setState({
-                isAuthenticated: session.authenticated,
-                athlete: session.athlete as Athlete | null,
-                loading: false,
-                error: null,
-            });
+            if (session.authenticated) {
+                // Fetch full profile to get gear/shoes
+                const fullProfile = await athleteApi.getProfile();
+                setState({
+                    isAuthenticated: true,
+                    athlete: fullProfile,
+                    loading: false,
+                    error: null,
+                });
+            } else {
+                setState({
+                    isAuthenticated: false,
+                    athlete: null,
+                    loading: false,
+                    error: null,
+                });
+            }
         } catch {
             setState({
                 isAuthenticated: false,

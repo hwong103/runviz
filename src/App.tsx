@@ -8,6 +8,7 @@ import { FitnessChart } from './components/FitnessChart';
 import { ActivityScatterChart } from './components/ActivityScatterChart';
 import { MileageTrendChart } from './components/MileageTrendChart';
 import { RunDetails } from './components/RunDetails';
+import { ShoeTracker } from './components/ShoeTracker';
 import type { Activity } from './types';
 import { isRun } from './types';
 
@@ -116,6 +117,7 @@ function App() {
         <RunDetails
           activity={selectedActivity}
           allActivities={activities}
+          shoes={athlete?.shoes || []}
           onClose={() => setSelectedActivity(null)}
         />
       )}
@@ -208,9 +210,11 @@ function App() {
           <ActivityScatterChart activities={filteredActivities} />
         </div>
 
-        {/* Middle Section: Fitness */}
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
-          <FitnessChart activities={activities} period={viewPeriod} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <FitnessChart activities={activities} period={viewPeriod} />
+          </div>
+          <ShoeTracker activities={filteredActivities} shoes={athlete?.shoes || []} />
         </div>
 
         {/* Bottom Section: Heatmap & List side-by-side */}

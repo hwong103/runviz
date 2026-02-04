@@ -11,7 +11,7 @@ import {
     Filler,
 } from 'chart.js';
 import { Bar, Chart } from 'react-chartjs-2';
-import type { Activity, ActivityStreams } from '../types';
+import type { Activity, ActivityStreams, Gear } from '../types';
 import { isRun } from '../types';
 import { format, parseISO } from 'date-fns';
 import { activities as activitiesApi } from '../services/api';
@@ -30,6 +30,7 @@ ChartJS.register(
 interface RunDetailsProps {
     activity: Activity;
     allActivities: Activity[];
+    shoes: Gear[];
     onClose: () => void;
 }
 
@@ -59,7 +60,7 @@ function formatPace(paceMinKm: number) {
     return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
-export function RunDetails({ activity: initialActivity, allActivities, onClose }: RunDetailsProps) {
+export function RunDetails({ activity: initialActivity, allActivities, shoes, onClose }: RunDetailsProps) {
     const [activity, setActivity] = useState<Activity>(initialActivity);
     const [streams, setStreams] = useState<ActivityStreams | null>(null);
     const [loadingStreams, setLoadingStreams] = useState(false);
@@ -171,6 +172,8 @@ export function RunDetails({ activity: initialActivity, allActivities, onClose }
             };
         });
 
+        const currentShoe = shoes.find(s => s.id === activity.gear_id);
+
         return {
             distBins,
             distLabels,
@@ -189,9 +192,10 @@ export function RunDetails({ activity: initialActivity, allActivities, onClose }
             foodCount,
             top10,
             avgPaceLabel: formatPace((activity.moving_time / activity.distance) * 1000 / 60),
-            avgSpeed: (activity.distance / activity.moving_time * 3.6).toFixed(1)
+            avgSpeed: (activity.distance / activity.moving_time * 3.6).toFixed(1),
+            currentShoe
         };
-    }, [activity, runs]);
+    }, [activity, runs, shoes]);
 
     const chartData = useMemo(() => {
         if (!streams?.velocity_smooth?.data || !streams.distance?.data) return null;
@@ -406,6 +410,13 @@ export function RunDetails({ activity: initialActivity, allActivities, onClose }
                             <div className="text-2xl font-black text-white">{stats.calories}</div>
                             <div className="absolute top-full left-0 text-emerald-500/80 text-[10px] font-bold truncate mt-1 whitespace-nowrap">{stats.foodCount} {stats.food.name}</div>
                         </div>
+                        {stats.currentShoe && (
+                            <div>
+                                <div className="text-gray-600 text-[9px] font-black uppercase tracking-widest mb-1">Shoe</div>
+                                <div className="text-sm font-black text-white leading-tight mt-1">{stats.currentShoe.name}</div>
+                                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">{(stats.currentShoe.distance / 1000).toFixed(0)}km total</div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">

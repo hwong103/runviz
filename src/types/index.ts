@@ -7,6 +7,18 @@ export interface Athlete {
     lastname: string;
     profile: string; // avatar URL
     profile_medium: string;
+    shoes?: Gear[];
+    bikes?: Gear[];
+}
+
+export interface Gear {
+    id: string;
+    primary: boolean;
+    name: string;
+    distance: number; // meters
+    brand_name?: string;
+    model_name?: string;
+    description?: string;
 }
 
 export interface Activity {
@@ -14,6 +26,7 @@ export interface Activity {
     name: string;
     type: string;
     sport_type: string;
+    gear_id?: string;
     start_date: string;
     start_date_local: string;
     timezone: string;
