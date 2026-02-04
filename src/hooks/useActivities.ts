@@ -68,22 +68,30 @@ export function useActivities() {
                     break;
                 }
 
-                // Find activities we don't have in cache yet
-                const newOnPage = response.activities.filter(
-                    (a: Activity) => !currentActivities.find((existing) => existing.id === a.id)
-                );
+                // Always process all activities from the API to capture updates (e.g. gear changes, name edits)
+                const pageActivities = response.activities;
 
-                if (newOnPage.length > 0) {
-                    totalNewSaved += newOnPage.length;
-                    newlyFetched.push(...newOnPage);
-                    console.log(`✅ Found ${newOnPage.length} new activities on page ${page}`);
+                if (pageActivities.length > 0) {
+                    totalNewSaved += pageActivities.length;
+                    newlyFetched.push(...pageActivities);
+                    console.log(`✅ Processed ${pageActivities.length} activities on page ${page}`);
                 }
 
                 // Incremental Sync optimization:
-                // If we found duplicates on this page and we are NOT forcing a full sync, stop here.
-                if (!isFullSync && newOnPage.length < response.activities.length) {
-                    console.log('🏁 Incremental sync: Caught up to existing history.');
-                    hasMore = false;
+                // If we are NOT forcing a full sync, check if we've reached a known activity ID
+                if (!isFullSync) {
+                    // Check if *all* activities on this page were already in our cache (by ID)
+                    // If so, we can probably stop, BUT we still want to save the fresh versions of them.
+                    const allKnown = pageActivities.every((a: Activity) =>
+                        currentActivities.some(existing => existing.id === a.id)
+                    );
+
+                    if (allKnown && page > 1) { // Always fetch at least 1 page to check for updates
+                        console.log('🏁 Incremental sync: Reached known history.');
+                        hasMore = false;
+                    } else {
+                        page++;
+                    }
                 } else {
                     page++;
                 }
@@ -92,9 +100,13 @@ export function useActivities() {
             }
 
             if (newlyFetched.length > 0) {
-                const merged = [...newlyFetched, ...currentActivities];
+                // Merge: newly fetched activities overwrite existing ones in the map
                 const uniqueMap = new Map();
-                merged.forEach(a => uniqueMap.set(a.id, a));
+                // 1. Put old activities in first
+                currentActivities.forEach(a => uniqueMap.set(a.id, a));
+                // 2. Overwrite with new fresh activities
+                newlyFetched.forEach(a => uniqueMap.set(a.id, a));
+
                 await cache.cacheActivities(Array.from(uniqueMap.values()));
                 await cache.setLastSyncDate(new Date());
             }
