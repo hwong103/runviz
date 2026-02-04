@@ -92,7 +92,7 @@ function App() {
               </span>
             </h1>
             <p className="text-gray-400 mb-10 text-lg font-medium leading-relaxed">
-              Unlock your Strava history with elite analytics and Smashrun parity.
+              Unlock your Strava history with elite analytics.
             </p>
 
             <button
