@@ -10,7 +10,7 @@ import {
     Legend,
     Filler,
 } from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2';
+import { Bar, Chart } from 'react-chartjs-2';
 import type { Activity, ActivityStreams } from '../types';
 import { format, parseISO } from 'date-fns';
 import { activities as activitiesApi } from '../services/api';
@@ -319,8 +319,9 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
                                         <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                                     </div>
                                 ) : mixedChartData ? (
-                                    <Line
-                                        data={mixedChartData}
+                                    <Chart
+                                        type='bar'
+                                        data={mixedChartData as any}
                                         options={{
                                             maintainAspectRatio: false,
                                             interaction: { mode: 'index', intersect: false },
@@ -334,9 +335,10 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
                                                     ticks: {
                                                         color: '#4b5563',
                                                         font: { size: 10, weight: 'bold' },
-                                                        callback: (value) => {
-                                                            const m = Math.floor(value as number);
-                                                            const s = Math.round((value as number - m) * 60);
+                                                        callback: (value: string | number) => {
+                                                            const numValue = typeof value === 'string' ? parseFloat(value) : value;
+                                                            const m = Math.floor(numValue);
+                                                            const s = Math.round((numValue - m) * 60);
                                                             return `${m}:${s.toString().padStart(2, '0')}`;
                                                         }
                                                     }
