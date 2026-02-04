@@ -75,7 +75,7 @@ function findBrandKey(brandName: string): string | null {
 /**
  * Get Logo.dev URL for a brand
  */
-export function getBrandLogoUrl(brandName?: string, size: number = 64): string | null {
+export function getBrandLogoUrl(brandName?: string, size: number = 64, theme?: 'light' | 'dark'): string | null {
     if (!brandName) return null;
 
     const brandKey = findBrandKey(brandName);
@@ -85,7 +85,11 @@ export function getBrandLogoUrl(brandName?: string, size: number = 64): string |
     if (!domain) return null;
 
     // Using domain lookup for more reliable logos
-    return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&format=png&size=${size}`;
+    let url = `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&format=png&size=${size}`;
+    if (theme) {
+        url += `&theme=${theme}`;
+    }
+    return url;
 }
 
 /**

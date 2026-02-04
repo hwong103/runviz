@@ -20,7 +20,7 @@ import { getBrandLogoUrl, getBrandFallbackEmoji } from '../services/logoService'
 // Brand logo component with fallback support
 function BrandLogo({ brandName, className }: { brandName?: string; className?: string }) {
     const [hasError, setHasError] = useState(false);
-    const logoUrl = getBrandLogoUrl(brandName, 48);
+    const logoUrl = getBrandLogoUrl(brandName, 48, 'dark');
     const fallbackEmoji = getBrandFallbackEmoji(brandName);
 
     useEffect(() => {
