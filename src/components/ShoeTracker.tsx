@@ -7,6 +7,27 @@ interface ShoeTrackerProps {
     shoes: Gear[];
 }
 
+// Map of known brands to their logos (simple text or URL if we had them)
+// For now, let's use a mapping to clean brand names or add emojis
+const BRAND_LOGOS: Record<string, string> = {
+    'Hoka': '🦅',
+    'HOKA': '🦅',
+    'Nike': '✔️',
+    'Adidas': '👟',
+    'Saucony': '🏃',
+    'Brooks': '🧢',
+    'Asics': '🌀',
+    'ASICS': '🌀',
+    'New Balance': 'NB',
+};
+
+function getBrandIcon(brandName?: string) {
+    if (!brandName) return '👟';
+    // Check for partial matches
+    const key = Object.keys(BRAND_LOGOS).find(k => brandName.includes(k));
+    return key ? BRAND_LOGOS[key] : '👟';
+}
+
 export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
     const [fetchedGear, setFetchedGear] = useState<Map<string, Gear>>(new Map());
 
@@ -84,6 +105,10 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
             .filter(s => s.id.startsWith('g') || s.id.startsWith('s'))
             // Filter out unknown shoes with no activity in period (ghosts)
             .filter(s => !s.isDecoveredFromActivity || s.periodDistance > 0)
+            // USER REQUEST FIX: Hide shoes if they haven't been used in this period
+            // Unless it's "All Time" (which usually means we have all activities anyway)
+            // But fundamentally, if periodDistance is 0, user wants it hidden to reduce noise.
+            .filter(s => s.periodDistance > 0)
             .sort((a, b) => {
                 if (b.periodDistance !== a.periodDistance) return b.periodDistance - a.periodDistance;
                 return b.lifetimeDistance - a.lifetimeDistance;
@@ -108,17 +133,17 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
                         <div key={shoe.id} className="bg-black/40 rounded-2xl p-5 border border-white/5 hover:border-emerald-500/30 transition-all group">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1 min-w-0 mr-2">
-                                    <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight truncate">{shoe.name}</h4>
+                                    <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight truncate flex items-center gap-2">
+                                        <span className="opacity-70 text-base">{getBrandIcon(shoe.brand_name)}</span>
+                                        {shoe.name}
+                                    </h4>
                                     {shoe.brand_name && (
-                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest block truncate">{shoe.brand_name}</span>
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest block truncate pl-7">{shoe.brand_name}</span>
                                     )}
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
                                     {shoe.primary && (
                                         <span className="bg-emerald-500/20 text-emerald-400 text-[8px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase">Primary</span>
-                                    )}
-                                    {shoe.periodDistance > 0 && (
-                                        <span className="bg-blue-500/20 text-blue-400 text-[8px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase">Active</span>
                                     )}
                                 </div>
                             </div>
@@ -165,7 +190,7 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full py-10 text-center opacity-50">
                         <span className="text-4xl mb-4 grayscale">👟</span>
-                        <p className="text-gray-400 text-xs font-black uppercase tracking-widest italic">No shoes detected</p>
+                        <p className="text-gray-400 text-xs font-black uppercase tracking-widest italic">No shoes used in this period</p>
                     </div>
                 )}
             </div>
