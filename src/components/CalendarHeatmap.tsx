@@ -82,10 +82,14 @@ export function CalendarHeatmap({
                     // Track month changes for labels
                     if (current.getMonth() !== curMonth) {
                         curMonth = current.getMonth();
-                        months.push({
-                            label: current.toLocaleString('default', { month: 'short' }),
-                            weekIndex,
-                        });
+                        // In month view, only show the label for the selected month to avoid "DECJAN" squishing.
+                        // In year view, show all months.
+                        if (!isMonthView || curMonth === month) {
+                            months.push({
+                                label: current.toLocaleString('default', { month: 'short' }).toUpperCase(),
+                                weekIndex,
+                            });
+                        }
                     }
 
                     week.push({
