@@ -61,9 +61,9 @@ export function useActivities() {
                 console.log(`Fetching page ${page} (${perPage} per page)...`);
                 const response = await activitiesApi.list(page, perPage) as any;
 
-                if (!response.activities || !Array.isArray(response.activities)) {
-                    console.error('Invalid sync response:', response);
-                    throw new Error(response.error?.message || 'Strava API error. Your connection might need to be reauthorized.');
+                if (!response || !response.activities || !Array.isArray(response.activities)) {
+                    console.error('Invalid sync response. Full response structure:', response);
+                    throw new Error('Sync failed. The API returned data in an unexpected format. Check the browser console for details.');
                 }
 
                 if (response.activities.length === 0) {

@@ -7,7 +7,7 @@ FRONTEND_URL = "https://hwong103.github.io/runviz"
 
 [[kv_namespaces]]
 binding = "TOKENS"
-id = "your-kv-namespace-id"
+id = "30c9eb9422124409935de1f20bb28237"
 
 # For local development, create a preview namespace
 # [[kv_namespaces]]

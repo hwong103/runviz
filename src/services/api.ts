@@ -55,7 +55,7 @@ export const auth = {
 // Activity endpoints
 export const activities = {
     async list(page = 1, perPage = 30): Promise<{ activities: Activity[]; hasMore: boolean }> {
-        return fetchApi(`/api/activities?page=${page}&per_page=${perPage}`);
+        return fetchApi(`/api/athlete/activities?page=${page}&per_page=${perPage}`);
     },
 
     async get(id: number): Promise<Activity> {

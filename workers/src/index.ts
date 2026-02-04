@@ -298,7 +298,7 @@ async function handleApiRequest(
     }
 
     // Proxy request to Strava API
-    const stravaPath = url.pathname.replace('/api', '');
+    const stravaPath = url.pathname.replace('/api', '').replace(/\/$/, '');
     const stravaUrl = new URL(`${STRAVA_API_URL}${stravaPath}`);
     url.searchParams.forEach((value, key) => stravaUrl.searchParams.set(key, value));
 
@@ -311,13 +311,15 @@ async function handleApiRequest(
     const data = await stravaResponse.json();
 
     // Handle activities list specially to add hasMore flag
-    if (stravaPath === '/athlete/activities') {
-        const activities = data as unknown[];
+    // We check for both /athlete/activities and the old /activities path to be safe
+    if (stravaPath === '/athlete/activities' || stravaPath === '/activities') {
+        const activities = Array.isArray(data) ? data : [];
         const perPage = parseInt(url.searchParams.get('per_page') || '30');
         return new Response(
             JSON.stringify({
                 activities,
                 hasMore: activities.length === perPage,
+                error: !Array.isArray(data) ? data : undefined
             }),
             { headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
         );
