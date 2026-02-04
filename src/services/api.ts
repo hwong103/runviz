@@ -63,7 +63,8 @@ export const activities = {
     },
 
     async getStreams(id: number): Promise<ActivityStreams> {
-        return fetchApi(`/api/activities/${id}/streams`);
+        const keys = 'time,distance,latlng,altitude,heartrate,cadence,velocity_smooth,grade_smooth';
+        return fetchApi(`/api/activities/${id}/streams?keys=${keys}&key_by_type=true`);
     },
 };
 

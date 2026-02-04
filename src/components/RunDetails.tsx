@@ -355,7 +355,7 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
                                     />
                                 ) : (
                                     <div className="flex items-center justify-center h-full text-gray-600 text-[10px] font-black uppercase tracking-widest">
-                                        GPS stream data not available
+                                        Performance data not available
                                     </div>
                                 )}
                             </div>
