@@ -59,7 +59,12 @@ export function useActivities() {
 
             while (hasMore && page <= 5) { // Sync up to 500 activities (5 requests) per click to stay safe
                 console.log(`Fetching page ${page} (${perPage} per page)...`);
-                const response = await activitiesApi.list(page, perPage);
+                const response = await activitiesApi.list(page, perPage) as any;
+
+                if (!response.activities || !Array.isArray(response.activities)) {
+                    console.error('Invalid sync response:', response);
+                    throw new Error(response.error?.message || 'Strava API error. Your connection might need to be reauthorized.');
+                }
 
                 if (response.activities.length === 0) {
                     hasMore = false;
