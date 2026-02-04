@@ -387,7 +387,15 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
             <div className="bg-[#0e1117] w-full max-w-6xl rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[95vh]">
                 <div className="flex items-center justify-between px-8 py-3 border-b border-white/5 bg-black/20">
                     <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Run Details Analysis</div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white font-black text-xl px-4 py-2 transition-colors">✕</button>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => console.log('DEBUG ACTIVITY JSON:', activity)}
+                            className="text-[9px] font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 text-gray-400 px-3 py-1 rounded transition-colors"
+                        >
+                            Log JSON
+                        </button>
+                        <button onClick={onClose} className="text-gray-400 hover:text-white font-black text-xl px-4 py-2 transition-colors">✕</button>
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-10 space-y-10">
