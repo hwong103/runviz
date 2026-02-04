@@ -12,16 +12,16 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
         const periodStats = new Map<string, number>();
 
         activities.forEach(activity => {
-            if (activity.gear_id) {
-                const current = periodStats.get(activity.gear_id) || 0;
-                periodStats.set(activity.gear_id, current + activity.distance);
+            // Strava activities use gear_id
+            const gearId = activity.gear_id;
+            if (gearId) {
+                const current = periodStats.get(gearId) || 0;
+                periodStats.set(gearId, current + activity.distance);
             }
         });
 
-        // Filter out bikes, just in case. Strava gear IDs for shoes usually start with 'g'
-        const runShoes = shoes.filter(s => s.id.startsWith('g'));
-
-        return runShoes
+        // Use all gear provided in the shoes array (Strava already filters these as shoes)
+        return shoes
             .map(shoe => ({
                 ...shoe,
                 periodDistance: (periodStats.get(shoe.id) || 0) / 1000,
@@ -38,25 +38,35 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
 
     return (
         <div className="bg-white/5 backdrop-blur-3xl rounded-[2.5rem] p-8 border border-white/10 shadow-2xl h-full flex flex-col">
-            <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3 tracking-tight">
-                <span className="text-2xl">👟</span>
-                SHOE TRACKER
-            </h3>
+            <div className="flex justify-between items-center mb-8">
+                <h3 className="text-xl font-black text-white flex items-center gap-3 tracking-tight">
+                    <span className="text-2xl">👟</span>
+                    SHOE TRACKER
+                </h3>
+                <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest bg-white/5 px-2 py-1 rounded-md">
+                    {shoes.length} total
+                </span>
+            </div>
 
             <div className="flex-1 space-y-4">
                 {shoeStats.length > 0 ? (
                     shoeStats.map(shoe => (
                         <div key={shoe.id} className="bg-black/40 rounded-2xl p-5 border border-white/5 hover:border-emerald-500/30 transition-all group">
                             <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{shoe.name}</h4>
+                                <div className="flex-1 min-w-0 mr-2">
+                                    <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight truncate">{shoe.name}</h4>
                                     {shoe.brand_name && (
-                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{shoe.brand_name}</span>
+                                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest block truncate">{shoe.brand_name}</span>
                                     )}
                                 </div>
-                                {shoe.primary && (
-                                    <span className="bg-emerald-500/20 text-emerald-400 text-[8px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase">Primary</span>
-                                )}
+                                <div className="flex flex-col items-end gap-1">
+                                    {shoe.primary && (
+                                        <span className="bg-emerald-500/20 text-emerald-400 text-[8px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase">Primary</span>
+                                    )}
+                                    {shoe.periodDistance > 0 && (
+                                        <span className="bg-blue-500/20 text-blue-400 text-[8px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase">Active</span>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -86,7 +96,9 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
                                 </div>
                                 <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                                     <div
-                                        className={`h-full transition-all duration-1000 ${shoe.lifetimeDistance > 700 ? 'bg-orange-500' : 'bg-emerald-500/50'
+                                        className={`h-full transition-all duration-1000 ${shoe.lifetimeDistance > 800 ? 'bg-red-500' :
+                                                shoe.lifetimeDistance > 700 ? 'bg-orange-500' :
+                                                    'bg-emerald-500/50'
                                             }`}
                                         style={{ width: `${Math.min(100, (shoe.lifetimeDistance / 800) * 100)}%` }}
                                     />
@@ -98,7 +110,13 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
                     <div className="flex flex-col items-center justify-center h-full py-10 text-center opacity-50">
                         <span className="text-4xl mb-4 grayscale">👟</span>
                         <p className="text-gray-400 text-xs font-black uppercase tracking-widest italic">No shoes detected</p>
-                        <p className="text-gray-500 text-[9px] mt-2 leading-relaxed font-medium uppercase tracking-tighter">Check your gear settings in Strava</p>
+                        <p className="text-gray-500 text-[9px] mt-2 leading-relaxed font-medium uppercase tracking-tighter">
+                            Total Gear: {shoes.length}<br />
+                            Runs with shoes: {activities.filter(a => a.gear_id).length}
+                        </p>
+                        <p className="text-gray-600 text-[9px] mt-4 uppercase font-bold text-center border-t border-white/5 pt-4 w-full">
+                            Tip: Try Logout & Login to refresh permissions
+                        </p>
                     </div>
                 )}
             </div>
