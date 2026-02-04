@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Activity } from '../types';
 import { isRun } from '../types';
+import { format, parseISO } from 'date-fns';
 
 interface CalendarHeatmapProps {
     activities: Activity[];
@@ -17,6 +18,7 @@ export function CalendarHeatmap({
     onSelectDay,
     selectedDate
 }: CalendarHeatmapProps) {
+    const [hoveredDay, setHoveredDay] = useState<{ date: string; distance: number; x: number; y: number } | null>(null);
     const { weeks, monthLabels, maxDistance } = useMemo(() => {
         // Build daily distance map
         const dailyDistances = new Map<string, number>();
@@ -137,9 +139,20 @@ export function CalendarHeatmap({
                                     <div
                                         key={dayIdx}
                                         onClick={() => day?.currentMonth && onSelectDay?.(day.date)}
+                                        onMouseEnter={(e) => {
+                                            if (day?.currentMonth) {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoveredDay({
+                                                    date: day.date,
+                                                    distance: day.distance,
+                                                    x: rect.left + rect.width / 2,
+                                                    y: rect.top - 10
+                                                });
+                                            }
+                                        }}
+                                        onMouseLeave={() => setHoveredDay(null)}
                                         className={`w-3 h-3 rounded-[2px] transition-all duration-200 ${day ? getColor(day.distance, day.currentMonth, selectedDate === day.date) : 'bg-transparent'
-                                            } ${day?.currentMonth ? 'hover:scale-125 cursor-pointer' : ''}`}
-                                        title={day ? `${day.date}: ${day.distance.toFixed(1)} km` : ''}
+                                            } ${day?.currentMonth ? 'hover:scale-125 cursor-pointer hover:ring-2 hover:ring-white/30' : ''}`}
                                     />
                                 ))}
                             </div>
@@ -165,6 +178,21 @@ export function CalendarHeatmap({
                     )}
                 </div>
             </div>
+
+            {/* Custom Tooltip */}
+            {hoveredDay && (
+                <div
+                    className="fixed z-[200] pointer-events-none -translate-x-1/2 -translate-y-full px-3 py-2 bg-[#11141b] border border-white/10 rounded-xl shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
+                    style={{ left: hoveredDay.x, top: hoveredDay.y }}
+                >
+                    <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-0.5">
+                        {format(parseISO(hoveredDay.date), 'MMM d, yyyy')}
+                    </div>
+                    <div className="text-xs font-bold text-white">
+                        {hoveredDay.distance.toFixed(2)} km
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

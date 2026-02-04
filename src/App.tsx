@@ -34,6 +34,7 @@ function App() {
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Calculate available years from activities
   const availableYears = useMemo(() => {
@@ -129,24 +130,24 @@ function App() {
 
       {/* Sticky Header with Controls */}
       <header className="sticky top-0 z-50 bg-[#0a0c10]/80 backdrop-blur-2xl border-b border-white/5 py-3">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 flex items-center justify-between gap-2 sm:gap-8">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <span className="text-2xl sm:text-3xl">🏃‍♂️</span>
-            <h1 className="text-2xl font-black italic tracking-tighter hidden lg:block">
+            <h1 className="text-2xl font-black italic tracking-tighter hidden xl:block">
               <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                 RUNVIZ
               </span>
             </h1>
           </div>
 
-          {/* Time Controls in Header */}
-          <div className="flex-1 flex items-center justify-start sm:justify-center gap-1.5 overflow-x-auto no-scrollbar mask-gradient pr-2 sm:pr-0">
-            <div className="flex items-center p-1 bg-black/40 rounded-xl border border-white/5 max-w-fit shrink-0">
+          {/* Time Controls: Condensed on mobile */}
+          <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-3">
+            <div className="flex items-center p-1 bg-black/40 rounded-xl border border-white/5">
               {(['all', 'year', 'month'] as const).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                  className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${viewPeriod.mode === mode
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all ${viewPeriod.mode === mode
                     ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                     : 'text-gray-500 hover:text-white'
                     }`}
@@ -156,56 +157,88 @@ function App() {
               ))}
             </div>
 
-            {viewPeriod.mode !== 'all' && (
-              <select
-                value={viewPeriod.year}
-                onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-                className="bg-black/60 text-white px-2 py-1.5 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-xs shrink-0"
-              >
-                {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            )}
+            <div className="flex items-center gap-1.5">
+              {viewPeriod.mode !== 'all' && (
+                <select
+                  value={viewPeriod.year}
+                  onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                  className="bg-black/60 text-white px-2 py-1.5 sm:py-2 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-[10px] sm:text-xs"
+                >
+                  {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              )}
 
-            {viewPeriod.mode === 'month' && (
-              <select
-                value={viewPeriod.month || 0}
-                onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value) }))}
-                className="bg-black/60 text-white px-2 py-1.5 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-xs shrink-0"
-              >
-                {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
-              </select>
-            )}
+              {viewPeriod.mode === 'month' && (
+                <select
+                  value={viewPeriod.month || 0}
+                  onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value) }))}
+                  className="bg-black/60 text-white px-2 py-1.5 sm:py-2 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-[10px] sm:text-xs"
+                >
+                  {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
+                </select>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          {/* User Menu Dropdown */}
+          <div className="relative shrink-0">
             <button
-              onClick={() => sync({ forceFull: true })}
-              disabled={syncing}
-              className={`p-2 rounded-xl transition-all ${syncing
-                ? 'bg-emerald-500/20 text-emerald-400 animate-spin'
-                : 'bg-white/5 hover:bg-white/10 text-white'
-                }`}
-              title="Sync Strava Data"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="flex items-center focus:outline-none group"
             >
-              🔄
+              {athlete?.profile && (
+                <div className={`p-0.5 rounded-full border-2 transition-all ${isMenuOpen ? 'border-emerald-500' : 'border-emerald-500/20 group-hover:border-emerald-500/50'}`}>
+                  <img src={athlete.profile} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full ring-2 ring-black" alt="Profile" />
+                </div>
+              )}
             </button>
 
-            <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-white/10">
-              {athlete?.profile && (
-                <img src={athlete.profile} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-emerald-500/20 ring-4 ring-black" alt="Profile" />
-              )}
-              <div className="hidden sm:flex flex-col">
-                <span className="font-black text-xs text-white leading-none">{athlete?.firstname}</span>
-                <button onClick={logout} className="text-[9px] text-gray-500 font-bold uppercase tracking-widest hover:text-white transition-colors mt-1">Logout</button>
-              </div>
-            </div>
+            {isMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsMenuOpen(false)}
+                />
+                <div className="absolute right-0 mt-3 w-64 bg-[#11141b] rounded-2xl border border-white/10 shadow-2xl z-50 overflow-hidden py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-5 py-4 border-b border-white/5">
+                    <div className="font-black text-xs text-white uppercase tracking-wider">{athlete?.firstname} {athlete?.lastname}</div>
+                    <div className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">Athlete #{athlete?.id}</div>
+                  </div>
+
+                  <div className="p-2 space-y-1">
+                    <button
+                      onClick={() => {
+                        sync({ forceFull: true });
+                        setIsMenuOpen(false);
+                      }}
+                      disabled={syncing}
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/5 text-left transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={syncing ? 'animate-spin' : ''}>🔄</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white">Sync Data</span>
+                      </div>
+                      {syncing && <span className="text-[8px] font-black text-emerald-400 uppercase">Updating...</span>}
+                    </button>
+
+                    <button
+                      onClick={logout}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-left transition-colors group"
+                    >
+                      <span>🚪</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-red-400">Logout</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>
 
       <main className="max-w-[1600px] mx-auto px-6 py-10 space-y-10">
         {/* Highlight Stats */}
-        <StatsOverview activities={activities} period={viewPeriod} />
+        <StatsOverview activities={filteredActivities} period={viewPeriod} />
 
         {/* Top Section: Trends & Distribution */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

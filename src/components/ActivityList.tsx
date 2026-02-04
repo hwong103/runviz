@@ -1,6 +1,6 @@
 import type { Activity } from '../types';
 import { formatDuration } from '../analytics/heartRateZones';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, formatDistanceToNow } from 'date-fns';
 
 interface ActivityListProps {
     activities: Activity[];
@@ -16,6 +16,8 @@ export function ActivityList({ activities, limit = 10, onSelect }: ActivityListP
     const runs = activities
         .filter((a) => a.type === 'Run' || a.sport_type === 'Run')
         .slice(0, limit);
+
+    const maxDist = Math.max(...runs.map(r => r.distance), 0);
 
     const formatDistance = (meters: number): string => {
         return (meters / 1000).toFixed(2);
@@ -34,7 +36,8 @@ export function ActivityList({ activities, limit = 10, onSelect }: ActivityListP
         return {
             weekday: format(date, 'eee'),
             day: format(date, 'd'),
-            month: format(date, 'MMM')
+            month: format(date, 'MMM'),
+            relative: formatDistanceToNow(date, { addSuffix: true })
         };
     };
 
@@ -47,7 +50,11 @@ export function ActivityList({ activities, limit = 10, onSelect }: ActivityListP
 
             <div className="space-y-3">
                 {runs.length === 0 ? (
-                    <p className="text-gray-400 text-center py-8">No runs yet. Connect Strava to sync!</p>
+                    <div className="text-center py-12 space-y-3">
+                        <div className="text-4xl">🏜️</div>
+                        <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">No activities found</p>
+                        <p className="text-gray-600 text-xs max-w-[200px] mx-auto">Try adjusting your filters or sync your latest Strava data.</p>
+                    </div>
                 ) : (
                     runs.map((activity) => {
                         const dateParts = formatDate(activity.start_date_local);
@@ -66,39 +73,49 @@ export function ActivityList({ activities, limit = 10, onSelect }: ActivityListP
 
                                 {/* Activity info */}
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-bold text-white truncate group-hover:text-emerald-400 transition-colors">
-                                        {activity.name}
-                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-bold text-white truncate group-hover:text-emerald-400 transition-colors">
+                                            {activity.name}
+                                        </h3>
+                                        {activity.distance === maxDist && maxDist > 0 && (
+                                            <span className="shrink-0 bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border border-emerald-500/20">
+                                                Longest
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="flex items-center gap-3 text-xs text-gray-500 font-bold mt-1">
                                         <span className="text-gray-300">{formatDistance(activity.distance)} km</span>
                                         <span>•</span>
                                         <span>{formatDuration(activity.moving_time)}</span>
-                                        <span>•</span>
-                                        <span>{formatPace(activity.average_speed)} /km</span>
+                                        <span className="hidden sm:inline">•</span>
+                                        <span className="hidden sm:inline">{formatPace(activity.average_speed)} /km</span>
+                                        <span className="text-[10px] opacity-60 lowercase font-medium ml-auto sm:ml-0">{dateParts.relative}</span>
                                     </div>
                                 </div>
 
                                 {/* Metrics */}
                                 <div className="flex items-center gap-4">
-                                    {activity.average_heartrate && (
-                                        <div className="text-right hidden sm:block">
-                                            <div className="text-xs text-red-500/80 font-black flex items-center gap-1 justify-end">
-                                                <span>❤️</span>
-                                                <span>{Math.round(activity.average_heartrate)}</span>
+                                    <div className="flex flex-col items-end gap-1">
+                                        {activity.average_heartrate && (
+                                            <div className="text-right hidden sm:block">
+                                                <div className="text-[10px] text-red-500/80 font-black flex items-center gap-1 justify-end">
+                                                    <span>❤️</span>
+                                                    <span>{Math.round(activity.average_heartrate)}</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {activity.total_elevation_gain > 0 && (
-                                        <div className="text-right hidden sm:block">
-                                            <div className="text-xs text-gray-400/60 font-black flex items-center gap-1 justify-end">
-                                                <span>⛰️</span>
-                                                <span>{Math.round(activity.total_elevation_gain)}m</span>
+                                        {activity.total_elevation_gain > 0 && (
+                                            <div className="text-right hidden sm:block">
+                                                <div className="text-[10px] text-gray-400/60 font-black flex items-center gap-1 justify-end">
+                                                    <span>⛰️</span>
+                                                    <span>{Math.round(activity.total_elevation_gain)}m</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
 
-                                    <div className="text-gray-700 font-black group-hover:text-white transition-colors">→</div>
+                                    <div className="text-gray-700 font-black group-hover:text-white transition-all transform group-hover:translate-x-1">→</div>
                                 </div>
                             </div>
                         );
