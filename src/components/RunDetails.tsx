@@ -144,8 +144,9 @@ export function RunDetails({ activity: initialActivity, allActivities, onClose }
         const similarSortedByPace = [...similarRuns].sort((a, b) => (a.moving_time / a.distance) - (b.moving_time / b.distance));
         const paceRank = similarSortedByPace.findIndex(a => a.id === activity.id) + 1;
 
-        const calories = activity.calories || (activity.kilojoules ? Math.round(activity.kilojoules * 1.07) : 0);
-        const food = FOOD_EQUIVALENTS[Math.floor(Math.random() * FOOD_EQUIVALENTS.length)];
+        const calories = activity.calories || (activity.kilojoules ? Math.round(activity.kilojoules) : Math.round((activity.distance / 1000) * 70)); // 70 is a rough default for kcal/km
+        // Use activity.id as a seed to keep food choice consistent for the same run
+        const food = FOOD_EQUIVALENTS[activity.id % FOOD_EQUIVALENTS.length];
         const foodCount = (calories / food.cals).toFixed(1);
 
         const clusterLabel = Math.round(targetDist);
