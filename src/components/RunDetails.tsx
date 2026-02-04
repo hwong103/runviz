@@ -404,6 +404,19 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                         <div className="lg:col-span-2 self-start">
                             <h1 className="text-4xl font-black text-white/90 tracking-tighter italic mb-2 leading-tight">{activity.name}</h1>
                             <div className="text-gray-500 text-xs font-black uppercase tracking-widest">{format(activityDate, 'eeee, d MMM y').toUpperCase()}</div>
+                            {stats.currentShoe && (
+                                <div className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
+                                    <span className="opacity-70 text-xs">
+                                        {stats.currentShoe.brand_name?.includes('Hoka') || stats.currentShoe.brand_name?.includes('HOKA') ? '🦅' :
+                                            stats.currentShoe.brand_name?.includes('Nike') ? '✔️' :
+                                                stats.currentShoe.brand_name?.includes('Saucony') ? '🏃' :
+                                                    stats.currentShoe.brand_name?.includes('New Balance') ? 'NB' :
+                                                        stats.currentShoe.brand_name?.includes('Asics') || stats.currentShoe.brand_name?.includes('ASICS') ? '🌀' :
+                                                            '👟'}
+                                    </span>
+                                    {stats.currentShoe.name}
+                                </div>
+                            )}
                         </div>
                         <div>
                             <div className="text-gray-600 text-[9px] font-black uppercase tracking-widest mb-1">Distance</div>
