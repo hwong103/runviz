@@ -21,11 +21,20 @@ interface TokenData {
 }
 
 // CORS headers for frontend
+// CORS headers for frontend
 function corsHeaders(origin: string): HeadersInit {
+    const allowedOrigins = [
+        'https://hwong103.github.io',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173'
+    ];
+
+    const isAllowed = allowedOrigins.includes(origin) || origin.endsWith('.hwong103.github.io');
+
     return {
-        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0],
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Credentials': 'true',
     };
 }
