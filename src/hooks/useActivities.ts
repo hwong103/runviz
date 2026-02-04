@@ -41,12 +41,13 @@ export function useActivities() {
         }
     }, []);
 
-    const sync = useCallback(async () => {
+    const sync = useCallback(async (options: { forceFull?: boolean } = {}) => {
         if (state.syncing) return;
         setState((prev) => ({ ...prev, syncing: true, error: null }));
 
         try {
-            console.log('--- Starting Sync ---');
+            const isFullSync = options.forceFull === true;
+            console.log(`--- Starting ${isFullSync ? 'Full' : 'Incremental'} Sync ---`);
             const currentActivities = await cache.getCachedActivities();
             let page = 1;
             let hasMore = true;
@@ -54,13 +55,17 @@ export function useActivities() {
             let totalNewSaved = 0;
             const newlyFetched: Activity[] = [];
 
-            while (hasMore && page <= 20) { // Sync up to 4000 activities (20 requests) to cover extensive histories
+            while (hasMore && page <= 20) {
                 console.log(`Fetching page ${page} (${perPage} per page)...`);
                 const response = await activitiesApi.list(page, perPage) as any;
 
                 if (!response || !response.activities || !Array.isArray(response.activities)) {
-                    console.error('Invalid sync response. Full response structure:', response);
-                    throw new Error('Sync failed. The API returned data in an unexpected format. Check the browser console for details.');
+                    throw new Error('Sync failed. Unexpected API response.');
+                }
+
+                if (response.activities.length === 0) {
+                    hasMore = false;
+                    break;
                 }
 
                 // Find activities we don't have in cache yet
@@ -74,18 +79,19 @@ export function useActivities() {
                     console.log(`✅ Found ${newOnPage.length} new activities on page ${page}`);
                 }
 
-                if (response.activities.length === 0) {
+                // Incremental Sync optimization:
+                // If we found duplicates on this page and we are NOT forcing a full sync, stop here.
+                if (!isFullSync && newOnPage.length < response.activities.length) {
+                    console.log('🏁 Incremental sync: Caught up to existing history.');
                     hasMore = false;
                 } else {
                     page++;
                 }
 
-                // Small throttle
                 if (hasMore) await new Promise(r => setTimeout(r, 200));
             }
 
             if (newlyFetched.length > 0) {
-                // Ensure absolute uniqueness by ID when merging
                 const merged = [...newlyFetched, ...currentActivities];
                 const uniqueMap = new Map();
                 merged.forEach(a => uniqueMap.set(a.id, a));
@@ -98,7 +104,7 @@ export function useActivities() {
 
             setState({
                 activities: finalActivities.sort((a, b) =>
-                    new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+                    new Date(b.start_date || b.start_date_local).getTime() - new Date(a.start_date || a.start_date_local).getTime()
                 ),
                 loading: false,
                 syncing: false,

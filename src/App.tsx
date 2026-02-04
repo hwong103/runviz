@@ -172,7 +172,7 @@ function App() {
 
           <div className="flex items-center gap-4 shrink-0">
             <button
-              onClick={() => sync()}
+              onClick={() => sync({ forceFull: true })}
               disabled={syncing}
               className={`p-2.5 rounded-xl transition-all ${syncing
                 ? 'bg-emerald-500/20 text-emerald-400 animate-spin'
