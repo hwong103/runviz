@@ -1,0 +1,16 @@
+name = "runviz-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+FRONTEND_URL = "https://hwong103.github.io/runviz"
+
+[[kv_namespaces]]
+binding = "TOKENS"
+id = "your-kv-namespace-id"
+
+# For local development, create a preview namespace
+# [[kv_namespaces]]
+# binding = "TOKENS"
+# id = "your-kv-namespace-id"
+# preview_id = "your-preview-id"
