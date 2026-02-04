@@ -1,12 +1,12 @@
 # RunViz 🏃‍♂️
 
-A beautiful, mobile-friendly running stats dashboard that replicates Smashrun's best features while unlocking Strava's paywalled analytics.
+A beautiful, mobile-friendly running stats dashboard that visualizes your Strava data with elite analytics.
 
 ![RunViz Dashboard](https://via.placeholder.com/800x400?text=RunViz+Dashboard)
 
 ## ✨ Features
 
-### Free Analytics (Strava paywalls these!)
+### Advanced Analytics
 - **Grade Adjusted Pace (GAP)** - See your equivalent flat-ground pace
 - **Heart Rate Zone Analysis** - Time in each zone with custom thresholds
 - **Training Load** - CTL/ATL/TSB fitness, fatigue, and form tracking
@@ -164,5 +164,4 @@ MIT - Fork it, modify it, make it yours!
 ## 🙏 Acknowledgments
 
 - [Strava API](https://developers.strava.com/) for the data
-- [Smashrun](https://smashrun.com/) for the inspiration
 - [Minetti et al.](https://pubmed.ncbi.nlm.nih.gov/12183501/) for the GAP formula

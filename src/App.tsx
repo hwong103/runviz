@@ -129,9 +129,9 @@ function App() {
 
       {/* Sticky Header with Controls */}
       <header className="sticky top-0 z-50 bg-[#0a0c10]/80 backdrop-blur-2xl border-b border-white/5 py-3">
-        <div className="max-w-[1600px] mx-auto px-6 flex items-center justify-between gap-8">
-          <div className="flex items-center gap-4 shrink-0">
-            <span className="text-3xl">🏃‍♂️</span>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 flex items-center justify-between gap-2 sm:gap-8">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+            <span className="text-2xl sm:text-3xl">🏃‍♂️</span>
             <h1 className="text-2xl font-black italic tracking-tighter hidden lg:block">
               <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                 RUNVIZ
@@ -140,13 +140,13 @@ function App() {
           </div>
 
           {/* Time Controls in Header */}
-          <div className="flex-1 flex items-center justify-center gap-3">
-            <div className="flex items-center p-1 bg-black/40 rounded-xl border border-white/5 max-w-fit">
+          <div className="flex-1 flex items-center justify-start sm:justify-center gap-1.5 overflow-x-auto no-scrollbar mask-gradient pr-2 sm:pr-0">
+            <div className="flex items-center p-1 bg-black/40 rounded-xl border border-white/5 max-w-fit shrink-0">
               {(['all', 'year', 'month'] as const).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                  className={`px-4 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all ${viewPeriod.mode === mode
+                  className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${viewPeriod.mode === mode
                     ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                     : 'text-gray-500 hover:text-white'
                     }`}
@@ -160,7 +160,7 @@ function App() {
               <select
                 value={viewPeriod.year}
                 onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-                className="bg-black/60 text-white px-3 py-2 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-xs"
+                className="bg-black/60 text-white px-2 py-1.5 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-xs shrink-0"
               >
                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
@@ -170,18 +170,18 @@ function App() {
               <select
                 value={viewPeriod.month || 0}
                 onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value) }))}
-                className="bg-black/60 text-white px-3 py-2 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-xs"
+                className="bg-black/60 text-white px-2 py-1.5 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-xs shrink-0"
               >
                 {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
               </select>
             )}
           </div>
 
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <button
               onClick={() => sync({ forceFull: true })}
               disabled={syncing}
-              className={`p-2.5 rounded-xl transition-all ${syncing
+              className={`p-2 rounded-xl transition-all ${syncing
                 ? 'bg-emerald-500/20 text-emerald-400 animate-spin'
                 : 'bg-white/5 hover:bg-white/10 text-white'
                 }`}
@@ -190,9 +190,9 @@ function App() {
               🔄
             </button>
 
-            <div className="flex items-center gap-3 pl-4 border-l border-white/10">
+            <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-white/10">
               {athlete?.profile && (
-                <img src={athlete.profile} className="w-9 h-9 rounded-full border-2 border-emerald-500/20 ring-4 ring-black" alt="Profile" />
+                <img src={athlete.profile} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-emerald-500/20 ring-4 ring-black" alt="Profile" />
               )}
               <div className="hidden sm:flex flex-col">
                 <span className="font-black text-xs text-white leading-none">{athlete?.firstname}</span>

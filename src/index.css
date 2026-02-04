@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+@theme {
+    --color-gray-900: #0a0c10;
+}
+
+body {
+    background-color: var(--color-gray-900);
+    margin: 0;
+    overscroll-behavior-y: none;
+    /* Disables pull-to-refresh on mobile which looks weird with dark mode */
+}
