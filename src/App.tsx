@@ -33,6 +33,7 @@ function App() {
   });
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
 
   // Calculate available years from activities
   const availableYears = useMemo(() => {
@@ -57,8 +58,12 @@ function App() {
       if (viewPeriod.mode === 'year') return year === viewPeriod.year;
       if (viewPeriod.mode === 'month') return year === viewPeriod.year && month === viewPeriod.month;
       return false;
+    }).filter(a => {
+      // Secondary filter: Shoe
+      if (selectedShoeId) return a.gear_id === selectedShoeId;
+      return true;
     });
-  }, [activities, viewPeriod]);
+  }, [activities, viewPeriod, selectedShoeId]);
 
   const handleSelectDay = useCallback((dateStr: string) => {
     const activity = activities.find(a => {
@@ -217,6 +222,8 @@ function App() {
           <ShoeTracker
             activities={filteredActivities}
             shoes={[...(athlete?.shoes || []), ...(athlete?.gear || [])]}
+            selectedShoeId={selectedShoeId}
+            onSelectShoe={(id) => setSelectedShoeId(prev => prev === id ? null : id)}
           />
         </div>
 

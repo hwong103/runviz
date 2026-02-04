@@ -40,6 +40,7 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
         return {
             runCount: filteredActivities.length,
             totalDistance: totalDistance / 1000, // km
+            avgDistance: filteredActivities.length > 0 ? (totalDistance / 1000) / filteredActivities.length : 0,
             avgPace,
             longestRun: longestRunDistance / 1000,
             ...streakData
@@ -86,10 +87,10 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 color="text-orange-400"
             />
             <StatCard
-                label="Max Break"
-                value={stats.longestBreak.toString()}
-                unit="days"
-                icon="🧘"
+                label="Avg Dist"
+                value={stats.avgDistance.toFixed(1)}
+                unit="km"
+                icon="📏"
                 color="text-blue-400"
             />
         </div>

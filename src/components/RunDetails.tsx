@@ -32,6 +32,7 @@ interface RunDetailsProps {
     allActivities: Activity[];
     shoes: Gear[];
     onClose: () => void;
+    onSelect?: (activity: Activity) => void;
 }
 
 const parseLocalTime = (dateStr: string) => {
@@ -60,12 +61,27 @@ function formatPace(paceMinKm: number) {
     return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
-export function RunDetails({ activity: initialActivity, allActivities, shoes, onClose }: RunDetailsProps) {
+export function RunDetails({ activity: initialActivity, allActivities, shoes, onClose, onSelect }: RunDetailsProps) {
+    // Reset internal state when ID changes (navigation)
     const [activity, setActivity] = useState<Activity>(initialActivity);
+    useEffect(() => { setActivity(initialActivity); }, [initialActivity.id]);
+
     const [streams, setStreams] = useState<ActivityStreams | null>(null);
     const [loadingStreams, setLoadingStreams] = useState(false);
     const [viewMode, setViewMode] = useState<'stream' | 'splits'>('stream');
     const [fetchedShoe, setFetchedShoe] = useState<Gear | null>(null);
+
+    // Navigation Logic
+    const currentIndex = allActivities.findIndex(a => a.id === initialActivity.id);
+    const hasNext = currentIndex > 0;
+    const hasPrev = currentIndex < allActivities.length - 1;
+
+    // Previous in list = Older date (higher index)
+    // Next in list = Newer date (lower index)
+    // BUT typically users expect "Left" = Previous (Older) and "Right" = Next (Newer)
+    // Let's stick to chronological: "Prev" takes you to the older run, "Next" to newer.
+    const prevActivity = hasPrev ? allActivities[currentIndex + 1] : null;
+    const nextActivity = hasNext ? allActivities[currentIndex - 1] : null;
 
     // Fetch gear details if they are missing from props
     useEffect(() => {
@@ -402,7 +418,29 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0c10]/95 backdrop-blur-xl p-4 overflow-y-auto">
             <div className="bg-[#0e1117] w-full max-w-6xl rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[95vh]">
                 <div className="flex items-center justify-between px-8 py-3 border-b border-white/5 bg-black/20">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Run Details Analysis</div>
+                    <div className="flex items-center gap-4">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Run Details Analysis</div>
+                        {/* Navigation Controls */}
+                        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5 ml-4 border border-white/10">
+                            <button
+                                onClick={() => prevActivity && onSelect?.(prevActivity)}
+                                disabled={!prevActivity}
+                                className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent transition-colors text-sm"
+                                title="Previous Run (Older)"
+                            >
+                                ←
+                            </button>
+                            <div className="w-px h-3 bg-white/10 mx-0.5"></div>
+                            <button
+                                onClick={() => nextActivity && onSelect?.(nextActivity)}
+                                disabled={!nextActivity}
+                                className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent transition-colors text-sm"
+                                title="Next Run (Newer)"
+                            >
+                                →
+                            </button>
+                        </div>
+                    </div>
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => console.log('DEBUG ACTIVITY JSON:', activity)}

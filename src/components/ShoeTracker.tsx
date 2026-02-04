@@ -5,6 +5,8 @@ import { gear as gearApi } from '../services/api';
 interface ShoeTrackerProps {
     activities: Activity[];
     shoes: Gear[];
+    selectedShoeId?: string | null;
+    onSelectShoe?: (id: string) => void;
 }
 
 // Map of known brands to their logos (simple text or URL if we had them)
@@ -28,7 +30,7 @@ function getBrandIcon(brandName?: string) {
     return key ? BRAND_LOGOS[key] : '👟';
 }
 
-export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
+export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }: ShoeTrackerProps) {
     const [fetchedGear, setFetchedGear] = useState<Map<string, Gear>>(new Map());
 
     // 1. Identify gears that are used but unknown
@@ -130,7 +132,14 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
             <div className="flex-1 space-y-4">
                 {shoeStats.length > 0 ? (
                     shoeStats.map(shoe => (
-                        <div key={shoe.id} className="bg-black/40 rounded-2xl p-5 border border-white/5 hover:border-emerald-500/30 transition-all group">
+                        <div
+                            key={shoe.id}
+                            onClick={() => onSelectShoe?.(shoe.id)}
+                            className={`rounded-2xl p-5 border transition-all group cursor-pointer ${selectedShoeId === shoe.id
+                                    ? 'bg-emerald-500/10 border-emerald-500 ring-1 ring-emerald-500/50'
+                                    : 'bg-black/40 border-white/5 hover:border-emerald-500/30'
+                                }`}
+                        >
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1 min-w-0 mr-2">
                                     <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight truncate flex items-center gap-2">
@@ -177,8 +186,8 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
                                     <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                                         <div
                                             className={`h-full transition-all duration-1000 ${shoe.lifetimeDistance > 800 ? 'bg-red-500' :
-                                                    shoe.lifetimeDistance > 700 ? 'bg-orange-500' :
-                                                        'bg-emerald-500/50'
+                                                shoe.lifetimeDistance > 700 ? 'bg-orange-500' :
+                                                    'bg-emerald-500/50'
                                                 }`}
                                             style={{ width: `${Math.min(100, (shoe.lifetimeDistance / 800) * 100)}%` }}
                                         />
