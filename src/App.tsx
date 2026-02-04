@@ -117,7 +117,7 @@ function App() {
         <RunDetails
           activity={selectedActivity}
           allActivities={activities}
-          shoes={athlete?.shoes || []}
+          shoes={[...(athlete?.shoes || []), ...(athlete?.gear || [])]}
           onClose={() => setSelectedActivity(null)}
         />
       )}
@@ -214,7 +214,10 @@ function App() {
           <div className="lg:col-span-2">
             <FitnessChart activities={activities} period={viewPeriod} />
           </div>
-          <ShoeTracker activities={filteredActivities} shoes={athlete?.shoes || []} />
+          <ShoeTracker
+            activities={filteredActivities}
+            shoes={[...(athlete?.shoes || []), ...(athlete?.gear || [])]}
+          />
         </div>
 
         {/* Bottom Section: Heatmap & List side-by-side */}

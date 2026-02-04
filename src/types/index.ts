@@ -9,6 +9,7 @@ export interface Athlete {
     profile_medium: string;
     shoes?: Gear[];
     bikes?: Gear[];
+    gear?: Gear[];
 }
 
 export interface Gear {

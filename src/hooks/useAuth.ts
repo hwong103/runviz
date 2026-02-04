@@ -27,7 +27,9 @@ export function useAuth() {
             if (session.authenticated) {
                 // Fetch full profile to get gear/shoes
                 const fullProfile = await athleteApi.getProfile();
-                console.log('DEBUG ATHLETE PROFILE:', fullProfile);
+                console.log('DEBUG: Full Athlete Profile:', fullProfile);
+                console.log('DEBUG: Shoes:', fullProfile.shoes);
+                console.log('DEBUG: Gear:', (fullProfile as any).gear);
                 setState({
                     isAuthenticated: true,
                     athlete: fullProfile,
