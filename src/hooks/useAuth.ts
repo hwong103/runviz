@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { auth, athlete as athleteApi } from '../services/api';
+import * as cache from '../services/cache';
 import type { Athlete } from '../types';
 
 interface AuthState {
@@ -61,17 +62,17 @@ export function useAuth() {
     async function logout() {
         try {
             await auth.logout();
+        } catch (err) {
+            console.error('Logout failed:', err);
+        } finally {
+            // Always clear local cache and state, even if server logout fails
+            await cache.clearCache();
             setState({
                 isAuthenticated: false,
                 athlete: null,
                 loading: false,
                 error: null,
             });
-        } catch (err) {
-            setState((prev) => ({
-                ...prev,
-                error: err instanceof Error ? err.message : 'Logout failed',
-            }));
         }
     }
 
