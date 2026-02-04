@@ -51,24 +51,38 @@ function getOrdinal(n: number) {
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps) {
+function formatPace(paceMinKm: number) {
+    if (!paceMinKm || isNaN(paceMinKm) || !isFinite(paceMinKm)) return '--:--';
+    const min = Math.floor(paceMinKm);
+    const sec = Math.round((paceMinKm - min) * 60);
+    return `${min}:${sec.toString().padStart(2, '0')}`;
+}
+
+export function RunDetails({ activity: initialActivity, allActivities, onClose }: RunDetailsProps) {
+    const [activity, setActivity] = useState<Activity>(initialActivity);
     const [streams, setStreams] = useState<ActivityStreams | null>(null);
     const [loadingStreams, setLoadingStreams] = useState(false);
+    const [viewMode, setViewMode] = useState<'stream' | 'splits'>('stream');
 
     useEffect(() => {
-        const fetchStreams = async () => {
+        const fetchData = async () => {
             setLoadingStreams(true);
             try {
-                const data = await activitiesApi.getStreams(activity.id);
-                setStreams(data);
+                // Fetch full activity details (for splits_metric)
+                const fullActivity = await activitiesApi.get(initialActivity.id);
+                if (fullActivity) setActivity(fullActivity);
+
+                // Fetch streams
+                const streamData = await activitiesApi.getStreams(initialActivity.id);
+                setStreams(streamData);
             } catch (err) {
-                console.error("Failed to fetch streams:", err);
+                console.error("Failed to fetch detailed activity data:", err);
             } finally {
                 setLoadingStreams(false);
             }
         };
-        fetchStreams();
-    }, [activity.id]);
+        fetchData();
+    }, [initialActivity.id]);
 
     const runs = useMemo(() =>
         allActivities.filter(a => a.type === 'Run' || a.sport_type === 'Run')
@@ -109,15 +123,13 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
         const minPace = Math.floor(Math.min(...validPaces, 4));
         const maxPace = Math.ceil(Math.max(...validPaces, 8));
         const paceBinCount = 6;
-        const paceBinSize = (maxPace - minPace) / paceBinCount;
+        const paceBinSize = Math.max((maxPace - minPace) / paceBinCount, 0.1);
 
         const paceBins = new Array(paceBinCount).fill(0);
         const paceLabels = [];
         for (let i = 0; i < paceBinCount; i++) {
             const p = minPace + (i * paceBinSize);
-            const m = Math.floor(p);
-            const s = Math.round((p - m) * 60);
-            paceLabels.push(`${m}:${s.toString().padStart(2, '0')}`);
+            paceLabels.push(formatPace(p));
         }
 
         validPaces.forEach(p => {
@@ -141,8 +153,6 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
         const clusterLabel = Math.round(targetDist);
         const top10 = similarSortedByPace.slice(0, 15).map(r => {
             const p = (r.moving_time / r.distance) * 1000 / 60;
-            const m = Math.floor(p);
-            const s = Math.round((p - m) * 60);
             const isCurrent = r.id === activity.id;
             const date = parseLocalTime(r.start_date_local);
 
@@ -154,7 +164,7 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
 
             return {
                 id: r.id,
-                pace: `${m}:${s.toString().padStart(2, '0')}`,
+                pace: formatPace(p),
                 date: format(date, 'd/MM/yy'),
                 isCurrent,
                 recencyColor,
@@ -205,66 +215,238 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
         };
     }, [activity, runs]);
 
-    const mixedChartData = useMemo(() => {
+    const chartData = useMemo(() => {
         if (!streams?.velocity_smooth?.data || !streams.distance?.data) return null;
 
-        // Downsample to ~120 points for smooth performance
-        const rawPoints = streams.velocity_smooth.data.length;
-        const step = Math.max(1, Math.floor(rawPoints / 120));
+        if (viewMode === 'splits') {
+            // Processing splits logic
+            const splits = [];
+            let currentSplitDist = 0;
+            let currentSplitTime = 0;
+            let currentSplitHR = 0;
+            let hrCount = 0;
+            let lastDist = 0;
+            let lastTime = 0;
 
-        const velocityData = [];
-        const hrData = [];
-        const distanceLabels = [];
+            for (let i = 0; i < streams.distance.data.length; i++) {
+                const d = streams.distance.data[i];
+                const t = streams.time?.data[i] || 0;
+                const hr = streams.heartrate?.data[i];
 
-        for (let i = 0; i < rawPoints; i += step) {
-            const dist = streams.distance.data[i];
-            const speed = streams.velocity_smooth.data[i];
-            const hr = streams.heartrate?.data ? streams.heartrate.data[i] : null;
+                currentSplitDist += (d - lastDist);
+                currentSplitTime += (t - lastTime);
+                if (hr) {
+                    currentSplitHR += hr;
+                    hrCount++;
+                }
 
-            if (speed <= 0.5) continue;
-            const pace = (1 / speed) * 1000 / 60;
-            if (pace > 15) continue;
+                if (currentSplitDist >= 1000 || i === streams.distance.data.length - 1) {
+                    const pace = (currentSplitTime / currentSplitDist) * 1000 / 60;
+                    splits.push({
+                        distance: Math.round(d / 1000),
+                        pace,
+                        hr: hrCount > 0 ? Math.round(currentSplitHR / hrCount) : null
+                    });
+                    currentSplitDist = 0;
+                    currentSplitTime = 0;
+                    currentSplitHR = 0;
+                    hrCount = 0;
+                }
+                lastDist = d;
+                lastTime = t;
+            }
 
-            velocityData.push(pace);
-            hrData.push(hr);
-            distanceLabels.push((dist / 1000).toFixed(2));
+            return {
+                labels: splits.map(s => s.distance.toString()),
+                datasets: [
+                    {
+                        type: 'line' as const,
+                        label: 'Pace',
+                        data: splits.map(s => s.pace),
+                        borderColor: '#60a5fa',
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        tension: 0,
+                        pointRadius: 4,
+                        borderWidth: 3,
+                        yAxisID: 'y',
+                    },
+                    {
+                        type: 'bar' as const,
+                        label: 'Heart Rate',
+                        data: splits.map(s => s.hr),
+                        backgroundColor: '#1d4ed8',
+                        borderRadius: 4,
+                        yAxisID: 'y1',
+                    }
+                ],
+                paces: splits.map(s => s.pace)
+            };
+        } else {
+            // Stream view logic (existing)
+            const rawPoints = streams.velocity_smooth.data.length;
+            const step = Math.max(1, Math.floor(rawPoints / 120));
+
+            const velocityData = [];
+            const hrData = [];
+            const distances = [];
+
+            for (let i = 0; i < rawPoints; i += step) {
+                const dist = streams.distance.data[i];
+                const speed = streams.velocity_smooth.data[i];
+                const hr = streams.heartrate?.data ? streams.heartrate.data[i] : null;
+
+                if (speed <= 0.5) continue;
+                const pace = (1 / speed) * 1000 / 60;
+                if (pace > 15) continue;
+
+                velocityData.push(pace);
+                hrData.push(hr);
+                distances.push(dist / 1000);
+            }
+
+            return {
+                labels: distances,
+                datasets: [
+                    {
+                        type: 'line' as const,
+                        label: 'Pace',
+                        data: velocityData,
+                        borderColor: '#60a5fa',
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        borderWidth: 3,
+                        yAxisID: 'y',
+                    },
+                    {
+                        type: 'bar' as const,
+                        label: 'Heart Rate',
+                        data: hrData,
+                        backgroundColor: '#1d4ed8',
+                        hoverBackgroundColor: '#2563eb',
+                        borderRadius: 1,
+                        barPercentage: 1.0,
+                        categoryPercentage: 1.0,
+                        yAxisID: 'y1',
+                    }
+                ],
+                paces: velocityData
+            };
         }
+    }, [streams, viewMode]);
+
+    const chartOptions = useMemo(() => {
+        if (!chartData) return {};
+
+        const paces = chartData.paces.filter(p => !isNaN(p) && isFinite(p));
+        const minPaceFound = Math.min(...paces);
+        const maxPaceFound = Math.max(...paces);
+
+        // Pad the pace axis for visibility
+        const paceMin = Math.max(0, Math.floor(minPaceFound) - 1);
+        const paceMax = Math.ceil(maxPaceFound) + 1;
 
         return {
-            labels: distanceLabels,
-            datasets: [
-                {
-                    type: 'line' as const,
-                    label: 'Pace',
-                    data: velocityData,
-                    borderColor: '#60a5fa',
-                    backgroundColor: 'transparent',
-                    fill: false,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    borderWidth: 3,
-                    yAxisID: 'y',
-                },
-                {
-                    type: 'bar' as const,
-                    label: 'Heart Rate',
-                    data: hrData,
-                    backgroundColor: '#1d4ed8',
-                    hoverBackgroundColor: '#2563eb',
-                    borderRadius: 1,
-                    barPercentage: 1.0,
-                    categoryPercentage: 1.0,
-                    yAxisID: 'y1',
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 20,
+                    right: 20,
+                    top: 20,
+                    bottom: 0
                 }
-            ]
+            },
+            interaction: { mode: 'index' as const, intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(0,0,0,0.9)',
+                    titleFont: { size: 11, weight: 'bold' },
+                    bodyFont: { size: 11 },
+                    padding: 12,
+                    callbacks: {
+                        label: (context: any) => {
+                            let label = context.dataset.label || '';
+                            if (label) label += ': ';
+                            if (context.dataset.yAxisID === 'y') {
+                                label += formatPace(context.parsed.y);
+                            } else {
+                                label += Math.round(context.parsed.y) + ' bpm';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: viewMode === 'stream' ? 'linear' : 'category',
+                    display: true,
+                    grid: { display: false },
+                    border: { display: false },
+                    ticks: {
+                        color: '#4b5563',
+                        font: { size: 10, weight: 'bold' },
+                        maxTicksLimit: 12,
+                        callback: (value: any) => viewMode === 'stream' ? Math.round(value) : value
+                    },
+                    title: {
+                        display: true,
+                        text: 'KILOMETERS',
+                        color: '#4b5563',
+                        font: { size: 10, weight: 'black', family: 'Inter' },
+                        padding: { top: 10 }
+                    }
+                },
+                y: {
+                    reverse: true,
+                    position: 'left' as const,
+                    min: paceMin,
+                    max: paceMax,
+                    grid: { color: 'rgba(255,255,255,0.03)', drawTicks: false },
+                    border: { display: false },
+                    ticks: {
+                        color: '#4b5563',
+                        font: { size: 10, weight: 'bold' },
+                        padding: 10,
+                        callback: (value: number | string) => {
+                            const numValue = typeof value === 'string' ? parseFloat(value) : value;
+                            return formatPace(numValue);
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'PACE',
+                        color: '#4b5563',
+                        font: { size: 10, weight: 'black' },
+                        padding: { bottom: 10 }
+                    }
+                },
+                y1: {
+                    position: 'right' as const,
+                    grid: { display: false },
+                    min: 80,
+                    max: 200,
+                    border: { display: false },
+                    ticks: {
+                        color: '#4b5563',
+                        font: { size: 10, weight: 'bold' },
+                        padding: 10
+                    },
+                    title: {
+                        display: true,
+                        text: 'HEART RATE',
+                        color: '#4b5563',
+                        font: { size: 10, weight: 'black' },
+                        padding: { bottom: 10 }
+                    }
+                }
+            }
         };
-    }, [streams]);
-
-    function formatPace(paceMinKm: number) {
-        const min = Math.floor(paceMinKm);
-        const sec = Math.round((paceMinKm - min) * 60);
-        return `${min}:${sec.toString().padStart(2, '0')}`;
-    }
+    }, [chartData, viewMode]);
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0c10]/95 backdrop-blur-xl p-4 overflow-y-auto">
@@ -302,67 +484,34 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
                             </div>
                         </div>
 
-                        {/* Smashrun Style Mixed Chart */}
+                        {/* Performance Chart with Improved Axes */}
                         <div className="pt-12 border-t border-white/5">
                             <div className="flex items-center justify-between mb-8">
-                                <h3 className="text-xs text-gray-400 font-bold uppercase tracking-widest">Change in speed over route</h3>
-                                <div className="bg-white/5 rounded px-2 py-1 text-[9px] font-black text-gray-400 uppercase tracking-widest">Splits</div>
+                                <h3 className="text-xs text-gray-400 font-bold uppercase tracking-widest">Performance Analysis</h3>
+                                <button
+                                    onClick={() => setViewMode(v => v === 'stream' ? 'splits' : 'stream')}
+                                    className={`rounded px-3 py-1 text-[9px] font-black uppercase tracking-widest transition-colors ${viewMode === 'splits' ? 'bg-emerald-500 text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+                                >
+                                    {viewMode === 'splits' ? 'Splits View' : 'Live Stream'}
+                                </button>
                             </div>
 
-                            <div className="h-72 bg-black/40 rounded-[2rem] border border-white/5 p-8 relative flex flex-col">
-                                {/* Custom Axis Labels */}
-                                <div className="absolute left-2 top-1/2 -rotate-90 origin-center text-[9px] text-gray-600 font-black uppercase tracking-widest w-24 text-center">Pace</div>
-                                <div className="absolute right-2 top-1/2 rotate-90 origin-center text-[9px] text-gray-600 font-black uppercase tracking-widest w-24 text-center">Heart Rate</div>
-
+                            <div className="h-80 bg-black/40 rounded-[2rem] border border-white/5 p-6 relative">
                                 {loadingStreams ? (
                                     <div className="flex items-center justify-center h-full">
                                         <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                                     </div>
-                                ) : mixedChartData ? (
+                                ) : chartData ? (
                                     <Chart
                                         type='bar'
-                                        data={mixedChartData as any}
-                                        options={{
-                                            maintainAspectRatio: false,
-                                            interaction: { mode: 'index', intersect: false },
-                                            plugins: { legend: { display: false }, tooltip: { enabled: true, backgroundColor: 'rgba(0,0,0,0.8)', titleFont: { size: 10 }, bodyFont: { size: 10 } } },
-                                            scales: {
-                                                x: { display: true, grid: { display: false }, ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' }, maxTicksLimit: 8 } },
-                                                y: {
-                                                    reverse: true,
-                                                    position: 'left',
-                                                    grid: { color: 'rgba(255,255,255,0.03)' },
-                                                    ticks: {
-                                                        color: '#4b5563',
-                                                        font: { size: 10, weight: 'bold' },
-                                                        callback: (value: string | number) => {
-                                                            const numValue = typeof value === 'string' ? parseFloat(value) : value;
-                                                            const m = Math.floor(numValue);
-                                                            const s = Math.round((numValue - m) * 60);
-                                                            return `${m}:${s.toString().padStart(2, '0')}`;
-                                                        }
-                                                    }
-                                                },
-                                                y1: {
-                                                    position: 'right',
-                                                    grid: { display: false },
-                                                    min: 80,
-                                                    max: 200,
-                                                    ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' } }
-                                                }
-                                            }
-                                        }}
+                                        data={chartData as any}
+                                        options={chartOptions as any}
                                     />
                                 ) : (
                                     <div className="flex items-center justify-center h-full text-gray-600 text-[10px] font-black uppercase tracking-widest">
                                         Performance data not available
                                     </div>
                                 )}
-                            </div>
-                            <div className="mt-4 flex justify-between items-center text-[10px] text-gray-600 font-black uppercase tracking-[0.2em] px-12">
-                                <span>0</span>
-                                <span>kilometers</span>
-                                <span>{(activity.distance / 1000).toFixed(0)}</span>
                             </div>
                         </div>
 
