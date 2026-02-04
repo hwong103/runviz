@@ -45,43 +45,77 @@ export function useActivities() {
     }
 
     const sync = useCallback(async () => {
+        if (state.syncing) return;
         setState((prev) => ({ ...prev, syncing: true, error: null }));
 
         try {
-            // Fetch all activities with pagination
-            const allActivities: Activity[] = [];
+            console.log('--- Starting Sync ---');
+            const currentActivities = await cache.getCachedActivities();
             let page = 1;
             let hasMore = true;
+            const perPage = 100;
+            let totalNewSaved = 0;
+            const newlyFetched: Activity[] = [];
 
-            while (hasMore) {
-                const response = await activitiesApi.list(page, 100);
-                allActivities.push(...response.activities);
-                hasMore = response.hasMore;
-                page++;
+            while (hasMore && page <= 5) { // Sync up to 500 activities (5 requests) per click to stay safe
+                console.log(`Fetching page ${page} (${perPage} per page)...`);
+                const response = await activitiesApi.list(page, perPage);
 
-                // Safety limit
-                if (page > 50) break;
+                if (response.activities.length === 0) {
+                    hasMore = false;
+                    break;
+                }
+
+                // Find activities we don't have in cache yet
+                const newOnPage = response.activities.filter(
+                    (a) => !currentActivities.find((existing) => existing.id === a.id)
+                );
+
+                if (newOnPage.length > 0) {
+                    totalNewSaved += newOnPage.length;
+                    newlyFetched.push(...newOnPage);
+                    console.log(`✅ Found ${newOnPage.length} new activities on page ${page}`);
+                }
+
+                // If we found ANY duplicates on this page, or it was the last page, we stop
+                if (newOnPage.length < response.activities.length) {
+                    console.log('🏁 Caught up to existing history.');
+                    hasMore = false;
+                } else {
+                    hasMore = response.hasMore;
+                    page++;
+                }
+
+                // Small throttle to be kind to the API
+                if (hasMore) await new Promise(r => setTimeout(r, 500));
             }
 
-            // Cache the activities
-            await cache.cacheActivities(allActivities);
-            await cache.setLastSyncDate(new Date());
+            if (newlyFetched.length > 0) {
+                await cache.cacheActivities([...newlyFetched, ...currentActivities]);
+                await cache.setLastSyncDate(new Date());
+            }
+
+            console.log(`--- Sync Complete. New found: ${totalNewSaved} ---`);
+            const finalActivities = await cache.getCachedActivities();
 
             setState({
-                activities: allActivities,
+                activities: finalActivities.sort((a, b) =>
+                    new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+                ),
                 loading: false,
                 syncing: false,
                 error: null,
                 lastSync: new Date(),
             });
         } catch (err) {
+            console.error('Sync failed:', err);
             setState((prev) => ({
                 ...prev,
                 syncing: false,
                 error: err instanceof Error ? err.message : 'Sync failed',
             }));
         }
-    }, []);
+    }, [state.syncing, state.activities]);
 
     const getActivity = useCallback(async (id: number): Promise<Activity | null> => {
         // Check cache first
