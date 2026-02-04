@@ -1,47 +1,47 @@
 import { useMemo } from 'react';
 import type { Activity } from '../types';
-import { formatDuration } from '../analytics/heartRateZones';
 
 interface StatsOverviewProps {
     activities: Activity[];
-    period: 'week' | 'month' | 'year' | 'all';
+    period: {
+        mode: 'all' | 'year' | 'month';
+        year: number;
+        month: number | null;
+    };
 }
 
 export function StatsOverview({ activities, period }: StatsOverviewProps) {
     const stats = useMemo(() => {
-        const now = new Date();
-        let startDate: Date;
+        // Filter activities by period
+        const filteredActivities = activities.filter((a) => {
+            if (a.type !== 'Run' && a.sport_type !== 'Run') return false;
 
-        switch (period) {
-            case 'week':
-                startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                break;
-            case 'month':
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                break;
-            case 'year':
-                startDate = new Date(now.getFullYear(), 0, 1);
-                break;
-            default:
-                startDate = new Date(0);
-        }
-
-        const runs = activities.filter((a) => {
             const date = new Date(a.start_date_local);
-            return (a.type === 'Run' || a.sport_type === 'Run') && date >= startDate;
+            const year = date.getFullYear();
+            const month = date.getMonth();
+
+            if (period.mode === 'all') return true;
+            if (period.mode === 'year') return year === period.year;
+            if (period.mode === 'month') return year === period.year && month === period.month;
+
+            return false;
         });
 
-        const totalDistance = runs.reduce((sum, a) => sum + a.distance, 0);
-        const totalTime = runs.reduce((sum, a) => sum + a.moving_time, 0);
-        const totalElevation = runs.reduce((sum, a) => sum + a.total_elevation_gain, 0);
+        // Basic stats
+        const totalDistance = filteredActivities.reduce((sum, a) => sum + a.distance, 0);
+        const totalTime = filteredActivities.reduce((sum, a) => sum + a.moving_time, 0);
         const avgPace = totalDistance > 0 ? (totalTime / totalDistance) * 1000 / 60 : 0;
+        const longestRunDistance = filteredActivities.reduce((max, a) => Math.max(max, a.distance), 0);
+
+        // Streak calculation
+        const streakData = calculateStreaks(filteredActivities);
 
         return {
-            runCount: runs.length,
+            runCount: filteredActivities.length,
             totalDistance: totalDistance / 1000, // km
-            totalTime,
-            totalElevation,
             avgPace,
+            longestRun: longestRunDistance / 1000,
+            ...streakData
         };
     }, [activities, period]);
 
@@ -52,7 +52,7 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
     };
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <StatCard
                 label="Runs"
                 value={stats.runCount.toString()}
@@ -66,19 +66,73 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 icon="📏"
             />
             <StatCard
-                label="Time"
-                value={formatDuration(stats.totalTime)}
-                unit=""
-                icon="⏱️"
-            />
-            <StatCard
                 label="Avg Pace"
                 value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'}
                 unit="/km"
                 icon="⚡"
             />
+            <StatCard
+                label="Longest"
+                value={stats.longestRun.toFixed(1)}
+                unit="km"
+                icon="🏆"
+            />
+            <StatCard
+                label="Max Streak"
+                value={stats.longestStreak.toString()}
+                unit="days"
+                icon="🔥"
+            />
+            <StatCard
+                label="Max Break"
+                value={stats.longestBreak.toString()}
+                unit="days"
+                icon="🧘"
+            />
         </div>
     );
+}
+
+function calculateStreaks(activities: Activity[]) {
+    if (activities.length === 0) return { longestStreak: 0, longestBreak: 0 };
+
+    // Get unique dates with runs
+    const runDates = new Set(
+        activities.map(a => new Date(a.start_date_local).toISOString().split('T')[0])
+    );
+
+    const sortedDates = Array.from(runDates).sort();
+    let longestStreak = 0;
+    let currentStreak = 0;
+
+    // Streak logic
+    if (sortedDates.length > 0) {
+        currentStreak = 1;
+        longestStreak = 1;
+        for (let i = 1; i < sortedDates.length; i++) {
+            const d1 = new Date(sortedDates[i - 1]);
+            const d2 = new Date(sortedDates[i]);
+            const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1) {
+                currentStreak++;
+            } else {
+                currentStreak = 1;
+            }
+            longestStreak = Math.max(longestStreak, currentStreak);
+        }
+    }
+
+    // Break logic
+    let longestBreak = 0;
+    for (let i = 1; i < sortedDates.length; i++) {
+        const d1 = new Date(sortedDates[i - 1]);
+        const d2 = new Date(sortedDates[i]);
+        const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) - 1;
+        longestBreak = Math.max(longestBreak, diffDays);
+    }
+
+    return { longestStreak, longestBreak };
 }
 
 interface StatCardProps {
@@ -92,12 +146,12 @@ function StatCard({ label, value, unit, icon }: StatCardProps) {
     return (
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02]">
             <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">{icon}</span>
-                <span className="text-sm text-gray-400">{label}</span>
+                <span className="text-xl">{icon}</span>
+                <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{label}</span>
             </div>
             <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-white">{value}</span>
-                <span className="text-sm text-gray-400">{unit}</span>
+                <span className="text-2xl font-bold text-white">{value}</span>
+                <span className="text-xs text-gray-400">{unit}</span>
             </div>
         </div>
     );

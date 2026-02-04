@@ -4,9 +4,10 @@ import type { Activity } from '../types';
 interface CalendarHeatmapProps {
     activities: Activity[];
     year?: number;
+    month?: number;
 }
 
-export function CalendarHeatmap({ activities, year = new Date().getFullYear() }: CalendarHeatmapProps) {
+export function CalendarHeatmap({ activities, year = new Date().getFullYear(), month }: CalendarHeatmapProps) {
     const { weeks, monthLabels, maxDistance } = useMemo(() => {
         // Build daily distance map
         const dailyDistances = new Map<string, number>();
@@ -24,7 +25,7 @@ export function CalendarHeatmap({ activities, year = new Date().getFullYear() }:
             if (d > max) max = d;
         });
 
-        // Build calendar grid (weeks x days)
+        // Current range
         const startDate = new Date(year, 0, 1);
         const endDate = new Date(year, 11, 31);
 
@@ -32,24 +33,25 @@ export function CalendarHeatmap({ activities, year = new Date().getFullYear() }:
         const firstSunday = new Date(startDate);
         firstSunday.setDate(startDate.getDate() - startDate.getDay());
 
-        const weeks: Array<Array<{ date: string; distance: number; dayOfWeek: number } | null>> = [];
+        const weeks: Array<Array<{ date: string; distance: number; dayOfWeek: number; currentMonth: boolean } | null>> = [];
         const months: Array<{ label: string; weekIndex: number }> = [];
-        let currentMonth = -1;
+        let curMonth = -1;
 
         const current = new Date(firstSunday);
         let weekIndex = 0;
 
         while (current <= endDate || weeks.length < 53) {
-            const week: Array<{ date: string; distance: number; dayOfWeek: number } | null> = [];
+            const week: Array<{ date: string; distance: number; dayOfWeek: number; currentMonth: boolean } | null> = [];
 
             for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
                 const dateStr = current.toISOString().split('T')[0];
                 const inYear = current.getFullYear() === year;
+                const isSelectedMonth = month !== undefined ? current.getMonth() === month : true;
 
                 if (inYear) {
-                    // Track month changes
-                    if (current.getMonth() !== currentMonth) {
-                        currentMonth = current.getMonth();
+                    // Track month changes for labels
+                    if (current.getMonth() !== curMonth) {
+                        curMonth = current.getMonth();
                         months.push({
                             label: current.toLocaleString('default', { month: 'short' }),
                             weekIndex,
@@ -60,6 +62,7 @@ export function CalendarHeatmap({ activities, year = new Date().getFullYear() }:
                         date: dateStr,
                         distance: dailyDistances.get(dateStr) || 0,
                         dayOfWeek,
+                        currentMonth: isSelectedMonth && inYear
                     });
                 } else {
                     week.push(null);
@@ -75,9 +78,10 @@ export function CalendarHeatmap({ activities, year = new Date().getFullYear() }:
         }
 
         return { weeks, monthLabels: months, maxDistance: max };
-    }, [activities, year]);
+    }, [activities, year, month]);
 
-    const getColor = (distance: number): string => {
+    const getColor = (distance: number, isActive: boolean): string => {
+        if (!isActive) return 'bg-white/[0.02]';
         if (distance === 0) return 'bg-white/5';
         const intensity = Math.min(distance / maxDistance, 1);
 
@@ -88,61 +92,60 @@ export function CalendarHeatmap({ activities, year = new Date().getFullYear() }:
     };
 
     return (
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <span>📅</span>
-                <span>{year} Activity</span>
-            </h2>
-
-            {/* Month labels */}
-            <div className="flex mb-2 text-xs text-gray-400 ml-8">
-                {monthLabels.map((month, i) => (
-                    <div
-                        key={i}
-                        className="absolute"
-                        style={{ marginLeft: `${month.weekIndex * 14 + 32}px` }}
-                    >
-                        {month.label}
-                    </div>
-                ))}
-            </div>
-
-            <div className="flex gap-0.5 mt-6">
-                {/* Day labels */}
-                <div className="flex flex-col gap-0.5 text-xs text-gray-400 pr-2">
-                    <span className="h-3"></span>
-                    <span className="h-3">M</span>
-                    <span className="h-3"></span>
-                    <span className="h-3">W</span>
-                    <span className="h-3"></span>
-                    <span className="h-3">F</span>
-                    <span className="h-3"></span>
+        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10 overflow-x-auto">
+            <div className="min-w-[700px]">
+                {/* Month labels */}
+                <div className="flex mb-2 text-[10px] text-gray-500 font-bold uppercase tracking-tighter ml-8 h-4 relative">
+                    {monthLabels.map((m, i) => (
+                        <div
+                            key={i}
+                            className="absolute"
+                            style={{ left: `${m.weekIndex * 14}px` }}
+                        >
+                            {m.label}
+                        </div>
+                    ))}
                 </div>
 
-                {/* Calendar grid */}
-                {weeks.map((week, weekIdx) => (
-                    <div key={weekIdx} className="flex flex-col gap-0.5">
-                        {week.map((day, dayIdx) => (
-                            <div
-                                key={dayIdx}
-                                className={`w-3 h-3 rounded-sm transition-all duration-200 hover:ring-2 hover:ring-white/30 ${day ? getColor(day.distance) : 'bg-transparent'
-                                    }`}
-                                title={day ? `${day.date}: ${day.distance.toFixed(1)} km` : ''}
-                            />
+                <div className="flex gap-0.5">
+                    {/* Day labels */}
+                    <div className="flex flex-col gap-0.5 text-[9px] text-gray-600 font-bold pr-2 select-none uppercase">
+                        <span className="h-3">S</span>
+                        <span className="h-3">M</span>
+                        <span className="h-3">T</span>
+                        <span className="h-3">W</span>
+                        <span className="h-3">T</span>
+                        <span className="h-3">F</span>
+                        <span className="h-3">S</span>
+                    </div>
+
+                    {/* Calendar grid */}
+                    <div className="flex gap-0.5">
+                        {weeks.map((week, weekIdx) => (
+                            <div key={weekIdx} className="flex flex-col gap-0.5">
+                                {week.map((day, dayIdx) => (
+                                    <div
+                                        key={dayIdx}
+                                        className={`w-3 h-3 rounded-[2px] transition-all duration-200 ${day ? getColor(day.distance, day.currentMonth) : 'bg-transparent'
+                                            } ${day?.currentMonth ? 'hover:ring-2 hover:ring-white/30 cursor-pointer' : ''}`}
+                                        title={day ? `${day.date}: ${day.distance.toFixed(1)} km` : ''}
+                                    />
+                                ))}
+                            </div>
                         ))}
                     </div>
-                ))}
-            </div>
+                </div>
 
-            {/* Legend */}
-            <div className="flex items-center gap-2 mt-4 text-xs text-gray-400">
-                <span>Less</span>
-                <div className="w-3 h-3 rounded-sm bg-white/5" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-900/60" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-700/70" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-500/80" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-400" />
-                <span>More</span>
+                {/* Legend */}
+                <div className="flex items-center gap-2 mt-6 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                    <span>Less</span>
+                    <div className="w-3 h-3 rounded-[2px] bg-white/5" />
+                    <div className="w-3 h-3 rounded-[2px] bg-emerald-900/60" />
+                    <div className="w-3 h-3 rounded-[2px] bg-emerald-700/70" />
+                    <div className="w-3 h-3 rounded-[2px] bg-emerald-500/80" />
+                    <div className="w-3 h-3 rounded-[2px] bg-emerald-400" />
+                    <span>More</span>
+                </div>
             </div>
         </div>
     );
