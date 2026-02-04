@@ -129,8 +129,8 @@ export function ActivityList({
                                     </div>
                                 </div>
 
-                                {/* Shoe (Desktop/Tablet) */}
-                                <div className="hidden sm:flex flex-col items-end min-w-[120px] max-w-[180px] ml-4 shrink-0">
+                                {/* Shoe (Always Visible) */}
+                                <div className="flex flex-col items-end min-w-[120px] max-w-[180px] ml-4 shrink-0">
                                     {(() => {
                                         // Try to find shoe in the provided shoes array, or use the one on the activity if available
                                         const shoe = (activity.gear_id ? shoes.find(s => s.id === activity.gear_id) : null) || activity.gear;
