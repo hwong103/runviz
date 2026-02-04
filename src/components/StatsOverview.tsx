@@ -82,12 +82,14 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 value={stats.longestStreak.toString()}
                 unit="days"
                 icon="🔥"
+                color="text-orange-400"
             />
             <StatCard
                 label="Max Break"
                 value={stats.longestBreak.toString()}
                 unit="days"
                 icon="🧘"
+                color="text-blue-400"
             />
         </div>
     );
@@ -140,18 +142,19 @@ interface StatCardProps {
     value: string;
     unit: string;
     icon: string;
+    color?: string;
 }
 
-function StatCard({ label, value, unit, icon }: StatCardProps) {
+function StatCard({ label, value, unit, icon, color = "text-white" }: StatCardProps) {
     return (
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.02]">
-            <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">{icon}</span>
-                <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{label}</span>
+        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all duration-300 group">
+            <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl group-hover:scale-110 transition-transform duration-300">{icon}</span>
+                <span className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">{label}</span>
             </div>
-            <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-white">{value}</span>
-                <span className="text-xs text-gray-400">{unit}</span>
+            <div className="flex items-baseline gap-1.5">
+                <span className={`text-3xl font-black tracking-tighter ${color}`}>{value}</span>
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{unit}</span>
             </div>
         </div>
     );

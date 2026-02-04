@@ -9,6 +9,7 @@ import { ActivityScatterChart } from './components/ActivityScatterChart';
 import { MileageTrendChart } from './components/MileageTrendChart';
 import { RunDetails } from './components/RunDetails';
 import type { Activity } from './types';
+import { format } from 'date-fns';
 
 interface ViewPeriod {
   mode: 'all' | 'year' | 'month';
@@ -17,8 +18,8 @@ interface ViewPeriod {
 }
 
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
 function App() {
@@ -59,7 +60,6 @@ function App() {
   }, [activities, viewPeriod]);
 
   const handleSelectDay = useCallback((dateStr: string) => {
-    // Find activity on this date
     const activity = activities.find(a => {
       if (a.type !== 'Run' && a.sport_type !== 'Run') return false;
       return a.start_date_local.startsWith(dateStr);
@@ -69,56 +69,41 @@ function App() {
     }
   }, [activities]);
 
-  // --- Conditional Returns MUST happen after all Hooks ---
-
-  // Loading state
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-white text-xl font-medium">Loading RunViz...</div>
+          <div className="text-white text-xl font-medium tracking-tight">Loading RunViz...</div>
         </div>
       </div>
     );
   }
 
-  // Not authenticated - show login
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0a0c10] flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
-          <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-2xl">
-            <h1 className="text-5xl font-extrabold text-white mb-2 tracking-tight italic">
+          <div className="bg-white/5 backdrop-blur-3xl rounded-[2.5rem] p-12 border border-white/10 shadow-2xl">
+            <h1 className="text-6xl font-black text-white mb-4 tracking-tighter italic">
               <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
                 RUNVIZ
               </span>
             </h1>
-            <p className="text-gray-400 mb-8 text-lg">
-              Unlock your Strava history with elite analytics.
+            <p className="text-gray-400 mb-10 text-lg font-medium leading-relaxed">
+              Unlock your Strava history with elite analytics and Smashrun parity.
             </p>
 
             <button
               onClick={login}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-orange-500/20 flex items-center justify-center gap-3"
+              className="w-full bg-[#FC4C02] hover:bg-[#E34402] text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-[#FC4C02]/20 flex items-center justify-center gap-3 text-lg uppercase tracking-widest"
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066l-2.084 4.116z" />
                 <path d="M15.387 0L0 24h6.128l3.054-6.172h3.065L15.387 24l9.109-18.172h6.063L15.387 0z" opacity="0.6" />
               </svg>
-              Connect with Strava
+              Connect Strava
             </button>
-
-            <div className="mt-10 grid grid-cols-2 gap-4 text-left">
-              <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                <span className="text-emerald-400 block font-bold text-lg">FREE</span>
-                <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Analytics</span>
-              </div>
-              <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                <span className="text-blue-400 block font-bold text-lg">SMASHRUN</span>
-                <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Parity</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -127,7 +112,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#0a0c10] text-gray-200">
-      {/* Run Details Modal */}
       {selectedActivity && (
         <RunDetails
           activity={selectedActivity}
@@ -136,72 +120,40 @@ function App() {
         />
       )}
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#0a0c10]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      {/* Sticky Header with Controls */}
+      <header className="sticky top-0 z-50 bg-[#0a0c10]/80 backdrop-blur-2xl border-b border-white/5 py-3">
+        <div className="max-w-[1600px] mx-auto px-6 flex items-center justify-between gap-8">
+          <div className="flex items-center gap-4 shrink-0">
             <span className="text-3xl">🏃‍♂️</span>
-            <h1 className="text-2xl font-black italic tracking-tighter">
+            <h1 className="text-2xl font-black italic tracking-tighter hidden lg:block">
               <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                 RUNVIZ
               </span>
             </h1>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => sync()}
-              disabled={syncing}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-bold text-sm ${syncing
-                ? 'bg-emerald-500/20 text-emerald-400 animate-pulse'
-                : 'bg-white/5 hover:bg-white/10 text-white'
-                }`}
-            >
-              <span>{syncing ? '⌛' : '🔄'}</span>
-              <span className="hidden sm:inline">{syncing ? 'Syncing...' : 'Sync Data'}</span>
-            </button>
-
-            <div className="flex items-center gap-3 pl-4 border-l border-white/10 text-sm">
-              <span className="text-gray-400 hidden lg:inline font-medium">Hello,</span>
-              <span className="font-bold text-white">{athlete?.firstname}</span>
-              {athlete?.profile && (
-                <img src={athlete.profile} className="w-8 h-8 rounded-full border border-white/20" alt="Profile" />
-              )}
-              <button
-                onClick={logout}
-                className="text-gray-500 hover:text-white transition-colors ml-2 font-bold"
-              >
-                Logout
-              </button>
+          {/* Time Controls in Header */}
+          <div className="flex-1 flex items-center justify-center gap-3">
+            <div className="flex items-center p-1 bg-black/40 rounded-xl border border-white/5 max-w-fit">
+              {(['all', 'year', 'month'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
+                  className={`px-4 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all ${viewPeriod.mode === mode
+                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                    : 'text-gray-500 hover:text-white'
+                    }`}
+                >
+                  {mode}
+                </button>
+              ))}
             </div>
-          </div>
-        </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* Navigation / Filters */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white/5 p-6 rounded-3xl border border-white/10">
-          <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-2xl border border-white/5">
-            {(['all', 'year', 'month'] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${viewPeriod.mode === mode
-                  ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                  : 'text-gray-500 hover:text-white'
-                  }`}
-              >
-                {mode.toUpperCase()}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-4">
             {viewPeriod.mode !== 'all' && (
               <select
                 value={viewPeriod.year}
                 onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-                className="bg-black/60 text-white px-5 py-3 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-sm"
+                className="bg-black/60 text-white px-3 py-2 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-xs"
               >
                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
@@ -211,60 +163,88 @@ function App() {
               <select
                 value={viewPeriod.month || 0}
                 onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value) }))}
-                className="bg-black/60 text-white px-5 py-3 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-sm"
+                className="bg-black/60 text-white px-3 py-2 rounded-xl border border-white/10 outline-none focus:border-emerald-500 transition-colors font-bold text-xs"
               >
                 {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
               </select>
             )}
+          </div>
 
-            {lastSync && (
-              <div className="text-[10px] text-gray-600 uppercase font-black tracking-widest hidden sm:block pl-4 border-l border-white/5">
-                Sync: {lastSync.toLocaleTimeString()}
+          <div className="flex items-center gap-4 shrink-0">
+            <button
+              onClick={() => sync()}
+              disabled={syncing}
+              className={`p-2.5 rounded-xl transition-all ${syncing
+                ? 'bg-emerald-500/20 text-emerald-400 animate-spin'
+                : 'bg-white/5 hover:bg-white/10 text-white'
+                }`}
+              title="Sync Strava Data"
+            >
+              🔄
+            </button>
+
+            <div className="flex items-center gap-3 pl-4 border-l border-white/10">
+              {athlete?.profile && (
+                <img src={athlete.profile} className="w-9 h-9 rounded-full border-2 border-emerald-500/20 ring-4 ring-black" alt="Profile" />
+              )}
+              <div className="hidden sm:flex flex-col">
+                <span className="font-black text-xs text-white leading-none">{athlete?.firstname}</span>
+                <button onClick={logout} className="text-[9px] text-gray-500 font-bold uppercase tracking-widest hover:text-white transition-colors mt-1">Logout</button>
               </div>
-            )}
+            </div>
           </div>
         </div>
+      </header>
 
+      <main className="max-w-[1600px] mx-auto px-6 py-10 space-y-10">
         {/* Highlight Stats */}
         <StatsOverview activities={activities} period={viewPeriod} />
 
-        {/* Charts & Visualizations */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Top Section: Trends & Distribution */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <MileageTrendChart activities={activities} period={viewPeriod} />
           </div>
-
           <ActivityScatterChart activities={filteredActivities} />
+        </div>
+
+        {/* Middle Section: Fitness */}
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
           <FitnessChart activities={activities} period={viewPeriod} />
+        </div>
 
-          <div className="lg:col-span-2">
-            <div className="bg-white/5 rounded-[2.5rem] p-8 border border-white/10">
-              <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
-                <span className="text-2xl">📊</span>
-                Activity Frequency
-              </h3>
-              <CalendarHeatmap
-                activities={activities}
-                year={viewPeriod.mode !== 'all' ? viewPeriod.year : undefined}
-                month={viewPeriod.mode === 'month' ? (viewPeriod.month ?? undefined) : undefined}
-                onSelectDay={handleSelectDay}
-                selectedDate={selectedActivity?.start_date_local.split('T')[0]}
-              />
-            </div>
+        {/* Bottom Section: Heatmap & List side-by-side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <div className="bg-white/5 rounded-[2.5rem] p-8 border border-white/10 h-full">
+            <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3 tracking-tight">
+              <span className="text-2xl">📊</span>
+              ACTIVITY FREQUENCY
+            </h3>
+            <CalendarHeatmap
+              activities={activities}
+              year={viewPeriod.mode !== 'all' ? viewPeriod.year : undefined}
+              month={viewPeriod.mode === 'month' ? (viewPeriod.month ?? undefined) : undefined}
+              onSelectDay={handleSelectDay}
+              selectedDate={selectedActivity?.start_date_local.split('T')[0]}
+            />
           </div>
 
-          <div className="lg:col-span-2">
-            <ActivityList activities={filteredActivities} limit={50} onSelect={setSelectedActivity} />
-          </div>
+          <ActivityList activities={filteredActivities} limit={50} onSelect={setSelectedActivity} />
         </div>
       </main>
 
-      <footer className="border-t border-white/5 py-16 bg-black/40">
+      <footer className="border-t border-white/5 py-20 bg-black/40">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="text-gray-600 text-[10px] font-black uppercase tracking-[0.4em] mb-6">RunViz Project</div>
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <div className="h-[1px] w-12 bg-white/10" />
+            <span className="text-gray-600 text-xs font-black uppercase tracking-[0.5em]">RunViz Elite</span>
+            <div className="h-[1px] w-12 bg-white/10" />
+          </div>
           <p className="text-gray-500 text-sm font-medium">
-            Powered by Strava. Built for athletes.{' '}
-            <a href="https://github.com/hwong103/runviz" className="text-emerald-500 hover:text-emerald-400 transition-colors font-bold underline underline-offset-4">Open Source</a>
+            Powered by Strava API. Specialized performance analytics.
+          </p>
+          <p className="mt-4">
+            <a href="https://github.com/hwong103/runviz" className="text-emerald-500/50 hover:text-emerald-500 transition-colors text-[10px] font-black uppercase tracking-[0.2em] decoration-emerald-500/20 underline underline-offset-8 decoration-2">GitHub Project Source</a>
           </p>
         </div>
       </footer>
