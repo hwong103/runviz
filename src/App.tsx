@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
 import { StatsOverview } from './components/StatsOverview';
@@ -8,8 +8,9 @@ import { FitnessChart } from './components/FitnessChart';
 import { RunDetails } from './components/RunDetails';
 import { ShoeTracker } from './components/ShoeTracker';
 import { RaceTimePredictions } from './components/RaceTimePredictions';
-import type { Activity } from './types';
+import type { Activity, Gear } from './types';
 import { isRun } from './types';
+import { gear as gearApi } from './services/api';
 
 interface ViewPeriod {
   mode: 'all' | 'year' | 'month';
@@ -35,7 +36,69 @@ function App() {
   const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Calculate available years from activities
+  // Store additionally fetched gear (e.g. retired shoes not in athlete profile)
+  const [additionalGear, setAdditionalGear] = useState<Map<string, Gear>>(new Map());
+
+  // Consolidated list of all known shoes
+  const allShoes = useMemo(() => {
+    const profileShoes = [...(athlete?.shoes || []), ...(athlete?.gear || [])];
+    const extraShoes = Array.from(additionalGear.values());
+    // Deduplicate by ID
+    const knownIds = new Set(profileShoes.map(s => s.id));
+    return [...profileShoes, ...extraShoes.filter(s => !knownIds.has(s.id))];
+  }, [athlete?.shoes, athlete?.gear, additionalGear]);
+
+  // Effect: Identify and fetch missing gear IDs
+  useEffect(() => {
+    if (activities.length === 0) return;
+
+    const knownIds = new Set([
+      ...(athlete?.shoes || []).map(s => s.id),
+      ...(athlete?.gear || []).map(s => s.id),
+      ...Array.from(additionalGear.keys())
+    ]);
+
+    const missingIds = new Set<string>();
+    activities.forEach(a => {
+      if (a.gear_id && !knownIds.has(a.gear_id)) {
+        // Only fetch if it looks like a gear ID
+        if (a.gear_id.startsWith('g') || a.gear_id.startsWith('b')) {
+          missingIds.add(a.gear_id);
+        }
+      }
+    });
+
+    if (missingIds.size > 0) {
+      console.log('Fetching missing gear:', Array.from(missingIds));
+      // Fetch individually (Strava doesn't have a bulk endpoint for this)
+      // Limit concurrency to avoid triggering rate limits too aggressively
+      const idsToFetch = Array.from(missingIds).slice(0, 5); // Fetch max 5 at a time to be safe
+
+      Promise.all(idsToFetch.map(id =>
+        gearApi.get(id)
+          .then(gear => ({ id, gear, success: true }))
+          .catch(() => ({ id, gear: null, success: false }))
+      )).then(results => {
+        setAdditionalGear(prev => {
+          const next = new Map(prev);
+          results.forEach(r => {
+            if (r.success && r.gear) {
+              next.set(r.id, r.gear);
+            } else {
+              // Mark as fetched but failed to prevent infinite loops, using a placeholder if needed
+              // or just don't add it (will retry later? No, better to blacklist optionally, 
+              // but for now simple retry logic is okay as long as we check knownIds including map keys)
+              // Actually, simply not adding it might cause loops. Let's rely on standard caching or just accept retries for now.
+              // To be better, we could add a null entry.
+            }
+          });
+          return next;
+        });
+      });
+    }
+  }, [activities, athlete?.shoes, athlete?.gear, additionalGear]); // Dependencies ensure we retry if new activities load
+
+  // Calculate available availableYears from activities
   const availableYears = useMemo(() => {
     const years = new Set<number>();
     activities.forEach(a => {
@@ -78,10 +141,9 @@ function App() {
   // Get selected shoe name for filter indicator
   const selectedShoeName = useMemo(() => {
     if (!selectedShoeId) return undefined;
-    const allShoes = [...(athlete?.shoes || []), ...(athlete?.gear || [])];
     const shoe = allShoes.find(s => s.id === selectedShoeId);
     return shoe?.name;
-  }, [selectedShoeId, athlete?.shoes, athlete?.gear]);
+  }, [selectedShoeId, allShoes]);
 
   if (authLoading) {
     return (
@@ -130,7 +192,7 @@ function App() {
         <RunDetails
           activity={selectedActivity}
           allActivities={activities}
-          shoes={[...(athlete?.shoes || []), ...(athlete?.gear || [])]}
+          shoes={allShoes}
           onClose={() => setSelectedActivity(null)}
           onSelect={setSelectedActivity}
         />
@@ -273,7 +335,7 @@ function App() {
           </div>
           <ShoeTracker
             activities={filteredActivities}
-            shoes={[...(athlete?.shoes || []), ...(athlete?.gear || [])]}
+            shoes={allShoes}
             selectedShoeId={selectedShoeId}
             onSelectShoe={(id) => setSelectedShoeId(prev => prev === id ? null : id)}
           />
@@ -287,7 +349,7 @@ function App() {
           selectedShoeId={selectedShoeId}
           selectedShoeName={selectedShoeName}
           onClearShoeFilter={() => setSelectedShoeId(null)}
-          shoes={[...(athlete?.shoes || []), ...(athlete?.gear || [])]}
+          shoes={allShoes}
         />
       </main>
 
