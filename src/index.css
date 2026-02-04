@@ -8,5 +8,17 @@ body {
     background-color: var(--color-gray-900);
     margin: 0;
     overscroll-behavior-y: none;
-    /* Disables pull-to-refresh on mobile which looks weird with dark mode */
+}
+
+@utility no-scrollbar {
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+@utility mask-gradient {
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
 }
