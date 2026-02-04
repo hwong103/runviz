@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Activity } from '../types';
 import { isRun } from '../types';
 import {
@@ -184,6 +184,26 @@ export function RaceTimePredictions({
         };
     }, [activities, period, maxHR, restHR]);
 
+    const [activeTooltip, setActiveTooltip] = useState<'ctl' | 'tsb' | null>(null);
+
+    // Close tooltip when clicking outside or pressing escape
+    useEffect(() => {
+        const handleClickOutside = () => setActiveTooltip(null);
+        const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setActiveTooltip(null); };
+
+        if (activeTooltip) {
+            // Defer attachment to avoid immediate close on the click that opened it
+            setTimeout(() => {
+                window.addEventListener('click', handleClickOutside);
+                window.addEventListener('keydown', handleEsc);
+            }, 0);
+        }
+        return () => {
+            window.removeEventListener('click', handleClickOutside);
+            window.removeEventListener('keydown', handleEsc);
+        };
+    }, [activeTooltip]);
+
     if (!predictions) {
         return (
             <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10">
@@ -201,28 +221,58 @@ export function RaceTimePredictions({
     }
 
     return (
-        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10">
+        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10 relative">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                     <span>🏁</span>
                     <span>Race Predictions</span>
                 </h2>
-                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-wider">
-                    <span
-                        className={`px-2 py-1 rounded cursor-help ${predictions.ctl >= 25 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}`}
-                        title="Chronic Training Load (Fitness): Weighted average of daily training load over the last 42 days."
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-wider relative z-10">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTooltip(activeTooltip === 'ctl' ? null : 'ctl');
+                        }}
+                        className={`px-2 py-1 rounded cursor-help transition-colors ${predictions.ctl >= 25 ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'} ${activeTooltip === 'ctl' ? 'ring-2 ring-emerald-500/50' : ''}`}
                     >
                         CTL {predictions.ctl.toFixed(0)}
-                    </span>
-                    <span
-                        className={`px-2 py-1 rounded cursor-help ${predictions.tsb > 5 ? 'bg-emerald-500/20 text-emerald-400' :
-                                predictions.tsb < -10 ? 'bg-red-500/20 text-red-400' :
-                                    'bg-yellow-500/20 text-yellow-400'
-                            }`}
-                        title="Training Stress Balance (Form): Difference between fitness (CTL) and fatigue (ATL). Positive values indicate freshness."
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTooltip(activeTooltip === 'tsb' ? null : 'tsb');
+                        }}
+                        className={`px-2 py-1 rounded cursor-help transition-colors ${predictions.tsb > 5 ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' :
+                            predictions.tsb < -10 ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' :
+                                'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                            } ${activeTooltip === 'tsb' ? 'ring-2 ring-white/20' : ''}`}
                     >
                         TSB {predictions.tsb > 0 ? '+' : ''}{predictions.tsb.toFixed(0)}
-                    </span>
+                    </button>
+
+                    {/* Custom Popup Tooltip */}
+                    {activeTooltip && (
+                        <div className="absolute right-0 top-full mt-2 w-64 bg-[#1a1d24] border border-white/10 rounded-xl shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-200">
+                            {activeTooltip === 'ctl' ? (
+                                <>
+                                    <div className="text-emerald-400 mb-1">Chronic Training Load (Fitness)</div>
+                                    <div className="text-gray-400 font-medium normal-case leading-relaxed">
+                                        Weighted average of your daily training load over the last 42 days. Higher values indicate higher fitness but higher fatigue.
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className={`mb-1 ${predictions.tsb > 0 ? 'text-emerald-400' : 'text-yellow-400'}`}>Training Stress Balance (Form)</div>
+                                    <div className="text-gray-400 font-medium normal-case leading-relaxed">
+                                        Difference between fitness (CTL) and fatigue (ATL).
+                                        <br />
+                                        <span className="text-emerald-500 block mt-1">+ Positive: Fresh & Ready</span>
+                                        <span className="text-red-400 block">- Negative: Fatigued & Building</span>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
