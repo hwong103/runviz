@@ -17,7 +17,7 @@ interface ActivityListProps {
 function BrandLogo({ brandName }: { brandName?: string }) {
     const logoUrl = getBrandLogoUrl(brandName, 32, 'dark');
     return logoUrl ? (
-        <img src={logoUrl} alt={brandName} className="w-4 h-4 object-contain opacity-70" />
+        <img src={logoUrl} alt={brandName} className="w-5 h-5 object-contain" />
     ) : null;
 }
 
@@ -136,11 +136,11 @@ export function ActivityList({
                                         const shoe = (activity.gear_id ? shoes.find(s => s.id === activity.gear_id) : null) || activity.gear;
                                         if (!shoe) return null;
                                         return (
-                                            <div className="flex items-center gap-2 group/shoe overflow-hidden">
-                                                <span className="text-[10px] font-bold text-gray-400 truncate group-hover/shoe:text-white transition-colors text-right">
+                                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 group/shoe hover:bg-emerald-500/20 transition-colors">
+                                                <BrandLogo brandName={shoe.brand_name} />
+                                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider truncate max-w-[120px]">
                                                     {shoe.name}
                                                 </span>
-                                                <BrandLogo brandName={shoe.brand_name} />
                                             </div>
                                         );
                                     })()}
