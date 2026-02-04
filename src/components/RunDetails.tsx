@@ -14,7 +14,7 @@ import { Bar, Chart } from 'react-chartjs-2';
 import type { Activity, ActivityStreams, Gear } from '../types';
 import { isRun } from '../types';
 import { format, parseISO } from 'date-fns';
-import { activities as activitiesApi } from '../services/api';
+import { activities as activitiesApi, gear as gearApi } from '../services/api';
 
 ChartJS.register(
     CategoryScale,
@@ -65,6 +65,23 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
     const [streams, setStreams] = useState<ActivityStreams | null>(null);
     const [loadingStreams, setLoadingStreams] = useState(false);
     const [viewMode, setViewMode] = useState<'stream' | 'splits'>('stream');
+    const [fetchedShoe, setFetchedShoe] = useState<Gear | null>(null);
+
+    // Fetch gear details if they are missing from props
+    useEffect(() => {
+        if (!activity.gear_id) return;
+
+        const knownShoe = shoes.find(s => s.id === activity.gear_id);
+        if (knownShoe) return;
+
+        // Valid gear ID but not in props? Fetch it!
+        // Strava gear IDs usually start with 'g' or 's' (shoes/gear)
+        if (activity.gear_id.startsWith('g') || activity.gear_id.startsWith('s')) {
+            gearApi.get(activity.gear_id)
+                .then(setFetchedShoe)
+                .catch(err => console.error("Failed to fetch gear", err));
+        }
+    }, [activity.gear_id, shoes]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -172,7 +189,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
             };
         });
 
-        const currentShoe = shoes.find(s => s.id === activity.gear_id);
+
 
         return {
             distBins,
@@ -192,10 +209,9 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
             foodCount,
             top10,
             avgPaceLabel: formatPace((activity.moving_time / activity.distance) * 1000 / 60),
-            avgSpeed: (activity.distance / activity.moving_time * 3.6).toFixed(1),
-            currentShoe
+            currentShoe: shoes.find(s => s.id === activity.gear_id) || fetchedShoe
         };
-    }, [activity, runs, shoes]);
+    }, [activity, runs, shoes, fetchedShoe]);
 
     const chartData = useMemo(() => {
         if (!streams?.velocity_smooth?.data || !streams.distance?.data) return null;
