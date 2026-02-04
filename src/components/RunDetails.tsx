@@ -10,10 +10,9 @@ import {
     Legend,
     Filler,
 } from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import type { Activity } from '../types';
-import { formatDuration } from '../analytics/heartRateZones';
-import { format, parseISO, startOfDay, subDays } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 ChartJS.register(
     CategoryScale,

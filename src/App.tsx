@@ -9,7 +9,6 @@ import { ActivityScatterChart } from './components/ActivityScatterChart';
 import { MileageTrendChart } from './components/MileageTrendChart';
 import { RunDetails } from './components/RunDetails';
 import type { Activity } from './types';
-import { format } from 'date-fns';
 
 interface ViewPeriod {
   mode: 'all' | 'year' | 'month';
@@ -24,7 +23,7 @@ const MONTHS = [
 
 function App() {
   const { isAuthenticated, athlete, loading: authLoading, login, logout } = useAuth();
-  const { activities, syncing, sync, lastSync } = useActivities();
+  const { activities, syncing, sync } = useActivities();
   const [viewPeriod, setViewPeriod] = useState<ViewPeriod>({
     mode: 'month',
     year: new Date().getFullYear(),
