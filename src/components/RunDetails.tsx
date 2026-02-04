@@ -12,6 +12,7 @@ import {
 } from 'chart.js';
 import { Bar, Chart } from 'react-chartjs-2';
 import type { Activity, ActivityStreams } from '../types';
+import { isRun } from '../types';
 import { format, parseISO } from 'date-fns';
 import { activities as activitiesApi } from '../services/api';
 
@@ -82,7 +83,7 @@ export function RunDetails({ activity: initialActivity, allActivities, onClose }
     }, [initialActivity.id]);
 
     const runs = useMemo(() =>
-        allActivities.filter(a => a.type === 'Run' || a.sport_type === 'Run')
+        allActivities.filter(isRun)
             .sort((a, b) => new Date(b.start_date_local).getTime() - new Date(a.start_date_local).getTime())
         , [allActivities]);
 

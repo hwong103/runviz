@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Activity } from '../types';
+import { isRun } from '../types';
 
 interface CalendarHeatmapProps {
     activities: Activity[];
@@ -21,7 +22,7 @@ export function CalendarHeatmap({
         const dailyDistances = new Map<string, number>();
 
         for (const activity of activities) {
-            if (activity.type !== 'Run' && activity.sport_type !== 'Run') continue;
+            if (!isRun(activity)) continue;
             const date = activity.start_date_local.split('T')[0];
             const existing = dailyDistances.get(date) || 0;
             dailyDistances.set(date, existing + activity.distance / 1000);

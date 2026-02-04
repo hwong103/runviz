@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Activity } from '../types';
+import { isRun } from '../types';
 
 interface StatsOverviewProps {
     activities: Activity[];
@@ -14,7 +15,7 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
     const stats = useMemo(() => {
         // Filter activities by period
         const filteredActivities = activities.filter((a) => {
-            if (a.type !== 'Run' && a.sport_type !== 'Run') return false;
+            if (!isRun(a)) return false;
 
             const date = new Date(a.start_date_local);
             const year = date.getFullYear();

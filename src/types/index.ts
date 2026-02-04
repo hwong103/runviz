@@ -122,3 +122,11 @@ export interface SyncState {
     progress: number;
     error: string | null;
 }
+
+export function isRun(activity: Activity): boolean {
+    const runTypes = ['Run', 'TrailRun', 'VirtualRun'];
+    return (
+        runTypes.includes(activity.type) ||
+        runTypes.includes(activity.sport_type)
+    );
+}

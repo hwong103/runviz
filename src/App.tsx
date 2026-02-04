@@ -9,6 +9,7 @@ import { ActivityScatterChart } from './components/ActivityScatterChart';
 import { MileageTrendChart } from './components/MileageTrendChart';
 import { RunDetails } from './components/RunDetails';
 import type { Activity } from './types';
+import { isRun } from './types';
 
 interface ViewPeriod {
   mode: 'all' | 'year' | 'month';
@@ -46,7 +47,7 @@ function App() {
   // Filter activities for the current view
   const filteredActivities = useMemo(() => {
     return activities.filter((a) => {
-      if (a.type !== 'Run' && a.sport_type !== 'Run') return false;
+      if (!isRun(a)) return false;
       const date = new Date(a.start_date_local);
       const year = date.getFullYear();
       const month = date.getMonth();
@@ -60,7 +61,7 @@ function App() {
 
   const handleSelectDay = useCallback((dateStr: string) => {
     const activity = activities.find(a => {
-      if (a.type !== 'Run' && a.sport_type !== 'Run') return false;
+      if (!isRun(a)) return false;
       return a.start_date_local.startsWith(dateStr);
     });
     if (activity) {

@@ -50,11 +50,11 @@ export function useActivities() {
             const currentActivities = await cache.getCachedActivities();
             let page = 1;
             let hasMore = true;
-            const perPage = 100;
+            const perPage = 200;
             let totalNewSaved = 0;
             const newlyFetched: Activity[] = [];
 
-            while (hasMore && page <= 5) { // Sync up to 500 activities (5 requests) per click to stay safe
+            while (hasMore && page <= 20) { // Sync up to 4000 activities (20 requests) to cover extensive histories
                 console.log(`Fetching page ${page} (${perPage} per page)...`);
                 const response = await activitiesApi.list(page, perPage) as any;
 
