@@ -105,8 +105,22 @@ export function calculateTrainingLoadHistory(
     let ctl = 0;
     let atl = 0;
 
-    const current = new Date(startDate);
-    while (current <= endDate) {
+    // Get all dates from the map to find the absolute start
+    const allDates = Array.from(dailyLoads.keys()).sort();
+    if (allDates.length === 0) return [];
+
+    const firstActivityDate = new Date(allDates[0]);
+    const calculationStart = firstActivityDate < startDate ? firstActivityDate : startDate;
+
+    const current = new Date(calculationStart);
+    // Ensure we start at the beginning of the day for consistent comparison
+    current.setHours(0, 0, 0, 0);
+    const viewStart = new Date(startDate);
+    viewStart.setHours(0, 0, 0, 0);
+    const viewEnd = new Date(endDate);
+    viewEnd.setHours(23, 59, 59, 999);
+
+    while (current <= viewEnd) {
         const dateStr = current.toISOString().split('T')[0];
         const trimp = dailyLoads.get(dateStr) || 0;
 
@@ -117,13 +131,16 @@ export function calculateTrainingLoadHistory(
         // TSB (Training Stress Balance / Form) = CTL - ATL
         const tsb = ctl - atl;
 
-        metrics.push({
-            date: dateStr,
-            ctl: Math.round(ctl * 10) / 10,
-            atl: Math.round(atl * 10) / 10,
-            tsb: Math.round(tsb * 10) / 10,
-            trimp,
-        });
+        // Only add to metrics if within the requested view window
+        if (current >= viewStart) {
+            metrics.push({
+                date: dateStr,
+                ctl: Math.round(ctl * 10) / 10,
+                atl: Math.round(atl * 10) / 10,
+                tsb: Math.round(tsb * 10) / 10,
+                trimp,
+            });
+        }
 
         current.setDate(current.getDate() + 1);
     }
@@ -143,7 +160,9 @@ export function activitiesToDailyLoads(
 
     for (const activity of activities) {
         // Only count runs
-        if (activity.type !== 'Run' && activity.sport_type !== 'Run') continue;
+        const runTypes = ['Run', 'TrailRun', 'VirtualRun'];
+        const isRun = runTypes.includes(activity.type) || runTypes.includes(activity.sport_type);
+        if (!isRun) continue;
 
         const date = activity.start_date_local.split('T')[0];
         const trimp = calculateActivityTRIMP(activity, maxHR, restHR);
