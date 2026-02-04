@@ -8,30 +8,54 @@ interface ShoeTrackerProps {
 
 export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
     const shoeStats = useMemo(() => {
-        // Map of gear_id to period distance (meters)
-        const periodStats = new Map<string, number>();
+        // 1. Build a map of all known gear from the athlete profile
+        const gearLibrary = new Map<string, Gear>();
+        shoes.forEach(s => gearLibrary.set(s.id, s));
+
+        // 2. Scan activities to find gear used in the filtered period 
+        // AND to discover gear that might not be in the 'shoes' prop
+        const periodDistances = new Map<string, number>();
 
         activities.forEach(activity => {
-            // Strava activities use gear_id
             const gearId = activity.gear_id;
             if (gearId) {
-                const current = periodStats.get(gearId) || 0;
-                periodStats.set(gearId, current + activity.distance);
+                // Track distance for this period
+                const currentDist = periodDistances.get(gearId) || 0;
+                periodDistances.set(gearId, currentDist + activity.distance);
+
+                // If this gear isn't in our library but the activity has gear info (detailed view)
+                // we could potentially extract it here, but mostly we rely on the ID matching.
             }
         });
 
-        // Use all gear provided in the shoes array (Strava already filters these as shoes)
-        return shoes
-            .map(shoe => ({
-                ...shoe,
-                periodDistance: (periodStats.get(shoe.id) || 0) / 1000,
-                lifetimeDistance: shoe.distance / 1000,
-            }))
+        // 3. Combine it all. We want to show shoes that have distance in the period
+        // OR are in the athlete's shoe list.
+        const allKnownIds = new Set([
+            ...Array.from(gearLibrary.keys()),
+            ...Array.from(periodDistances.keys())
+        ]);
+
+        return Array.from(allKnownIds)
+            .map(id => {
+                const shoe = gearLibrary.get(id);
+                const pDist = (periodDistances.get(id) || 0) / 1000;
+
+                return {
+                    id,
+                    name: shoe?.name || `Unknown Shoe (${id})`,
+                    brand_name: shoe?.brand_name,
+                    primary: shoe?.primary || false,
+                    lifetimeDistance: (shoe?.distance || 0) / 1000,
+                    periodDistance: pDist,
+                    isDecoveredFromActivity: !shoe
+                };
+            })
+            // Only show things that are actually shoes (Strava gear IDs usually start with 'g' or 's')
+            // and filter out "Unknown" shoes that have 0 distance in the current period to stay clean
+            .filter(s => s.id.startsWith('g') || s.id.startsWith('s'))
+            .filter(s => !s.isDecoveredFromActivity || s.periodDistance > 0)
             .sort((a, b) => {
-                // Prioritize shoes used in this period, then by lifetime distance
-                if (b.periodDistance !== a.periodDistance) {
-                    return b.periodDistance - a.periodDistance;
-                }
+                if (b.periodDistance !== a.periodDistance) return b.periodDistance - a.periodDistance;
                 return b.lifetimeDistance - a.lifetimeDistance;
             });
     }, [activities, shoes]);
@@ -44,7 +68,7 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
                     SHOE TRACKER
                 </h3>
                 <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest bg-white/5 px-2 py-1 rounded-md">
-                    {shoes.length} total
+                    {shoeStats.length} pairs
                 </span>
             </div>
 
@@ -80,45 +104,48 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
                                 <div className="border-l border-white/5 pl-4">
                                     <div className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-1">Lifetime</div>
                                     <div className="text-lg font-black text-white/60">
-                                        {shoe.lifetimeDistance.toFixed(0)}
+                                        {shoe.lifetimeDistance > 0 ? shoe.lifetimeDistance.toFixed(0) : '---'}
                                         <span className="text-gray-600 text-[10px] font-bold ml-1 uppercase">km</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Progress Bar for Lifetime (assuming 800km lifespan) */}
-                            <div className="mt-4">
-                                <div className="flex justify-between text-[8px] font-black uppercase tracking-widest mb-1.5">
-                                    <span className="text-gray-600">Lifespan</span>
-                                    <span className={shoe.lifetimeDistance > 700 ? 'text-orange-400' : 'text-gray-500'}>
-                                        {Math.min(100, Math.round((shoe.lifetimeDistance / 800) * 100))}%
-                                    </span>
+                            {shoe.lifetimeDistance > 0 && (
+                                <div className="mt-4">
+                                    <div className="flex justify-between text-[8px] font-black uppercase tracking-widest mb-1.5">
+                                        <span className="text-gray-600">Lifespan</span>
+                                        <span className={shoe.lifetimeDistance > 700 ? 'text-orange-400' : 'text-gray-500'}>
+                                            {Math.min(100, Math.round((shoe.lifetimeDistance / 800) * 100))}%
+                                        </span>
+                                    </div>
+                                    <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full transition-all duration-1000 ${shoe.lifetimeDistance > 800 ? 'bg-red-500' :
+                                                    shoe.lifetimeDistance > 700 ? 'bg-orange-500' :
+                                                        'bg-emerald-500/50'
+                                                }`}
+                                            style={{ width: `${Math.min(100, (shoe.lifetimeDistance / 800) * 100)}%` }}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full transition-all duration-1000 ${shoe.lifetimeDistance > 800 ? 'bg-red-500' :
-                                                shoe.lifetimeDistance > 700 ? 'bg-orange-500' :
-                                                    'bg-emerald-500/50'
-                                            }`}
-                                        style={{ width: `${Math.min(100, (shoe.lifetimeDistance / 800) * 100)}%` }}
-                                    />
-                                </div>
-                            </div>
+                            )}
                         </div>
                     ))
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full py-10 text-center opacity-50">
                         <span className="text-4xl mb-4 grayscale">👟</span>
                         <p className="text-gray-400 text-xs font-black uppercase tracking-widest italic">No shoes detected</p>
-                        <p className="text-gray-500 text-[9px] mt-2 leading-relaxed font-medium uppercase tracking-tighter">
-                            Total Gear: {shoes.length}<br />
-                            Runs with shoes: {activities.filter(a => a.gear_id).length}
-                        </p>
-                        <p className="text-gray-600 text-[9px] mt-4 uppercase font-bold text-center border-t border-white/5 pt-4 w-full">
-                            Tip: Try Logout & Login to refresh permissions
-                        </p>
+                        <div className="text-gray-600 text-[9px] mt-4 uppercase font-bold text-center border-t border-white/5 pt-4 w-full space-y-1">
+                            <p>Profile Shoes: {shoes.length}</p>
+                            <p>Tagged Runs: {activities.filter(a => a.gear_id).length}</p>
+                        </div>
                     </div>
                 )}
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-white/5 flex gap-2 overflow-hidden">
+                <div className="text-[8px] font-black text-gray-600 uppercase tracking-widest whitespace-nowrap">Gear Library: {'[' + shoes.map(s => s.id.slice(0, 4)).join(', ') + ']'}</div>
             </div>
         </div>
     );
