@@ -387,8 +387,8 @@ export function RunDetails({ activity: initialActivity, allActivities, onClose }
                 <div className="flex-1 overflow-y-auto p-10 space-y-10">
                     {/* Header: Compact Row */}
                     <div className="grid grid-cols-2 lg:grid-cols-5 gap-8 items-end border-b border-white/5 pb-10">
-                        <div className="lg:col-span-2">
-                            <h1 className="text-4xl font-black text-white/90 tracking-tighter italic truncate mb-2">{activity.name}</h1>
+                        <div className="lg:col-span-2 self-start">
+                            <h1 className="text-4xl font-black text-white/90 tracking-tighter italic mb-2 leading-tight">{activity.name}</h1>
                             <div className="text-gray-500 text-xs font-black uppercase tracking-widest">{format(activityDate, 'eeee, d MMM y').toUpperCase()}</div>
                         </div>
                         <div>
@@ -399,10 +399,10 @@ export function RunDetails({ activity: initialActivity, allActivities, onClose }
                             <div className="text-gray-600 text-[9px] font-black uppercase tracking-widest mb-1">Avg Pace</div>
                             <div className="text-2xl font-black text-white">{stats.avgPaceLabel}<span className="text-gray-500 text-sm font-medium ml-1">/km</span></div>
                         </div>
-                        <div>
+                        <div className="relative">
                             <div className="text-gray-600 text-[9px] font-black uppercase tracking-widest mb-1">Calories</div>
                             <div className="text-2xl font-black text-white">{stats.calories}</div>
-                            <div className="text-emerald-500/80 text-[10px] font-bold truncate mt-1">{stats.foodCount} {stats.food.name}</div>
+                            <div className="absolute top-full left-0 text-emerald-500/80 text-[10px] font-bold truncate mt-1 whitespace-nowrap">{stats.foodCount} {stats.food.name}</div>
                         </div>
                     </div>
 
