@@ -405,8 +405,8 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                             <h1 className="text-4xl font-black text-white/90 tracking-tighter italic mb-2 leading-tight">{activity.name}</h1>
                             <div className="text-gray-500 text-xs font-black uppercase tracking-widest">{format(activityDate, 'eeee, d MMM y').toUpperCase()}</div>
                             {stats.currentShoe && (
-                                <div className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
-                                    <span className="opacity-70 text-xs">
+                                <div className="text-emerald-400 text-xs font-black uppercase tracking-widest mt-3 flex items-center gap-2 bg-emerald-500/10 w-fit px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                                    <span className="text-sm">
                                         {stats.currentShoe.brand_name?.includes('Hoka') || stats.currentShoe.brand_name?.includes('HOKA') ? '🦅' :
                                             stats.currentShoe.brand_name?.includes('Nike') ? '✔️' :
                                                 stats.currentShoe.brand_name?.includes('Saucony') ? '🏃' :
