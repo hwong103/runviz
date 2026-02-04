@@ -79,13 +79,11 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
 
     const stats = useMemo(() => {
         // --- LONG DISTANCE HISTOGRAM ---
-        // Smashrun shows Longest on Left, Shortest on Right.
         const allDistances = runs.map(r => r.distance / 1000);
-        const maxDist = Math.ceil(Math.max(...allDistances, 1) / 2) * 2; // Round up to even for nice axes
+        const maxDist = Math.ceil(Math.max(...allDistances, 1) / 2) * 2;
         const binCount = 10;
         const binSize = maxDist / binCount;
 
-        // We create bins for [maxDist -> 0]
         const distBins = new Array(binCount).fill(0);
         const distLabels = [];
         for (let i = 0; i < binCount; i++) {
@@ -95,8 +93,6 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
 
         runs.forEach(r => {
             const d = r.distance / 1000;
-            // Map d to a bin where maxDist is index 0, 0 is index binCount-1
-            // index = floor((maxDist - d) / binSize)
             const index = Math.min(Math.floor((maxDist - d) / binSize), binCount - 1);
             if (index >= 0) distBins[index]++;
         });
@@ -105,7 +101,6 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
         const myDistBin = Math.min(Math.floor((maxDist - myDist) / binSize), binCount - 1);
 
         // --- PACE HISTOGRAM ---
-        // Similar distance runs
         const targetDist = activity.distance / 1000;
         const similarRuns = runs.filter(r => Math.abs(r.distance / 1000 - targetDist) < 2);
         const paces = similarRuns.map(r => (r.moving_time / r.distance) * 1000 / 60);
@@ -133,19 +128,16 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
         const myPace = (activity.moving_time / activity.distance) * 1000 / 60;
         const myPaceBin = Math.min(Math.floor((myPace - minPace) / paceBinSize), paceBinCount - 1);
 
-        // --- RANKINGS ---
         const sortedByDistance = [...runs].sort((a, b) => b.distance - a.distance);
         const distanceRank = sortedByDistance.findIndex(a => a.id === activity.id) + 1;
 
         const similarSortedByPace = [...similarRuns].sort((a, b) => (a.moving_time / a.distance) - (b.moving_time / b.distance));
         const paceRank = similarSortedByPace.findIndex(a => a.id === activity.id) + 1;
 
-        // Calories food equivalent
         const calories = activity.calories || (activity.kilojoules ? Math.round(activity.kilojoules * 1.07) : 0);
         const food = FOOD_EQUIVALENTS[Math.floor(Math.random() * FOOD_EQUIVALENTS.length)];
         const foodCount = (calories / food.cals).toFixed(1);
 
-        // Comparison list logic
         const clusterLabel = Math.round(targetDist);
         const top10 = similarSortedByPace.slice(0, 15).map(r => {
             const p = (r.moving_time / r.distance) * 1000 / 60;
@@ -213,35 +205,58 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
         };
     }, [activity, runs]);
 
-    const speedChartData = useMemo(() => {
+    const mixedChartData = useMemo(() => {
         if (!streams?.velocity_smooth?.data || !streams.distance?.data) return null;
 
-        const step = Math.max(1, Math.floor(streams.velocity_smooth.data.length / 100));
+        // Downsample to ~120 points for smooth performance
+        const rawPoints = streams.velocity_smooth.data.length;
+        const step = Math.max(1, Math.floor(rawPoints / 120));
+
         const velocityData = [];
+        const hrData = [];
         const distanceLabels = [];
 
-        for (let i = 0; i < streams.velocity_smooth.data.length; i += step) {
+        for (let i = 0; i < rawPoints; i += step) {
+            const dist = streams.distance.data[i];
             const speed = streams.velocity_smooth.data[i];
+            const hr = streams.heartrate?.data ? streams.heartrate.data[i] : null;
+
             if (speed <= 0.5) continue;
             const pace = (1 / speed) * 1000 / 60;
             if (pace > 15) continue;
 
             velocityData.push(pace);
-            distanceLabels.push((streams.distance.data[i] / 1000).toFixed(2));
+            hrData.push(hr);
+            distanceLabels.push((dist / 1000).toFixed(2));
         }
 
         return {
             labels: distanceLabels,
-            datasets: [{
-                label: 'Pace (min/km)',
-                data: velocityData,
-                borderColor: '#34d399',
-                backgroundColor: 'rgba(52, 211, 153, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                borderWidth: 2,
-            }]
+            datasets: [
+                {
+                    type: 'line' as const,
+                    label: 'Pace',
+                    data: velocityData,
+                    borderColor: '#60a5fa',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    borderWidth: 3,
+                    yAxisID: 'y',
+                },
+                {
+                    type: 'bar' as const,
+                    label: 'Heart Rate',
+                    data: hrData,
+                    backgroundColor: '#1d4ed8',
+                    hoverBackgroundColor: '#2563eb',
+                    borderRadius: 1,
+                    barPercentage: 1.0,
+                    categoryPercentage: 1.0,
+                    yAxisID: 'y1',
+                }
+            ]
         };
     }, [streams]);
 
@@ -285,157 +300,54 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex gap-12 mt-12">
-                                <div>
-                                    <div className="text-gray-500 text-xs font-black uppercase tracking-widest mb-1">Elapsed Time</div>
-                                    <div className="text-4xl font-black text-white">
-                                        {Math.floor(activity.elapsed_time / 60)}:{Math.round(activity.elapsed_time % 60).toString().padStart(2, '0')}
-                                        <span className="text-gray-500 text-sm font-medium ml-3 font-mono">
-                                            {format(activityDate, 'H:mm')} to {format(new Date(activityDate.getTime() + activity.elapsed_time * 1000), 'H:mm')}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="border-l border-white/5 pl-12">
-                                    <div className="text-gray-500 text-xs font-black uppercase tracking-widest mb-1">Average Pace</div>
-                                    <div className="text-4xl font-black text-white">
-                                        {stats.avgPaceLabel}
-                                        <span className="text-gray-500 text-xl font-medium lowercase ml-2">min/km</span>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
-                        {/* Histogram Section - Smashrun Style */}
-                        <div className="grid grid-cols-2 gap-12 pt-12 border-t border-white/5">
-                            {/* Nth Longest Run */}
-                            <div>
-                                <h3 className="text-sm text-gray-400 font-bold border-b border-white/10 pb-2 mb-8">Nth longest run</h3>
-                                <div className="h-44 relative mt-12">
-                                    {/* Sidebar Label */}
-                                    <div className="absolute -left-8 top-1/2 -rotate-90 origin-center text-[10px] text-gray-600 font-black uppercase tracking-widest w-24 text-center">
-                                        run count
-                                    </div>
-                                    <Bar
-                                        data={{
-                                            labels: stats.distLabels,
-                                            datasets: [{
-                                                data: stats.distBins,
-                                                backgroundColor: '#1d4ed8',
-                                                hoverBackgroundColor: '#2563eb',
-                                                borderRadius: 2,
-                                                borderColor: 'rgba(255,255,255,0.05)',
-                                                borderWidth: 1,
-                                            }]
-                                        }}
-                                        options={{
-                                            maintainAspectRatio: false,
-                                            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                                            scales: {
-                                                y: { display: true, ticks: { display: false }, grid: { display: true, color: 'rgba(255,255,255,0.03)' } },
-                                                x: { display: true, ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' } }, grid: { display: false } }
-                                            }
-                                        }}
-                                    />
-                                    {/* Selected Label Positioning */}
-                                    <div
-                                        className="absolute pointer-events-none transition-all duration-700"
-                                        style={{
-                                            left: `${(stats.myDistBin / 10) * 100 + 5}%`,
-                                            bottom: `${(stats.distBins[stats.myDistBin] / Math.max(...stats.distBins)) * 100}%`,
-                                        }}
-                                    >
-                                        <div className="text-3xl font-black text-white -mt-10 -ml-8 drop-shadow-2xl">
-                                            {stats.distanceRankText}
-                                        </div>
-                                    </div>
-                                    <div className="text-center text-[10px] text-gray-600 font-black uppercase tracking-widest mt-4">kilometers</div>
-                                </div>
-                            </div>
-
-                            {/* Nth Fastest Run */}
-                            <div className="border-l border-white/5 pl-12">
-                                <h3 className="text-sm text-gray-400 font-bold border-b border-white/10 pb-2 mb-8">Nth fastest (for a similar distance)</h3>
-                                <div className="h-44 relative mt-12">
-                                    {/* Sidebar Label */}
-                                    <div className="absolute -left-8 top-1/2 -rotate-90 origin-center text-[10px] text-gray-600 font-black uppercase tracking-widest w-24 text-center">
-                                        run count
-                                    </div>
-                                    <Bar
-                                        data={{
-                                            labels: stats.paceLabels,
-                                            datasets: [{
-                                                data: stats.paceBins,
-                                                backgroundColor: stats.paceBins.map((_, i) => i === stats.myPaceBin ? '#60a5fa' : '#1d4ed8'),
-                                                borderRadius: 2,
-                                                borderColor: 'rgba(255,255,255,0.05)',
-                                                borderWidth: 1,
-                                            }]
-                                        }}
-                                        options={{
-                                            maintainAspectRatio: false,
-                                            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                                            scales: {
-                                                y: { display: true, ticks: { display: false }, grid: { display: true, color: 'rgba(255,255,255,0.03)' } },
-                                                x: { display: true, ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' } }, grid: { display: false } }
-                                            }
-                                        }}
-                                    />
-                                    {/* Selected Label Positioning */}
-                                    <div
-                                        className="absolute pointer-events-none transition-all duration-700"
-                                        style={{
-                                            left: `${(stats.myPaceBin / 6) * 100 + 8}%`,
-                                            bottom: `${(stats.paceBins[stats.myPaceBin] / Math.max(...stats.paceBins)) * 100}%`,
-                                        }}
-                                    >
-                                        <div className="text-3xl font-black text-white -mt-10 -ml-8 drop-shadow-2xl">
-                                            {stats.paceRankText}
-                                        </div>
-                                    </div>
-                                    <div className="text-center text-[10px] text-gray-600 font-black uppercase tracking-widest mt-4">pace</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Extra Metrics Row */}
-                        <div className="grid grid-cols-2 gap-12 pt-12 border-t border-white/5">
-                            <div>
-                                <div className="text-gray-500 text-xs font-black uppercase tracking-widest mb-1">Average Speed</div>
-                                <div className="text-4xl font-black text-white">
-                                    {stats.avgSpeed}
-                                    <span className="text-gray-500 text-xl font-medium lowercase ml-2">km/h</span>
-                                </div>
-                            </div>
-                            <div className="border-l border-white/5 pl-12 flex items-start gap-8">
-                                <div>
-                                    <div className="text-gray-500 text-xs font-black uppercase tracking-widest mb-1">Calories</div>
-                                    <div className="text-4xl font-black text-white">{stats.calories}</div>
-                                    <div className="text-gray-600 text-[10px] font-bold mt-1 uppercase tracking-wider">{Math.round(activity.moving_time > 0 ? (stats.calories / (activity.moving_time / 3600)) : 0)} calories/hour</div>
-                                </div>
-                                <div className="bg-white/[0.02] p-4 rounded-xl border border-white/5 flex-1">
-                                    <div className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1">Food Equivalent</div>
-                                    <div className="text-white font-black text-sm">{stats.foodCount} {stats.food.name}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Speed over route Implementated */}
+                        {/* Smashrun Style Mixed Chart */}
                         <div className="pt-12 border-t border-white/5">
-                            <h3 className="text-xs text-gray-500 font-black uppercase tracking-widest mb-6">Change in speed over route</h3>
-                            <div className="h-64 bg-black/20 rounded-[2rem] border border-white/5 p-6 relative">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-xs text-gray-400 font-bold uppercase tracking-widest">Change in speed over route</h3>
+                                <div className="bg-white/5 rounded px-2 py-1 text-[9px] font-black text-gray-400 uppercase tracking-widest">Splits</div>
+                            </div>
+
+                            <div className="h-72 bg-black/40 rounded-[2rem] border border-white/5 p-8 relative flex flex-col">
+                                {/* Custom Axis Labels */}
+                                <div className="absolute left-2 top-1/2 -rotate-90 origin-center text-[9px] text-gray-600 font-black uppercase tracking-widest w-24 text-center">Pace</div>
+                                <div className="absolute right-2 top-1/2 rotate-90 origin-center text-[9px] text-gray-600 font-black uppercase tracking-widest w-24 text-center">Heart Rate</div>
+
                                 {loadingStreams ? (
                                     <div className="flex items-center justify-center h-full">
                                         <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                                     </div>
-                                ) : speedChartData ? (
+                                ) : mixedChartData ? (
                                     <Line
-                                        data={speedChartData}
+                                        data={mixedChartData}
                                         options={{
                                             maintainAspectRatio: false,
-                                            plugins: { legend: { display: false } },
+                                            interaction: { mode: 'index', intersect: false },
+                                            plugins: { legend: { display: false }, tooltip: { enabled: true, backgroundColor: 'rgba(0,0,0,0.8)', titleFont: { size: 10 }, bodyFont: { size: 10 } } },
                                             scales: {
-                                                x: { display: true, grid: { display: false }, ticks: { color: '#4b5563', font: { size: 9 }, maxTicksLimit: 10 } },
-                                                y: { reverse: true, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#4b5563', font: { size: 9 } } }
+                                                x: { display: true, grid: { display: false }, ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' }, maxTicksLimit: 8 } },
+                                                y: {
+                                                    reverse: true,
+                                                    position: 'left',
+                                                    grid: { color: 'rgba(255,255,255,0.03)' },
+                                                    ticks: {
+                                                        color: '#4b5563',
+                                                        font: { size: 10, weight: 'bold' },
+                                                        callback: (value) => {
+                                                            const m = Math.floor(value as number);
+                                                            const s = Math.round((value as number - m) * 60);
+                                                            return `${m}:${s.toString().padStart(2, '0')}`;
+                                                        }
+                                                    }
+                                                },
+                                                y1: {
+                                                    position: 'right',
+                                                    grid: { display: false },
+                                                    min: 80,
+                                                    max: 200,
+                                                    ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' } }
+                                                }
                                             }
                                         }}
                                     />
@@ -445,12 +357,76 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
                                     </div>
                                 )}
                             </div>
+                            <div className="mt-4 flex justify-between items-center text-[10px] text-gray-600 font-black uppercase tracking-[0.2em] px-12">
+                                <span>0</span>
+                                <span>kilometers</span>
+                                <span>{(activity.distance / 1000).toFixed(0)}</span>
+                            </div>
+                        </div>
+
+                        {/* Histograms Section */}
+                        <div className="grid grid-cols-2 gap-12 pt-12 border-t border-white/5">
+                            <div>
+                                <h3 className="text-sm text-gray-400 font-bold border-b border-white/10 pb-2 mb-8">Nth longest run</h3>
+                                <div className="h-44 relative mt-12">
+                                    <div className="absolute -left-8 top-1/2 -rotate-90 origin-center text-[10px] text-gray-600 font-black uppercase tracking-widest w-24 text-center">run count</div>
+                                    <Bar
+                                        data={{
+                                            labels: stats.distLabels,
+                                            datasets: [{ data: stats.distBins, backgroundColor: '#1d4ed8', borderRadius: 2, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }]
+                                        }}
+                                        options={{
+                                            maintainAspectRatio: false,
+                                            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                                            scales: { y: { display: true, ticks: { display: false }, grid: { display: true, color: 'rgba(255,255,255,0.03)' } }, x: { display: true, ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' } }, grid: { display: false } } }
+                                        }}
+                                    />
+                                    <div className="absolute pointer-events-none transition-all duration-700" style={{ left: `${(stats.myDistBin / 10) * 100 + 5}%`, bottom: `${(stats.distBins[stats.myDistBin] / Math.max(...stats.distBins)) * 100}%` }}>
+                                        <div className="text-3xl font-black text-white -mt-10 -ml-8 drop-shadow-2xl">{stats.distanceRankText}</div>
+                                    </div>
+                                    <div className="text-center text-[10px] text-gray-600 font-black uppercase tracking-widest mt-4">kilometers</div>
+                                </div>
+                            </div>
+
+                            <div className="border-l border-white/5 pl-12">
+                                <h3 className="text-sm text-gray-400 font-bold border-b border-white/10 pb-2 mb-8">Nth fastest (similar distance)</h3>
+                                <div className="h-44 relative mt-12">
+                                    <div className="absolute -left-8 top-1/2 -rotate-90 origin-center text-[10px] text-gray-600 font-black uppercase tracking-widest w-24 text-center">run count</div>
+                                    <Bar
+                                        data={{
+                                            labels: stats.paceLabels,
+                                            datasets: [{ data: stats.paceBins, backgroundColor: '#1d4ed8', borderRadius: 2, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }]
+                                        }}
+                                        options={{
+                                            maintainAspectRatio: false,
+                                            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                                            scales: { y: { display: true, ticks: { display: false }, grid: { display: true, color: 'rgba(255,255,255,0.03)' } }, x: { display: true, ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' } }, grid: { display: false } } }
+                                        }}
+                                    />
+                                    <div className="absolute pointer-events-none transition-all duration-700" style={{ left: `${(stats.myPaceBin / 6) * 100 + 8}%`, bottom: `${(stats.paceBins[stats.myPaceBin] / Math.max(...stats.paceBins)) * 100}%` }}>
+                                        <div className="text-3xl font-black text-white -mt-10 -ml-8 drop-shadow-2xl">{stats.paceRankText}</div>
+                                    </div>
+                                    <div className="text-center text-[10px] text-gray-600 font-black uppercase tracking-widest mt-4">pace</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Final Metrics */}
+                        <div className="grid grid-cols-2 gap-12 pt-12 border-t border-white/5">
+                            <div>
+                                <div className="text-gray-500 text-xs font-black uppercase tracking-widest mb-1">Calories</div>
+                                <div className="text-4xl font-black text-white">{stats.calories}</div>
+                            </div>
+                            <div className="border-l border-white/5 pl-12">
+                                <div className="text-gray-500 text-xs font-black uppercase tracking-widest mb-1">Food Equivalent</div>
+                                <div className="text-3xl font-black text-white">{stats.foodCount} {stats.food.name}</div>
+                            </div>
                         </div>
                     </div>
 
                     <div className="lg:col-span-4 space-y-12">
                         <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-xl">
-                            <h3 className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-4">Notable <span className="text-gray-700 normal-case italic font-medium ml-1">(as of the date of this run)</span></h3>
+                            <h3 className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-4">Notable</h3>
                             <ul className="space-y-4 text-sm text-white/80 font-bold">
                                 {stats.notables.map((note, idx) => (
                                     <li key={idx} className="flex gap-3 leading-relaxed">
@@ -478,11 +454,6 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
                                         </div>
                                     </div>
                                 ))}
-                            </div>
-                            <div className="mt-8 grid grid-cols-2 gap-y-3 text-[9px] font-black uppercase tracking-widest text-gray-600">
-                                <div className="flex items-center gap-2"><div className="w-3 h-1 rounded-full bg-white font-mono" /> Last 30d</div>
-                                <div className="flex items-center gap-2"><div className="w-3 h-1 rounded-full bg-blue-400" /> Last 90d</div>
-                                <div className="flex items-center gap-2"><div className="w-3 h-1 rounded-full bg-blue-600" /> Last 180d</div>
                             </div>
                         </div>
                     </div>
