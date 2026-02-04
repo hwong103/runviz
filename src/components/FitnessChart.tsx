@@ -69,7 +69,16 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
         return calculateTrainingLoadHistory(dailyLoads, startDate, endDate);
     }, [activities, period, maxHR, restHR]);
 
-    const latestTSB = metrics.length > 0 ? metrics[metrics.length - 1].tsb : 0;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const displayMetric = useMemo(() => {
+        if (metrics.length === 0) return null;
+        const todayMatch = metrics.find(m => m.date === todayStr);
+        // If viewing current year/month, show today's stats. 
+        // If viewing past period, show the last day of that period.
+        return todayMatch || metrics[metrics.length - 1];
+    }, [metrics, todayStr]);
+
+    const latestTSB = displayMetric ? displayMetric.tsb : 0;
     const interpretation = interpretTSB(latestTSB);
 
     const chartData = {
@@ -176,19 +185,19 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/5">
                 <div className="text-center">
                     <div className="text-2xl font-black text-emerald-400">
-                        {metrics.length > 0 ? metrics[metrics.length - 1].ctl.toFixed(0) : '-'}
+                        {displayMetric ? displayMetric.ctl.toFixed(0) : '-'}
                     </div>
                     <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Fitness</div>
                 </div>
                 <div className="text-center">
                     <div className="text-2xl font-black text-orange-400">
-                        {metrics.length > 0 ? metrics[metrics.length - 1].atl.toFixed(0) : '-'}
+                        {displayMetric ? displayMetric.atl.toFixed(0) : '-'}
                     </div>
                     <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Fatigue</div>
                 </div>
                 <div className="text-center">
                     <div className="text-2xl font-black text-purple-400">
-                        {metrics.length > 0 ? metrics[metrics.length - 1].tsb.toFixed(0) : '-'}
+                        {displayMetric ? displayMetric.tsb.toFixed(0) : '-'}
                     </div>
                     <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Form</div>
                 </div>
