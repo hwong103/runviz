@@ -1,6 +1,7 @@
-import type { Activity } from '../types';
+import type { Activity, Gear } from '../types';
 import { formatDuration } from '../analytics/heartRateZones';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
+import { getBrandLogoUrl } from '../services/logoService';
 
 interface ActivityListProps {
     activities: Activity[];
@@ -9,6 +10,15 @@ interface ActivityListProps {
     selectedShoeId?: string | null;
     selectedShoeName?: string;
     onClearShoeFilter?: () => void;
+    shoes?: Gear[];
+}
+
+// Brand logo component for list view
+function BrandLogo({ brandName }: { brandName?: string }) {
+    const logoUrl = getBrandLogoUrl(brandName, 32, 'dark');
+    return logoUrl ? (
+        <img src={logoUrl} alt={brandName} className="w-4 h-4 object-contain opacity-70" />
+    ) : null;
 }
 
 const parseLocalTime = (dateStr: string) => {
@@ -21,7 +31,8 @@ export function ActivityList({
     onSelect,
     selectedShoeId,
     selectedShoeName,
-    onClearShoeFilter
+    onClearShoeFilter,
+    shoes = []
 }: ActivityListProps) {
     const runs = activities
         .filter((a) => a.type === 'Run' || a.sport_type === 'Run')
@@ -116,6 +127,22 @@ export function ActivityList({
                                         <span className="hidden sm:inline">{formatPace(activity.average_speed)} /km</span>
                                         <span className="text-[10px] opacity-60 lowercase font-medium ml-auto sm:ml-0">{dateParts.relative}</span>
                                     </div>
+                                </div>
+
+                                {/* Shoe (Desktop only) */}
+                                <div className="hidden md:flex flex-col items-end min-w-[120px] max-w-[160px] ml-4">
+                                    {(() => {
+                                        const shoe = shoes.find(s => s.id === activity.gear_id);
+                                        if (!shoe) return null;
+                                        return (
+                                            <div className="flex items-center gap-2 group/shoe">
+                                                <span className="text-[10px] font-bold text-gray-500 truncate group-hover/shoe:text-gray-300 transition-colors text-right">
+                                                    {shoe.name}
+                                                </span>
+                                                <BrandLogo brandName={shoe.brand_name} />
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
 
                                 {/* Metrics */}

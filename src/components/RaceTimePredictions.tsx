@@ -208,13 +208,19 @@ export function RaceTimePredictions({
                     <span>Race Predictions</span>
                 </h2>
                 <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-wider">
-                    <span className={`px-2 py-1 rounded ${predictions.ctl >= 25 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                    <span
+                        className={`px-2 py-1 rounded cursor-help ${predictions.ctl >= 25 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}`}
+                        title="Chronic Training Load (Fitness): Weighted average of daily training load over the last 42 days."
+                    >
                         CTL {predictions.ctl.toFixed(0)}
                     </span>
-                    <span className={`px-2 py-1 rounded ${predictions.tsb > 5 ? 'bg-emerald-500/20 text-emerald-400' :
-                        predictions.tsb < -10 ? 'bg-red-500/20 text-red-400' :
-                            'bg-yellow-500/20 text-yellow-400'
-                        }`}>
+                    <span
+                        className={`px-2 py-1 rounded cursor-help ${predictions.tsb > 5 ? 'bg-emerald-500/20 text-emerald-400' :
+                                predictions.tsb < -10 ? 'bg-red-500/20 text-red-400' :
+                                    'bg-yellow-500/20 text-yellow-400'
+                            }`}
+                        title="Training Stress Balance (Form): Difference between fitness (CTL) and fatigue (ATL). Positive values indicate freshness."
+                    >
                         TSB {predictions.tsb > 0 ? '+' : ''}{predictions.tsb.toFixed(0)}
                     </span>
                 </div>

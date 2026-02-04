@@ -158,9 +158,9 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
     return (
         <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <span>💪</span>
-                    <span>Fitness & Freshness</span>
+                <h2 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
+                    <span className="text-2xl">💪</span>
+                    Fitness
                 </h2>
 
                 <div

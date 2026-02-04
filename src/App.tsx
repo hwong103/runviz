@@ -5,8 +5,6 @@ import { StatsOverview } from './components/StatsOverview';
 import { CalendarHeatmap } from './components/CalendarHeatmap';
 import { ActivityList } from './components/ActivityList';
 import { FitnessChart } from './components/FitnessChart';
-import { ActivityScatterChart } from './components/ActivityScatterChart';
-import { MileageTrendChart } from './components/MileageTrendChart';
 import { RunDetails } from './components/RunDetails';
 import { ShoeTracker } from './components/ShoeTracker';
 import { RaceTimePredictions } from './components/RaceTimePredictions';
@@ -250,37 +248,17 @@ function App() {
         {/* Highlight Stats */}
         <StatsOverview activities={filteredActivities} period={viewPeriod} />
 
-        {/* Top Section: Trends & Distribution */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <MileageTrendChart activities={activities} period={viewPeriod} />
-          </div>
-          <ActivityScatterChart activities={filteredActivities} />
-        </div>
-
+        {/* Row 1: Fitness & Race Predictions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <FitnessChart activities={activities} period={viewPeriod} />
           </div>
-          <ShoeTracker
-            activities={filteredActivities}
-            shoes={[...(athlete?.shoes || []), ...(athlete?.gear || [])]}
-            selectedShoeId={selectedShoeId}
-            onSelectShoe={(id) => setSelectedShoeId(prev => prev === id ? null : id)}
-          />
-        </div>
-
-        {/* Race Predictions */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            {/* Placeholder for future widget or leave empty */}
-          </div>
           <RaceTimePredictions activities={activities} period={viewPeriod} />
         </div>
 
-        {/* Bottom Section: Heatmap & List side-by-side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          <div className="bg-white/5 rounded-[2.5rem] p-8 border border-white/10 h-full">
+        {/* Row 2: Heatmap & Shoe Tracker */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          <div className="lg:col-span-2 bg-white/5 rounded-[2.5rem] p-8 border border-white/10 h-full">
             <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3 tracking-tight">
               <span className="text-2xl">📊</span>
               ACTIVITY FREQUENCY
@@ -293,16 +271,24 @@ function App() {
               selectedDate={selectedActivity?.start_date_local.split('T')[0]}
             />
           </div>
-
-          <ActivityList
+          <ShoeTracker
             activities={filteredActivities}
-            limit={50}
-            onSelect={setSelectedActivity}
+            shoes={[...(athlete?.shoes || []), ...(athlete?.gear || [])]}
             selectedShoeId={selectedShoeId}
-            selectedShoeName={selectedShoeName}
-            onClearShoeFilter={() => setSelectedShoeId(null)}
+            onSelectShoe={(id) => setSelectedShoeId(prev => prev === id ? null : id)}
           />
         </div>
+
+        {/* Row 3: Training Log (Full Width) */}
+        <ActivityList
+          activities={filteredActivities}
+          limit={50}
+          onSelect={setSelectedActivity}
+          selectedShoeId={selectedShoeId}
+          selectedShoeName={selectedShoeName}
+          onClearShoeFilter={() => setSelectedShoeId(null)}
+          shoes={[...(athlete?.shoes || []), ...(athlete?.gear || [])]}
+        />
       </main>
 
       <footer className="border-t border-white/5 py-20 bg-black/40">
