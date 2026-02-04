@@ -1,13 +1,20 @@
 import { useMemo } from 'react';
 import type { Activity } from '../types';
 import { formatDuration } from '../analytics/heartRateZones';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 interface RunDetailsProps {
     activity: Activity;
     allActivities: Activity[];
     onClose: () => void;
 }
+
+// Helper to parse Strava's start_date_local correctly
+// We remove the trailing 'Z' if present to ensure the browser treats it as "local time"
+// and not "UTC time that needs converting to browser timezone".
+const parseLocalTime = (dateStr: string) => {
+    return parseISO(dateStr.replace('Z', ''));
+};
 
 export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps) {
     const runs = useMemo(() =>
@@ -39,13 +46,15 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
             similarRuns,
             pace: `${mins}:${secs.toString().padStart(2, '0')}`,
             avgSpeed: (activity.distance / activity.moving_time * 3.6).toFixed(1), // km/h
-            calories: activity.kilojoules ? Math.round(activity.kilojoules * 0.239) : '-',
+            calories: activity.kilojoules ? Math.round(activity.kilojoules * 0.239) : (activity.calories || '-'),
         };
     }, [activity, runs]);
 
+    const activityDate = useMemo(() => parseLocalTime(activity.start_date_local), [activity.start_date_local]);
+
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-            <div className="bg-[#111827] w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            <div className="bg-[#111827] w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col transform transition-all">
                 {/* Header */}
                 <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                     <div>
@@ -56,7 +65,7 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
                             {activity.name}
                         </h2>
                         <div className="text-gray-400 text-sm mt-1 font-bold">
-                            {format(new Date(activity.start_date_local), 'EEEE, MMMM do, yyyy • h:mm a')}
+                            {format(activityDate, 'EEEE, MMMM do, yyyy • h:mm a')}
                         </div>
                     </div>
                     <button
@@ -80,22 +89,22 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Rankings */}
                         <div className="bg-white/5 rounded-3xl p-6 border border-white/5">
-                            <h3 className="text-xs text-gray-500 font-black uppercase tracking-widest mb-4">All-Time Rankings</h3>
+                            <h3 className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-4">All-Time Local Rank</h3>
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-400 text-sm">Longest Run</span>
-                                    <span className="text-white font-black">#{stats.distanceRank} of {runs.length}</span>
+                                    <span className="text-white font-black">#{stats.distanceRank}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-400 text-sm">Fastest Pace</span>
-                                    <span className="text-white font-black">#{stats.paceRank} of {runs.length}</span>
+                                    <span className="text-white font-black">#{stats.paceRank}</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Extra Stats */}
                         <div className="bg-white/5 rounded-3xl p-6 border border-white/5">
-                            <h3 className="text-xs text-gray-500 font-black uppercase tracking-widest mb-4">Detailed Data</h3>
+                            <h3 className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-4">Energy & Heart Rate</h3>
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-400 text-sm">Calories</span>
@@ -110,7 +119,7 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
 
                         {/* Max HR / Elevation */}
                         <div className="bg-white/5 rounded-3xl p-6 border border-white/5">
-                            <h3 className="text-xs text-gray-500 font-black uppercase tracking-widest mb-4">Elevation & Intensity</h3>
+                            <h3 className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-4">Intensity</h3>
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-400 text-sm">Gain</span>
@@ -125,35 +134,31 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
                     </div>
 
                     {/* Similar Runs */}
-                    <div className="bg-white/5 rounded-[2rem] p-8 border border-white/5">
-                        <h3 className="text-lg font-bold text-white mb-6">Similar Runs (+/- 1km)</h3>
-                        <div className="space-y-4">
+                    <div className="bg-white/5 rounded-[2rem] p-8 border border-white/10">
+                        <h3 className="text-lg font-bold text-white mb-6">Similar Distance Comparison</h3>
+                        <div className="space-y-3">
                             {stats.similarRuns.map(run => {
                                 const runPace = (run.moving_time / run.distance) * 1000 / 60;
                                 const runMins = Math.floor(runPace);
                                 const runSecs = Math.round((runPace - runMins) * 60);
+                                const runDate = parseLocalTime(run.start_date_local);
                                 return (
-                                    <div key={run.id} className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5">
+                                    <div key={run.id} className="flex items-center justify-between p-4 bg-black/30 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
                                         <div>
                                             <div className="text-white font-bold">{run.name}</div>
-                                            <div className="text-gray-500 text-xs">{format(new Date(run.start_date_local), 'MMM d, yyyy')}</div>
+                                            <div className="text-gray-500 text-xs font-medium">{format(runDate, 'MMM d, yyyy')}</div>
                                         </div>
                                         <div className="text-right">
                                             <div className="text-emerald-400 font-black">{(run.distance / 1000).toFixed(1)} km</div>
-                                            <div className="text-gray-400 text-xs">{runMins}:{runSecs.toString().padStart(2, '0')}/km</div>
+                                            <div className="text-gray-400 text-xs font-bold">{runMins}:{runSecs.toString().padStart(2, '0')}/km</div>
                                         </div>
                                     </div>
                                 );
                             })}
                             {stats.similarRuns.length === 0 && (
-                                <div className="text-gray-500 text-center py-4">No similar runs found.</div>
+                                <div className="text-gray-500 text-center py-4 bg-black/20 rounded-2xl">No similar runs found for comparison.</div>
                             )}
                         </div>
-                    </div>
-
-                    {/* Speed Chart Placeholder / streams needed for actual chart */}
-                    <div className="h-48 bg-black/40 rounded-[2rem] border border-white/5 flex items-center justify-center">
-                        <span className="text-gray-600 font-bold uppercase tracking-widest text-xs">Full Speed Chart & Mapping Coming Soon</span>
                     </div>
                 </div>
             </div>
@@ -163,11 +168,11 @@ export function RunDetails({ activity, allActivities, onClose }: RunDetailsProps
 
 function MetricCard({ label, value, unit }: { label: string; value: string; unit: string }) {
     return (
-        <div className="text-center p-6 bg-white/[0.03] rounded-[2rem] border border-white/5">
+        <div className="text-center p-6 bg-white/[0.03] rounded-[2rem] border border-white/5 hover:border-emerald-500/20 transition-colors">
             <div className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2">{label}</div>
             <div className="flex items-baseline justify-center gap-1">
                 <span className="text-3xl font-black text-white">{value}</span>
-                <span className="text-xs text-gray-400 font-bold">{unit}</span>
+                <span className="text-xs text-gray-400 font-bold uppercase tracking-tighter">{unit}</span>
             </div>
         </div>
     );
