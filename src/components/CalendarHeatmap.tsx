@@ -19,6 +19,10 @@ export function CalendarHeatmap({
     selectedDate
 }: CalendarHeatmapProps) {
     const [hoveredDay, setHoveredDay] = useState<{ date: string; distance: number; x: number; y: number } | null>(null);
+
+    // Check if we're in month-only view
+    const isMonthView = month !== undefined;
+
     const { weeks, monthLabels, maxDistance } = useMemo(() => {
         // Build daily distance map
         const dailyDistances = new Map<string, number>();
@@ -36,30 +40,45 @@ export function CalendarHeatmap({
             if (d > max) max = d;
         });
 
-        // Current range
-        const startDate = new Date(year, 0, 1);
-        const endDate = new Date(year, 11, 31);
+        let startDate: Date;
+        let endDate: Date;
 
-        // Start from Sunday of the week containing Jan 1
+        if (isMonthView) {
+            // Month view: show only the selected month
+            startDate = new Date(year, month!, 1);
+            endDate = new Date(year, month! + 1, 0); // Last day of month
+        } else {
+            // Year view: show full year
+            startDate = new Date(year, 0, 1);
+            endDate = new Date(year, 11, 31);
+        }
+
+        // Start from Sunday of the week containing the start date
         const firstSunday = new Date(startDate);
         firstSunday.setDate(startDate.getDate() - startDate.getDay());
 
-        const weeks: Array<Array<{ date: string; distance: number; dayOfWeek: number; currentMonth: boolean } | null>> = [];
+        const weeks: Array<Array<{ date: string; distance: number; dayOfWeek: number; currentMonth: boolean; inRange: boolean } | null>> = [];
         const months: Array<{ label: string; weekIndex: number }> = [];
         let curMonth = -1;
 
         const current = new Date(firstSunday);
         let weekIndex = 0;
 
-        while (current <= endDate || weeks.length < 53) {
-            const week: Array<{ date: string; distance: number; dayOfWeek: number; currentMonth: boolean } | null> = [];
+        // For month view, we only need 5-6 weeks max
+        const maxWeeks = isMonthView ? 6 : 53;
+
+        while (weeks.length < maxWeeks) {
+            const week: Array<{ date: string; distance: number; dayOfWeek: number; currentMonth: boolean; inRange: boolean } | null> = [];
 
             for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
                 const dateStr = current.toISOString().split('T')[0];
                 const inYear = current.getFullYear() === year;
-                const isSelectedMonth = month !== undefined ? current.getMonth() === month : true;
+                const inMonth = isMonthView ? current.getMonth() === month : true;
+                const inRange = isMonthView
+                    ? (current >= startDate && current <= endDate)
+                    : inYear;
 
-                if (inYear) {
+                if (inYear || isMonthView) {
                     // Track month changes for labels
                     if (current.getMonth() !== curMonth) {
                         curMonth = current.getMonth();
@@ -73,7 +92,8 @@ export function CalendarHeatmap({
                         date: dateStr,
                         distance: dailyDistances.get(dateStr) || 0,
                         dayOfWeek,
-                        currentMonth: isSelectedMonth && inYear
+                        currentMonth: inMonth && inYear,
+                        inRange
                     });
                 } else {
                     week.push(null);
@@ -85,11 +105,18 @@ export function CalendarHeatmap({
             weeks.push(week);
             weekIndex++;
 
-            if (current > endDate && weeks.length >= 52) break;
+            // For month view, stop when we've passed the end date
+            if (isMonthView && current > endDate) {
+                break;
+            }
+            // For year view, stop at end of year
+            if (!isMonthView && current > endDate && weeks.length >= 52) {
+                break;
+            }
         }
 
         return { weeks, monthLabels: months, maxDistance: max };
-    }, [activities, year, month]);
+    }, [activities, year, month, isMonthView]);
 
     const getColor = (distance: number, isActive: boolean, isSelected: boolean): string => {
         if (isSelected) return 'bg-white ring-2 ring-emerald-400';
@@ -105,14 +132,14 @@ export function CalendarHeatmap({
 
     return (
         <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10 overflow-x-auto">
-            <div className="min-w-[700px]">
+            <div className={isMonthView ? '' : 'min-w-[700px]'}>
                 {/* Month labels */}
                 <div className="flex mb-2 text-[10px] text-gray-500 font-bold uppercase tracking-tighter ml-8 h-4 relative">
                     {monthLabels.map((m, i) => (
                         <div
                             key={i}
-                            className="absolute"
-                            style={{ left: `${m.weekIndex * 14}px` }}
+                            className={isMonthView ? '' : 'absolute'}
+                            style={isMonthView ? {} : { left: `${m.weekIndex * 14}px` }}
                         >
                             {m.label}
                         </div>
@@ -135,26 +162,29 @@ export function CalendarHeatmap({
                     <div className="flex gap-0.5">
                         {weeks.map((week, weekIdx) => (
                             <div key={weekIdx} className="flex flex-col gap-0.5">
-                                {week.map((day, dayIdx) => (
-                                    <div
-                                        key={dayIdx}
-                                        onClick={() => day?.currentMonth && onSelectDay?.(day.date)}
-                                        onMouseEnter={(e) => {
-                                            if (day?.currentMonth) {
-                                                const rect = e.currentTarget.getBoundingClientRect();
-                                                setHoveredDay({
-                                                    date: day.date,
-                                                    distance: day.distance,
-                                                    x: rect.left + rect.width / 2,
-                                                    y: rect.top - 10
-                                                });
-                                            }
-                                        }}
-                                        onMouseLeave={() => setHoveredDay(null)}
-                                        className={`w-3 h-3 rounded-[2px] transition-all duration-200 ${day ? getColor(day.distance, day.currentMonth, selectedDate === day.date) : 'bg-transparent'
-                                            } ${day?.currentMonth ? 'hover:scale-125 cursor-pointer hover:ring-2 hover:ring-white/30' : ''}`}
-                                    />
-                                ))}
+                                {week.map((day, dayIdx) => {
+                                    const isInteractive = isMonthView ? day?.inRange : day?.currentMonth;
+                                    return (
+                                        <div
+                                            key={dayIdx}
+                                            onClick={() => isInteractive && onSelectDay?.(day!.date)}
+                                            onMouseEnter={(e) => {
+                                                if (isInteractive) {
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    setHoveredDay({
+                                                        date: day!.date,
+                                                        distance: day!.distance,
+                                                        x: rect.left + rect.width / 2,
+                                                        y: rect.top - 10
+                                                    });
+                                                }
+                                            }}
+                                            onMouseLeave={() => setHoveredDay(null)}
+                                            className={`w-3 h-3 rounded-[2px] transition-all duration-200 ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'bg-transparent'
+                                                } ${isInteractive ? 'hover:scale-125 cursor-pointer hover:ring-2 hover:ring-white/30' : ''}`}
+                                        />
+                                    );
+                                })}
                             </div>
                         ))}
                     </div>

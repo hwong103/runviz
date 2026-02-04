@@ -9,6 +9,7 @@ import { ActivityScatterChart } from './components/ActivityScatterChart';
 import { MileageTrendChart } from './components/MileageTrendChart';
 import { RunDetails } from './components/RunDetails';
 import { ShoeTracker } from './components/ShoeTracker';
+import { RaceTimePredictions } from './components/RaceTimePredictions';
 import type { Activity } from './types';
 import { isRun } from './types';
 
@@ -76,6 +77,14 @@ function App() {
     }
   }, [activities]);
 
+  // Get selected shoe name for filter indicator
+  const selectedShoeName = useMemo(() => {
+    if (!selectedShoeId) return undefined;
+    const allShoes = [...(athlete?.shoes || []), ...(athlete?.gear || [])];
+    const shoe = allShoes.find(s => s.id === selectedShoeId);
+    return shoe?.name;
+  }, [selectedShoeId, athlete?.shoes, athlete?.gear]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
@@ -125,6 +134,7 @@ function App() {
           allActivities={activities}
           shoes={[...(athlete?.shoes || []), ...(athlete?.gear || [])]}
           onClose={() => setSelectedActivity(null)}
+          onSelect={setSelectedActivity}
         />
       )}
 
@@ -260,6 +270,14 @@ function App() {
           />
         </div>
 
+        {/* Race Predictions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            {/* Placeholder for future widget or leave empty */}
+          </div>
+          <RaceTimePredictions activities={activities} period={viewPeriod} />
+        </div>
+
         {/* Bottom Section: Heatmap & List side-by-side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           <div className="bg-white/5 rounded-[2.5rem] p-8 border border-white/10 h-full">
@@ -276,7 +294,14 @@ function App() {
             />
           </div>
 
-          <ActivityList activities={filteredActivities} limit={50} onSelect={setSelectedActivity} />
+          <ActivityList
+            activities={filteredActivities}
+            limit={50}
+            onSelect={setSelectedActivity}
+            selectedShoeId={selectedShoeId}
+            selectedShoeName={selectedShoeName}
+            onClearShoeFilter={() => setSelectedShoeId(null)}
+          />
         </div>
       </main>
 

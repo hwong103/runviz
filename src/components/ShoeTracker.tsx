@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import type { Activity, Gear } from '../types';
 import { gear as gearApi } from '../services/api';
+import { getBrandLogoUrl, getBrandFallbackEmoji } from '../services/logoService';
 
 interface ShoeTrackerProps {
     activities: Activity[];
@@ -9,25 +10,29 @@ interface ShoeTrackerProps {
     onSelectShoe?: (id: string) => void;
 }
 
-// Map of known brands to their logos (simple text or URL if we had them)
-// For now, let's use a mapping to clean brand names or add emojis
-const BRAND_LOGOS: Record<string, string> = {
-    'Hoka': '🦅',
-    'HOKA': '🦅',
-    'Nike': '✔️',
-    'Adidas': '👟',
-    'Saucony': '🏃',
-    'Brooks': '🧢',
-    'Asics': '🌀',
-    'ASICS': '🌀',
-    'New Balance': 'NB',
-};
+// Brand logo component with fallback support
+function BrandLogo({ brandName, className }: { brandName?: string; className?: string }) {
+    const [hasError, setHasError] = useState(false);
+    const logoUrl = getBrandLogoUrl(brandName, 48);
+    const fallbackEmoji = getBrandFallbackEmoji(brandName);
 
-function getBrandIcon(brandName?: string) {
-    if (!brandName) return '👟';
-    // Check for partial matches
-    const key = Object.keys(BRAND_LOGOS).find(k => brandName.includes(k));
-    return key ? BRAND_LOGOS[key] : '👟';
+    // Reset error state when brand changes
+    useEffect(() => {
+        setHasError(false);
+    }, [brandName]);
+
+    if (!logoUrl || hasError) {
+        return <span className={className}>{fallbackEmoji}</span>;
+    }
+
+    return (
+        <img
+            src={logoUrl}
+            alt={brandName || 'Brand'}
+            className={`${className} w-6 h-6 object-contain`}
+            onError={() => setHasError(true)}
+        />
+    );
 }
 
 export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }: ShoeTrackerProps) {
@@ -136,14 +141,14 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                             key={shoe.id}
                             onClick={() => onSelectShoe?.(shoe.id)}
                             className={`rounded-2xl p-5 border transition-all group cursor-pointer ${selectedShoeId === shoe.id
-                                    ? 'bg-emerald-500/10 border-emerald-500 ring-1 ring-emerald-500/50'
-                                    : 'bg-black/40 border-white/5 hover:border-emerald-500/30'
+                                ? 'bg-emerald-500/10 border-emerald-500 ring-1 ring-emerald-500/50'
+                                : 'bg-black/40 border-white/5 hover:border-emerald-500/30'
                                 }`}
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1 min-w-0 mr-2">
                                     <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight truncate flex items-center gap-2">
-                                        <span className="opacity-70 text-base">{getBrandIcon(shoe.brand_name)}</span>
+                                        <BrandLogo brandName={shoe.brand_name} className="opacity-70 text-base" />
                                         {shoe.name}
                                     </h4>
                                     {shoe.brand_name && (

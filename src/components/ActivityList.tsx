@@ -6,13 +6,23 @@ interface ActivityListProps {
     activities: Activity[];
     limit?: number;
     onSelect?: (activity: Activity) => void;
+    selectedShoeId?: string | null;
+    selectedShoeName?: string;
+    onClearShoeFilter?: () => void;
 }
 
 const parseLocalTime = (dateStr: string) => {
     return parseISO(dateStr.replace('Z', ''));
 };
 
-export function ActivityList({ activities, limit = 10, onSelect }: ActivityListProps) {
+export function ActivityList({
+    activities,
+    limit = 10,
+    onSelect,
+    selectedShoeId,
+    selectedShoeName,
+    onClearShoeFilter
+}: ActivityListProps) {
     const runs = activities
         .filter((a) => a.type === 'Run' || a.sport_type === 'Run')
         .slice(0, limit);
@@ -46,6 +56,21 @@ export function ActivityList({ activities, limit = 10, onSelect }: ActivityListP
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
                 <span className="text-2xl">🏃</span>
                 <span>Training Log</span>
+                {selectedShoeId && selectedShoeName && (
+                    <div className="flex items-center gap-2 ml-auto">
+                        <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border border-emerald-500/30 flex items-center gap-2">
+                            <span>👟</span>
+                            <span>{selectedShoeName}</span>
+                        </span>
+                        <button
+                            onClick={onClearShoeFilter}
+                            className="text-gray-400 hover:text-white text-xs font-black transition-colors px-2 py-1 rounded hover:bg-white/10"
+                            title="Clear filter"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
             </h2>
 
             <div className="space-y-3">

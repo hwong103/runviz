@@ -15,6 +15,31 @@ import type { Activity, ActivityStreams, Gear } from '../types';
 import { isRun } from '../types';
 import { format, parseISO } from 'date-fns';
 import { activities as activitiesApi, gear as gearApi } from '../services/api';
+import { getBrandLogoUrl, getBrandFallbackEmoji } from '../services/logoService';
+
+// Brand logo component with fallback support
+function BrandLogo({ brandName, className }: { brandName?: string; className?: string }) {
+    const [hasError, setHasError] = useState(false);
+    const logoUrl = getBrandLogoUrl(brandName, 48);
+    const fallbackEmoji = getBrandFallbackEmoji(brandName);
+
+    useEffect(() => {
+        setHasError(false);
+    }, [brandName]);
+
+    if (!logoUrl || hasError) {
+        return <span className={className}>{fallbackEmoji}</span>;
+    }
+
+    return (
+        <img
+            src={logoUrl}
+            alt={brandName || 'Brand'}
+            className={`${className} w-5 h-5 object-contain`}
+            onError={() => setHasError(true)}
+        />
+    );
+}
 
 ChartJS.register(
     CategoryScale,
@@ -460,14 +485,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                             <div className="text-gray-500 text-xs font-black uppercase tracking-widest">{format(activityDate, 'eeee, d MMM y').toUpperCase()}</div>
                             {stats.currentShoe && (
                                 <div className="text-emerald-400 text-xs font-black uppercase tracking-widest mt-3 flex items-center gap-2 bg-emerald-500/10 w-fit px-3 py-1.5 rounded-lg border border-emerald-500/20">
-                                    <span className="text-sm">
-                                        {stats.currentShoe.brand_name?.includes('Hoka') || stats.currentShoe.brand_name?.includes('HOKA') ? '🦅' :
-                                            stats.currentShoe.brand_name?.includes('Nike') ? '✔️' :
-                                                stats.currentShoe.brand_name?.includes('Saucony') ? '🏃' :
-                                                    stats.currentShoe.brand_name?.includes('New Balance') ? 'NB' :
-                                                        stats.currentShoe.brand_name?.includes('Asics') || stats.currentShoe.brand_name?.includes('ASICS') ? '🌀' :
-                                                            '👟'}
-                                    </span>
+                                    <BrandLogo brandName={stats.currentShoe.brand_name} className="text-sm" />
                                     {stats.currentShoe.name}
                                 </div>
                             )}
