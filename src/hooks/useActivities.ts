@@ -63,11 +63,6 @@ export function useActivities() {
                     throw new Error('Sync failed. The API returned data in an unexpected format. Check the browser console for details.');
                 }
 
-                if (response.activities.length === 0) {
-                    hasMore = false;
-                    break;
-                }
-
                 // Find activities we don't have in cache yet
                 const newOnPage = response.activities.filter(
                     (a: Activity) => !currentActivities.find((existing) => existing.id === a.id)
@@ -79,21 +74,22 @@ export function useActivities() {
                     console.log(`✅ Found ${newOnPage.length} new activities on page ${page}`);
                 }
 
-                // If we found ANY duplicates on this page, or it was the last page, we stop
-                if (newOnPage.length < response.activities.length) {
-                    console.log('🏁 Caught up to existing history.');
+                if (response.activities.length === 0) {
                     hasMore = false;
                 } else {
-                    hasMore = response.hasMore;
                     page++;
                 }
 
-                // Small throttle to be kind to the API
-                if (hasMore) await new Promise(r => setTimeout(r, 500));
+                // Small throttle
+                if (hasMore) await new Promise(r => setTimeout(r, 200));
             }
 
             if (newlyFetched.length > 0) {
-                await cache.cacheActivities([...newlyFetched, ...currentActivities]);
+                // Ensure absolute uniqueness by ID when merging
+                const merged = [...newlyFetched, ...currentActivities];
+                const uniqueMap = new Map();
+                merged.forEach(a => uniqueMap.set(a.id, a));
+                await cache.cacheActivities(Array.from(uniqueMap.values()));
                 await cache.setLastSyncDate(new Date());
             }
 
