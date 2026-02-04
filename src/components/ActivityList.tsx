@@ -134,7 +134,19 @@ export function ActivityList({
                                     {(() => {
                                         // Try to find shoe in the provided shoes array, or use the one on the activity if available
                                         const shoe = (activity.gear_id ? shoes.find(s => s.id === activity.gear_id) : null) || activity.gear;
-                                        if (!shoe) return null;
+
+                                        if (!shoe) {
+                                            // DEBUG visual helper
+                                            if (activity.gear_id) {
+                                                return (
+                                                    <span className="text-[9px] text-red-500 font-mono bg-red-900/20 px-1 rounded">
+                                                        Miss: {activity.gear_id}
+                                                    </span>
+                                                );
+                                            }
+                                            return null;
+                                        }
+
                                         return (
                                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 group/shoe hover:bg-emerald-500/20 transition-colors">
                                                 <BrandLogo brandName={shoe.brand_name} />
