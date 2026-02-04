@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { activities as activitiesApi } from '../services/api';
 import * as cache from '../services/cache';
 import type { Activity } from '../types';
@@ -20,12 +20,9 @@ export function useActivities() {
         lastSync: null,
     });
 
-    // Load cached activities on mount
-    useEffect(() => {
-        loadCached();
-    }, []);
+    const hasInitialized = useRef(false);
 
-    async function loadCached() {
+    const loadCached = useCallback(async () => {
         try {
             const cached = await cache.getCachedActivities();
             const lastSync = await cache.getLastSyncDate();
@@ -42,7 +39,7 @@ export function useActivities() {
                 error: err instanceof Error ? err.message : 'Failed to load cached data',
             }));
         }
-    }
+    }, []);
 
     const sync = useCallback(async () => {
         if (state.syncing) return;
@@ -120,7 +117,21 @@ export function useActivities() {
                 error: err instanceof Error ? err.message : 'Sync failed',
             }));
         }
-    }, [state.syncing, state.activities]);
+    }, [state.syncing]); // Simplified dependency array to avoid loops
+
+    // Initial load and sync
+    useEffect(() => {
+        if (hasInitialized.current) return;
+        hasInitialized.current = true;
+
+        const init = async () => {
+            await loadCached();
+            // Automatically sync after load
+            console.log('🔄 Triggering automatic sync on load...');
+            sync();
+        };
+        init();
+    }, [loadCached, sync]);
 
     const getActivity = useCallback(async (id: number): Promise<Activity | null> => {
         // Check cache first
