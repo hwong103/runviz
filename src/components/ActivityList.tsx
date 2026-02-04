@@ -129,14 +129,15 @@ export function ActivityList({
                                     </div>
                                 </div>
 
-                                {/* Shoe (Desktop only) */}
-                                <div className="hidden md:flex flex-col items-end min-w-[120px] max-w-[160px] ml-4">
+                                {/* Shoe (Desktop/Tablet) */}
+                                <div className="hidden sm:flex flex-col items-end min-w-[120px] max-w-[180px] ml-4 shrink-0">
                                     {(() => {
-                                        const shoe = shoes.find(s => s.id === activity.gear_id);
+                                        // Try to find shoe in the provided shoes array, or use the one on the activity if available
+                                        const shoe = (activity.gear_id ? shoes.find(s => s.id === activity.gear_id) : null) || activity.gear;
                                         if (!shoe) return null;
                                         return (
-                                            <div className="flex items-center gap-2 group/shoe">
-                                                <span className="text-[10px] font-bold text-gray-500 truncate group-hover/shoe:text-gray-300 transition-colors text-right">
+                                            <div className="flex items-center gap-2 group/shoe overflow-hidden">
+                                                <span className="text-[10px] font-bold text-gray-400 truncate group-hover/shoe:text-white transition-colors text-right">
                                                     {shoe.name}
                                                 </span>
                                                 <BrandLogo brandName={shoe.brand_name} />
