@@ -68,6 +68,13 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 icon="📏"
             />
             <StatCard
+                label="Avg Dist"
+                value={stats.avgDistance.toFixed(1)}
+                unit="km"
+                icon="📏"
+                color="text-blue-400"
+            />
+            <StatCard
                 label="Avg Pace"
                 value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'}
                 unit="/km"
@@ -85,13 +92,6 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 unit="days"
                 icon="🔥"
                 color="text-orange-400"
-            />
-            <StatCard
-                label="Avg Dist"
-                value={stats.avgDistance.toFixed(1)}
-                unit="km"
-                icon="📏"
-                color="text-blue-400"
             />
         </div>
     );
