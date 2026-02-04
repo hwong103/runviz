@@ -79,8 +79,15 @@ export const athlete = {
     },
 };
 
+// Gear endpoints
+export const gear = {
+    async get(id: string): Promise<Gear> {
+        return fetchApi(`/api/gear/${id}`);
+    },
+};
+
 // Types used by this module
-import type { Activity, ActivityStreams, Athlete } from '../types';
+import type { Activity, ActivityStreams, Athlete, Gear } from '../types';
 
 interface AthleteStats {
     all_run_totals: {

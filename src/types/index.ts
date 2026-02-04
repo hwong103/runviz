@@ -49,6 +49,7 @@ export interface Activity {
         summary_polyline: string;
         polyline?: string;
     };
+    gear?: Gear;
     // Extended fields from streams
     streams?: ActivityStreams;
 }

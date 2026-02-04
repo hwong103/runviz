@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Activity, Gear } from '../types';
+import { gear as gearApi } from '../services/api';
 
 interface ShoeTrackerProps {
     activities: Activity[];
@@ -7,29 +8,58 @@ interface ShoeTrackerProps {
 }
 
 export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
+    const [fetchedGear, setFetchedGear] = useState<Map<string, Gear>>(new Map());
+
+    // 1. Identify gears that are used but unknown
+    const unknownGearIds = useMemo(() => {
+        const knownIds = new Set(shoes.map(s => s.id));
+        const unknown = new Set<string>();
+
+        activities.forEach(a => {
+            if (a.gear_id && !knownIds.has(a.gear_id)) {
+                unknown.add(a.gear_id);
+            }
+        });
+
+        // Filter out IDs we've already fetched
+        Array.from(fetchedGear.keys()).forEach(id => unknown.delete(id));
+
+        return Array.from(unknown);
+    }, [activities, shoes, fetchedGear]);
+
+    // 2. Lazy fetch unknown gear
+    useEffect(() => {
+        if (unknownGearIds.length === 0) return;
+
+        unknownGearIds.forEach(async (id) => {
+            try {
+                // Skip if not a shoe/gear ID
+                if (!id.startsWith('g') && !id.startsWith('s')) return;
+
+                const gear = await gearApi.get(id);
+                setFetchedGear(prev => new Map(prev).set(id, gear));
+            } catch (err) {
+                console.error(`Failed to fetch gear ${id}`, err);
+            }
+        });
+    }, [unknownGearIds]);
+
     const shoeStats = useMemo(() => {
-        // 1. Build a map of all known gear from the athlete profile
+        // Build complete library from props + fetched
         const gearLibrary = new Map<string, Gear>();
         shoes.forEach(s => gearLibrary.set(s.id, s));
+        fetchedGear.forEach((g, id) => gearLibrary.set(id, g));
 
-        // 2. Scan activities to find gear used in the filtered period 
-        // AND to discover gear that might not be in the 'shoes' prop
         const periodDistances = new Map<string, number>();
 
         activities.forEach(activity => {
             const gearId = activity.gear_id;
             if (gearId) {
-                // Track distance for this period
                 const currentDist = periodDistances.get(gearId) || 0;
                 periodDistances.set(gearId, currentDist + activity.distance);
-
-                // If this gear isn't in our library but the activity has gear info (detailed view)
-                // we could potentially extract it here, but mostly we rely on the ID matching.
             }
         });
 
-        // 3. Combine it all. We want to show shoes that have distance in the period
-        // OR are in the athlete's shoe list.
         const allKnownIds = new Set([
             ...Array.from(gearLibrary.keys()),
             ...Array.from(periodDistances.keys())
@@ -42,7 +72,7 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
 
                 return {
                     id,
-                    name: shoe?.name || `Unknown Shoe (${id})`,
+                    name: shoe?.name || `Unknown Shoe`,
                     brand_name: shoe?.brand_name,
                     primary: shoe?.primary || false,
                     lifetimeDistance: (shoe?.distance || 0) / 1000,
@@ -50,15 +80,15 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
                     isDecoveredFromActivity: !shoe
                 };
             })
-            // Only show things that are actually shoes (Strava gear IDs usually start with 'g' or 's')
-            // and filter out "Unknown" shoes that have 0 distance in the current period to stay clean
+            // Only show things that look like shoes 
             .filter(s => s.id.startsWith('g') || s.id.startsWith('s'))
+            // Filter out unknown shoes with no activity in period (ghosts)
             .filter(s => !s.isDecoveredFromActivity || s.periodDistance > 0)
             .sort((a, b) => {
                 if (b.periodDistance !== a.periodDistance) return b.periodDistance - a.periodDistance;
                 return b.lifetimeDistance - a.lifetimeDistance;
             });
-    }, [activities, shoes]);
+    }, [activities, shoes, fetchedGear]);
 
     return (
         <div className="bg-white/5 backdrop-blur-3xl rounded-[2.5rem] p-8 border border-white/10 shadow-2xl h-full flex flex-col">
@@ -136,16 +166,8 @@ export function ShoeTracker({ activities, shoes }: ShoeTrackerProps) {
                     <div className="flex flex-col items-center justify-center h-full py-10 text-center opacity-50">
                         <span className="text-4xl mb-4 grayscale">👟</span>
                         <p className="text-gray-400 text-xs font-black uppercase tracking-widest italic">No shoes detected</p>
-                        <div className="text-gray-600 text-[9px] mt-4 uppercase font-bold text-center border-t border-white/5 pt-4 w-full space-y-1">
-                            <p>Profile Shoes: {shoes.length}</p>
-                            <p>Tagged Runs: {activities.filter(a => a.gear_id).length}</p>
-                        </div>
                     </div>
                 )}
-            </div>
-
-            <div className="mt-6 pt-6 border-t border-white/5 flex gap-2 overflow-hidden">
-                <div className="text-[8px] font-black text-gray-600 uppercase tracking-widest whitespace-nowrap">Gear Library: {'[' + shoes.map(s => s.id.slice(0, 4)).join(', ') + ']'}</div>
             </div>
         </div>
     );
