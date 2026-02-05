@@ -90,7 +90,7 @@ export default {
             }
 
             // Protected API routes
-            if (url.pathname === '/api/routes/generate') {
+            if (url.pathname.replace(/\/$/, '') === '/api/routes/generate') {
                 return await handleRouteGeneration(request, env, origin);
             }
 
