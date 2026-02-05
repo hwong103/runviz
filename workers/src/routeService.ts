@@ -47,6 +47,7 @@ export async function handleRouteGeneration(
                 body: JSON.stringify({
                     coordinates: [[startLng, startLat]],
                     options: {
+                        avoid_features: ["ferries", "highways"],
                         round_trip: {
                             length: targetDistanceMeters, // ORS expects meters
                             points: 3,

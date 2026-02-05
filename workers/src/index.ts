@@ -90,15 +90,25 @@ export default {
             }
 
             // Protected API routes
-            if (url.pathname.replace(/\/$/, '') === '/api/routes/generate') {
+            const cleanPath = url.pathname.replace(/\/+$/, '');
+
+            if (cleanPath === '/api/routes/generate') {
                 return await handleRouteGeneration(request, env, origin);
+            }
+
+            if (cleanPath === '/api/geocoding/search') {
+                return await handleSearchGeocoding(url, env, origin);
+            }
+
+            if (cleanPath === '/api/geocoding/reverse') {
+                return await handleReverseGeocoding(url, env, origin);
             }
 
             if (url.pathname.startsWith('/api/')) {
                 return await handleApiRequest(request, url, env, origin);
             }
 
-            return new Response('Not Found', { status: 404 });
+            return new Response(`Not Found: ${url.pathname}`, { status: 404, headers: corsHeaders(origin) });
         } catch (error) {
             console.error('Worker error:', error);
             return new Response(
@@ -343,5 +353,43 @@ async function handleApiRequest(
     return new Response(JSON.stringify(data), {
         status: stravaResponse.status,
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+    });
+}
+
+// Nominatim Geocoding Proxy
+async function handleSearchGeocoding(url: URL, env: Env, origin: string): Promise<Response> {
+    const q = url.searchParams.get('q');
+    if (!q) return new Response('Missing query', { status: 400 });
+
+    const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&countrycodes=au`;
+
+    const response = await fetch(nominatimUrl, {
+        headers: {
+            'User-Agent': 'RunViz/1.0 (https://hwong103.github.io/runviz)'
+        }
+    });
+
+    const data = await response.json();
+    return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
+    });
+}
+
+async function handleReverseGeocoding(url: URL, env: Env, origin: string): Promise<Response> {
+    const lat = url.searchParams.get('lat');
+    const lon = url.searchParams.get('lon');
+    if (!lat || !lon) return new Response('Missing coordinates', { status: 400 });
+
+    const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+
+    const response = await fetch(nominatimUrl, {
+        headers: {
+            'User-Agent': 'RunViz/1.0 (https://hwong103.github.io/runviz)'
+        }
+    });
+
+    const data = await response.json();
+    return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
     });
 }

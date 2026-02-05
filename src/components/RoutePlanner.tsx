@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { routes as routesApi } from '../services/api';
+import { routes as routesApi, geocoding } from '../services/api';
 import type { GeneratedRoute, RoutePoint } from '../types';
 
 // Fix Leaflet marker icon issue
@@ -102,8 +102,7 @@ const RoutePlanner: React.FC = () => {
     useEffect(() => {
         if (startPoint) {
             setSearching(true);
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${startPoint[0]}&lon=${startPoint[1]}`)
-                .then(res => res.json())
+            geocoding.reverse(startPoint[0], startPoint[1])
                 .then(data => {
                     if (data.display_name) {
                         setResolvedAddress(data.display_name.split(',').slice(0, 3).join(','));
@@ -120,8 +119,7 @@ const RoutePlanner: React.FC = () => {
             if (searchQuery.length > 2) {
                 setSearching(true);
                 try {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5&countrycodes=au`);
-                    const data = await res.json();
+                    const data = await geocoding.search(searchQuery);
                     setSuggestions(data);
                     setShowSuggestions(true);
                 } catch (err) {

@@ -96,6 +96,17 @@ export const routes = {
     },
 };
 
+// Geocoding endpoints
+export const geocoding = {
+    async search(query: string): Promise<any[]> {
+        return fetchApi(`/api/geocoding/search?q=${encodeURIComponent(query)}`);
+    },
+
+    async reverse(lat: number, lon: number): Promise<any> {
+        return fetchApi(`/api/geocoding/reverse?lat=${lat}&lon=${lon}`);
+    },
+};
+
 // Types used by this module
 import type { Activity, ActivityStreams, Athlete, Gear, RouteGenerationRequest, GeneratedRoute } from '../types';
 
