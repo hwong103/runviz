@@ -192,9 +192,9 @@ const RoutePlanner: React.FC = () => {
             if (results.length > 0) {
                 setSelectedRouteId(results[0].id);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to generate routes:', err);
-            setError('Failed to generate routes. Please check your API configuration.');
+            setError(err.message || 'Failed to generate routes. Please check your API configuration.');
         } finally {
             setLoading(false);
         }
@@ -256,22 +256,22 @@ const RoutePlanner: React.FC = () => {
                                     placeholder="Search location..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors pr-20"
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors pr-24"
                                 />
-                                <div className="absolute right-3 inset-y-0 flex items-center gap-2">
+                                <div className="absolute right-2 inset-y-0 flex items-center justify-end gap-1 pointer-events-none">
                                     <button
                                         type="button"
                                         onClick={useCurrentLocation}
-                                        className="text-gray-500 hover:text-emerald-400 transition-colors p-1 flex items-center justify-center"
+                                        className="text-gray-500 hover:text-emerald-400 transition-colors w-9 h-9 flex items-center justify-center active:scale-95 pointer-events-auto"
                                         title="Use current location"
                                     >
-                                        <span className="leading-none text-base">🎯</span>
+                                        <span className="text-lg leading-none">🎯</span>
                                     </button>
-                                    <div className="text-gray-500 flex items-center justify-center w-6 h-6">
+                                    <div className="text-gray-500 flex items-center justify-center w-9 h-9 opacity-40">
                                         {searching ? (
                                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                         ) : (
-                                            <span className="leading-none text-base">🔍</span>
+                                            <span className="text-lg leading-none">🔍</span>
                                         )}
                                     </div>
                                 </div>

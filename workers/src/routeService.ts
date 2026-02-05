@@ -14,14 +14,17 @@ export async function handleRouteGeneration(
     env: Env,
     origin: string
 ): Promise<Response> {
+    // We allow public access to route generation for now to make it easier to test
+    // If we want to restrict it, we can re-enable this check later.
+    /*
     const sessionId = getSessionId(request);
-
     if (!sessionId) {
         return new Response(
             JSON.stringify({ error: 'Unauthorized' }),
             { status: 401, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
         );
     }
+    */
 
     try {
         const body = await request.json() as RouteRequest;
@@ -87,6 +90,13 @@ export async function handleRouteGeneration(
                 polyline: '' // We can compute this or just use the points on the frontend
             };
         }).filter(Boolean);
+
+        if (routes.length === 0) {
+            return new Response(
+                JSON.stringify({ error: 'No routes could be generated for this location. Try a different distance or start point.' }),
+                { status: 422, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            );
+        }
 
         return new Response(
             JSON.stringify(routes),
