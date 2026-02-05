@@ -16,7 +16,7 @@ A beautiful, mobile-friendly running stats dashboard that visualizes your Strava
 
 | Route Planner |
 |:---:|
-| <img src="public/screenshots/route_planner.png" width="800" /> |
+| <img src="public/screenshots/route_planner.jpg" width="800" /> |
 
 ## ✨ Features
 
