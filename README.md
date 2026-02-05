@@ -14,13 +14,17 @@ A beautiful, mobile-friendly running stats dashboard that visualizes your Strava
 |:---:|:---:|
 | <img src="public/screenshots/run-details.jpg" width="400" /> | <img src="public/screenshots/shoe-tracker.jpg" width="400" /> |
 
+| Route Planner |
+|:---:|
+| <img src="public/screenshots/route_planner.png" width="800" /> |
+
 ## ✨ Features
 
-### Advanced Analytics
-- **Grade Adjusted Pace (GAP)** - See your equivalent flat-ground pace
-- **Heart Rate Zone Analysis** - Time in each zone with custom thresholds
-- **Training Load** - CTL/ATL/TSB fitness, fatigue, and form tracking
-- **Pace Zone Distribution** - Visual breakdown of your effort
+- **Advanced Analytics** - GAP, HR zones, and CTL/ATL/TSB tracking
+- **AI Route Planner** - Generate personalized round-trip running routes based on distance
+- **Intelligent Search** - Geocoding with autocorrect and current location support
+- **PR Progress** - Track personal records over time
+- **Shoe Tracker** - Monitor mileage on your gear
 
 ### Beautiful Visualizations
 - 📅 **Calendar Heatmap** - GitHub-style activity visualization
@@ -68,6 +72,7 @@ wrangler kv:namespace create TOKENS
 # Set secrets
 wrangler secret put STRAVA_CLIENT_ID
 wrangler secret put STRAVA_CLIENT_SECRET
+wrangler secret put ORS_API_KEY
 
 # Deploy
 npm install
@@ -148,6 +153,16 @@ runviz/
 |--------|-------------|
 | `STRAVA_CLIENT_ID` | From Strava API settings |
 | `STRAVA_CLIENT_SECRET` | From Strava API settings |
+| `ORS_API_KEY` | From [OpenRouteService](https://openrouteservice.org/dev/#/signup) |
+
+### 🗺️ Map API Setup
+
+The Route Planner uses **OpenRouteService (ORS)** for routing and **Nominatim (OpenStreetMap)** for address search.
+
+1.  **Register**: Sign up for a free account at [OpenRouteService](https://openrouteservice.org/dev/#/signup).
+2.  **API Key**: Create a new API Key (Token) in the dashboard.
+3.  **Configure**: Add the token to your Cloudflare Worker using `wrangler secret put ORS_API_KEY`.
+4.  **Usage**: The free tier allows for 2,000 route requests per day, which is plenty for personal use!
 
 ## 📊 Analytics Details
 
