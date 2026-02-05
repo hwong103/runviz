@@ -86,8 +86,18 @@ export const gear = {
     },
 };
 
+// Route Planning endpoints
+export const routes = {
+    async generate(request: RouteGenerationRequest): Promise<GeneratedRoute[]> {
+        return fetchApi('/api/routes/generate', {
+            method: 'POST',
+            body: JSON.stringify(request),
+        });
+    },
+};
+
 // Types used by this module
-import type { Activity, ActivityStreams, Athlete, Gear } from '../types';
+import type { Activity, ActivityStreams, Athlete, Gear, RouteGenerationRequest, GeneratedRoute } from '../types';
 
 interface AthleteStats {
     all_run_totals: {

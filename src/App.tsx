@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
 import { StatsOverview } from './components/StatsOverview';
@@ -208,6 +209,16 @@ function App() {
                 RUNVIZ
               </span>
             </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              to="/plan-route"
+              className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-xl border border-emerald-500/20 transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-2"
+            >
+              <span>🗺️</span>
+              <span className="hidden sm:inline">Plan Route</span>
+            </Link>
           </div>
 
           {/* Time Controls: Condensed on mobile */}

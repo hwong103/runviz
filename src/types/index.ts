@@ -138,6 +138,30 @@ export interface SyncState {
     error: string | null;
 }
 
+// Route Planning Types
+
+export interface RoutePoint {
+    lat: number;
+    lng: number;
+    elevation?: number;
+}
+
+export interface GeneratedRoute {
+    id: string;
+    name: string;
+    distance: number; // meters
+    elevationGain: number; // meters
+    estimatedTime: number; // seconds
+    points: RoutePoint[];
+    polyline: string;
+}
+
+export interface RouteGenerationRequest {
+    startLat: number;
+    startLng: number;
+    targetDistanceMeters: number;
+}
+
 export function isRun(activity: Activity): boolean {
     const runTypes = ['Run', 'TrailRun', 'VirtualRun'];
     return (

@@ -1,3 +1,5 @@
+import { handleRouteGeneration } from './routeService';
+
 /**
  * RunViz API - Cloudflare Workers Backend
  * 
@@ -9,6 +11,7 @@ export interface Env {
     STRAVA_CLIENT_ID: string;
     STRAVA_CLIENT_SECRET: string;
     FRONTEND_URL: string;
+    ORS_API_KEY: string;
 }
 
 interface TokenData {
@@ -21,8 +24,7 @@ interface TokenData {
 }
 
 // CORS headers for frontend
-// CORS headers for frontend
-function corsHeaders(origin: string): HeadersInit {
+export function corsHeaders(origin: string): HeadersInit {
     const allowedOrigins = [
         'https://hwong103.github.io',
         'http://localhost:5173',
@@ -40,7 +42,7 @@ function corsHeaders(origin: string): HeadersInit {
 }
 
 // Get session ID from cookie
-function getSessionId(request: Request): string | null {
+export function getSessionId(request: Request): string | null {
     const cookie = request.headers.get('Cookie');
     if (!cookie) return null;
     const match = cookie.match(/runviz_session=([^;]+)/);
@@ -88,6 +90,10 @@ export default {
             }
 
             // Protected API routes
+            if (url.pathname === '/api/routes/generate') {
+                return await handleRouteGeneration(request, env, origin);
+            }
+
             if (url.pathname.startsWith('/api/')) {
                 return await handleApiRequest(request, url, env, origin);
             }
