@@ -258,16 +258,16 @@ const RoutePlanner: React.FC = () => {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors pr-24"
                                 />
-                                <div className="absolute right-2 inset-y-0 flex items-center justify-end gap-1 pointer-events-none">
+                                <div className="absolute right-3 inset-y-0 flex items-center gap-2 pointer-events-none">
                                     <button
                                         type="button"
                                         onClick={useCurrentLocation}
-                                        className="text-gray-500 hover:text-emerald-400 transition-colors w-9 h-9 flex items-center justify-center active:scale-95 pointer-events-auto"
+                                        className="text-gray-500 hover:text-emerald-400 transition-colors w-8 h-8 flex items-center justify-center active:scale-95 pointer-events-auto"
                                         title="Use current location"
                                     >
                                         <span className="text-lg leading-none">🎯</span>
                                     </button>
-                                    <div className="text-gray-500 flex items-center justify-center w-9 h-9 opacity-40">
+                                    <div className="text-gray-500 flex items-center justify-center w-8 h-8 opacity-40">
                                         {searching ? (
                                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                         ) : (

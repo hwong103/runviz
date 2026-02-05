@@ -50,7 +50,7 @@ export async function handleRouteGeneration(
                 body: JSON.stringify({
                     coordinates: [[startLng, startLat]],
                     options: {
-                        avoid_features: ["ferries", "highways"],
+                        avoid_features: ["ferries"],
                         round_trip: {
                             length: targetDistanceMeters, // ORS expects meters
                             points: 3,
@@ -92,8 +92,10 @@ export async function handleRouteGeneration(
         }).filter(Boolean);
 
         if (routes.length === 0) {
+            // Find the first error message to help debug
+            const firstError = results.find((r: any) => r.error)?.error?.message || 'No routes could be generated for this location. Try a different distance or start point.';
             return new Response(
-                JSON.stringify({ error: 'No routes could be generated for this location. Try a different distance or start point.' }),
+                JSON.stringify({ error: firstError }),
                 { status: 422, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
             );
         }
