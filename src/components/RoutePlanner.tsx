@@ -151,6 +151,24 @@ const RoutePlanner: React.FC = () => {
         localStorage.setItem('runviz_last_start_point', JSON.stringify(pos));
     }, []);
 
+    const useCurrentLocation = () => {
+        if ("geolocation" in navigator) {
+            setSearching(true);
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const pos: [number, number] = [position.coords.latitude, position.coords.longitude];
+                    handlePickStart(pos);
+                    setSearching(false);
+                },
+                (error) => {
+                    console.error("Error getting location:", error);
+                    setError("Could not get your location.");
+                    setSearching(false);
+                }
+            );
+        }
+    };
+
     const adjustDistance = (delta: number) => {
         setTargetDistance(prev => {
             const next = prev + delta;
@@ -240,10 +258,20 @@ const RoutePlanner: React.FC = () => {
                                     placeholder="Search location..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors pr-10"
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors pr-20"
                                 />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                                    {searching ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '🔍'}
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={useCurrentLocation}
+                                        className="text-gray-500 hover:text-emerald-400 transition-colors p-1"
+                                        title="Use current location"
+                                    >
+                                        🎯
+                                    </button>
+                                    <div className="text-gray-500 flex items-center justify-center w-5 h-5">
+                                        {searching ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '🔍'}
+                                    </div>
                                 </div>
 
                                 {showSuggestions && suggestions.length > 0 && (
@@ -313,9 +341,9 @@ const RoutePlanner: React.FC = () => {
 
                         {generatedRoutes.length > 0 && (
                             <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 max-h-[500px] overflow-y-auto custom-scrollbar">
-                                <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest opacity-50 sticky top-0 bg-[#0a0c10]/5 backdrop-blur-md py-1">5 Options</h2>
+                                <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest opacity-50 sticky top-0 bg-[#0a0c10]/5 backdrop-blur-md py-1">Routes</h2>
                                 <div className="space-y-2">
-                                    {generatedRoutes.map((route) => (
+                                    {[...generatedRoutes].sort((a, b) => a.elevationGain - b.elevationGain).map((route) => (
                                         <button
                                             key={route.id}
                                             onClick={() => setSelectedRouteId(route.id)}
