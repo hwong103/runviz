@@ -36,6 +36,17 @@ const MapRecenter: React.FC<{ points: RoutePoint[] }> = ({ points }) => {
     return null;
 };
 
+// Component to recenter map when startPoint is set or changed
+const MapCenterer: React.FC<{ center: [number, number] | null }> = ({ center }) => {
+    const map = useMap();
+    useEffect(() => {
+        if (center) {
+            map.setView(center, 13);
+        }
+    }, [center, map]);
+    return null;
+};
+
 const RoutePlanner: React.FC = () => {
     const navigate = useNavigate();
     const [targetDistance, setTargetDistance] = useState(5); // Default 5km
@@ -45,11 +56,22 @@ const RoutePlanner: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Load recent start point from local storage
+    // Load recent start point from local storage or detect location
     useEffect(() => {
         const saved = localStorage.getItem('runviz_last_start_point');
         if (saved) {
             setStartPoint(JSON.parse(saved));
+        } else if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const pos: [number, number] = [position.coords.latitude, position.coords.longitude];
+                    setStartPoint(pos);
+                    // Don't save to localStorage yet, only if they click/pick it
+                },
+                (error) => {
+                    console.error("Error getting location:", error);
+                }
+            );
         }
     }, []);
 
@@ -243,6 +265,7 @@ const RoutePlanner: React.FC = () => {
                                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                                 />
                                 <MapPicker onPick={handlePickStart} />
+                                <MapCenterer center={startPoint} />
                                 {startPoint && <Marker position={startPoint} />}
                                 {selectedRoute && (
                                     <>
