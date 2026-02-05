@@ -53,6 +53,7 @@ export async function handleRouteGeneration(
                             seed: seed
                         }
                     },
+                    elevation: true,
                     units: 'm'
                 })
             }).then(res => res.json())
@@ -77,9 +78,10 @@ export async function handleRouteGeneration(
                 distance: properties.summary.distance,
                 elevationGain: properties.ascent || 0,
                 estimatedTime: properties.summary.duration,
-                points: geometry.coordinates.map((coord: [number, number]) => ({
+                points: geometry.coordinates.map((coord: [number, number, number?]) => ({
                     lat: coord[1],
-                    lng: coord[0]
+                    lng: coord[0],
+                    elevation: coord[2]
                 })),
                 polyline: '' // We can compute this or just use the points on the frontend
             };

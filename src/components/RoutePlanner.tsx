@@ -66,7 +66,6 @@ const RoutePlanner: React.FC = () => {
                 (position) => {
                     const pos: [number, number] = [position.coords.latitude, position.coords.longitude];
                     setStartPoint(pos);
-                    // Don't save to localStorage yet, only if they click/pick it
                 },
                 (error) => {
                     console.error("Error getting location:", error);
@@ -180,15 +179,6 @@ const RoutePlanner: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
-                                    <div className="text-[9px] font-black uppercase tracking-widest text-emerald-400/70 mb-1">Starting Point</div>
-                                    <div className="text-xs font-bold text-gray-300">
-                                        {startPoint
-                                            ? `${startPoint[0].toFixed(5)}, ${startPoint[1].toFixed(5)}`
-                                            : 'Click on the map to set starting point'}
-                                    </div>
-                                </div>
-
                                 {error && (
                                     <div className="p-4 bg-red-500/10 rounded-2xl border border-red-500/20 text-red-400 text-xs font-bold">
                                         {error}
@@ -234,7 +224,9 @@ const RoutePlanner: React.FC = () => {
                                             <div className="flex gap-4 text-[10px] font-bold text-gray-500">
                                                 <span>📏 {(route.distance / 1000).toFixed(2)}km</span>
                                                 <span>⏱️ {Math.round(route.estimatedTime / 60)} min</span>
-                                                <span>{Math.round(route.elevationGain)}m ⛰️</span>
+                                                {route.elevationGain > 0 && (
+                                                    <span>{Math.round(route.elevationGain)}m ⛰️</span>
+                                                )}
                                             </div>
                                         </button>
                                     ))}
