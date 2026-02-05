@@ -260,17 +260,21 @@ const RoutePlanner: React.FC = () => {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors pr-20"
                                 />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                <div className="absolute right-3 inset-y-0 flex items-center gap-2">
                                     <button
                                         type="button"
                                         onClick={useCurrentLocation}
-                                        className="text-gray-500 hover:text-emerald-400 transition-colors p-1"
+                                        className="text-gray-500 hover:text-emerald-400 transition-colors p-1 flex items-center justify-center"
                                         title="Use current location"
                                     >
-                                        🎯
+                                        <span className="leading-none text-base">🎯</span>
                                     </button>
-                                    <div className="text-gray-500 flex items-center justify-center w-5 h-5">
-                                        {searching ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '🔍'}
+                                    <div className="text-gray-500 flex items-center justify-center w-6 h-6">
+                                        {searching ? (
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : (
+                                            <span className="leading-none text-base">🔍</span>
+                                        )}
                                     </div>
                                 </div>
 
