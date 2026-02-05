@@ -34,8 +34,8 @@ export async function handleRouteGeneration(
             );
         }
 
-        // Generate 3 different routes using different seeds for round trips
-        const seeds = [Math.floor(Math.random() * 100), Math.floor(Math.random() * 100) + 100, Math.floor(Math.random() * 100) + 200];
+        // Generate 5 different routes using different seeds for round trips
+        const seeds = Array.from({ length: 5 }, (_, i) => Math.floor(Math.random() * 100) + (i * 100));
 
         const routePromises = seeds.map(seed =>
             fetch('https://api.openrouteservice.org/v2/directions/foot-walking/geojson', {

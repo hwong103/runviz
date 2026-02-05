@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -47,6 +47,12 @@ const MapCenterer: React.FC<{ center: [number, number] | null }> = ({ center }) 
     return null;
 };
 
+interface Suggestion {
+    display_name: string;
+    lat: string;
+    lon: string;
+}
+
 const RoutePlanner: React.FC = () => {
     const navigate = useNavigate();
     const [targetDistance, setTargetDistance] = useState(5); // Default 5km
@@ -57,7 +63,22 @@ const RoutePlanner: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [searching, setSearching] = useState(false);
+    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
+
+    const suggestionRef = useRef<HTMLDivElement>(null);
+
+    // Close suggestions when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Load recent start point from local storage or detect location
     useEffect(() => {
@@ -80,6 +101,7 @@ const RoutePlanner: React.FC = () => {
     // Reverse geocode when startPoint changes
     useEffect(() => {
         if (startPoint) {
+            setSearching(true);
             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${startPoint[0]}&lon=${startPoint[1]}`)
                 .then(res => res.json())
                 .then(data => {
@@ -87,38 +109,54 @@ const RoutePlanner: React.FC = () => {
                         setResolvedAddress(data.display_name.split(',').slice(0, 3).join(','));
                     }
                 })
-                .catch(err => console.error("Geocoding error:", err));
+                .catch(err => console.error("Geocoding error:", err))
+                .finally(() => setSearching(false));
         }
     }, [startPoint]);
 
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!searchQuery.trim()) return;
-
-        setSearching(true);
-        setError(null);
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`);
-            const data = await res.json();
-            if (data && data.length > 0) {
-                const pos: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                handlePickStart(pos);
-                setSearchQuery('');
+    // Handle typing in search bar (Autocomplete)
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            if (searchQuery.length > 2) {
+                setSearching(true);
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5&countrycodes=au`);
+                    const data = await res.json();
+                    setSuggestions(data);
+                    setShowSuggestions(true);
+                } catch (err) {
+                    console.error("Autocomplete error:", err);
+                } finally {
+                    setSearching(false);
+                }
             } else {
-                setError('Location not found');
+                setSuggestions([]);
+                setShowSuggestions(false);
             }
-        } catch (err) {
-            console.error("Search error:", err);
-            setError('Search failed');
-        } finally {
-            setSearching(false);
-        }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const selectSuggestion = (s: Suggestion) => {
+        const pos: [number, number] = [parseFloat(s.lat), parseFloat(s.lon)];
+        handlePickStart(pos);
+        setSearchQuery('');
+        setSuggestions([]);
+        setShowSuggestions(false);
+        setResolvedAddress(s.display_name.split(',').slice(0, 3).join(','));
     };
 
     const handlePickStart = useCallback((pos: [number, number]) => {
         setStartPoint(pos);
         localStorage.setItem('runviz_last_start_point', JSON.stringify(pos));
     }, []);
+
+    const adjustDistance = (delta: number) => {
+        setTargetDistance(prev => {
+            const next = prev + delta;
+            return Math.max(1, Math.min(100, next));
+        });
+    };
 
     const generateRoutes = async () => {
         if (!startPoint) {
@@ -195,44 +233,59 @@ const RoutePlanner: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Controls Panel */}
                     <div className="lg:col-span-4 space-y-4">
-                        <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 shadow-2xl backdrop-blur-xl">
-                            <form onSubmit={handleSearch} className="mb-6">
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder="Search location..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors pr-10"
-                                    />
-                                    <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
-                                        {searching ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '🔍'}
-                                    </button>
+                        <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 shadow-2xl backdrop-blur-xl relative">
+                            <div className="relative mb-6" ref={suggestionRef}>
+                                <input
+                                    type="text"
+                                    placeholder="Search location..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors pr-10"
+                                />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                    {searching ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '🔍'}
                                 </div>
-                                {resolvedAddress && (
+
+                                {showSuggestions && suggestions.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1c22] border border-white/10 rounded-xl overflow-hidden z-[1001] shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                        {suggestions.map((s, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => selectSuggestion(s)}
+                                                className="w-full px-4 py-3 text-left text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5 last:border-0"
+                                            >
+                                                <div className="font-bold truncate">{s.display_name.split(',')[0]}</div>
+                                                <div className="text-[10px] opacity-50 truncate">{s.display_name.split(',').slice(1).join(',')}</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {resolvedAddress && !showSuggestions && (
                                     <div className="mt-2 text-[10px] font-bold text-emerald-400/70 uppercase tracking-wider line-clamp-1">
                                         📍 {resolvedAddress}
                                     </div>
                                 )}
-                            </form>
+                            </div>
 
                             <div className="space-y-4">
                                 <div>
                                     <div className="flex justify-between items-end mb-2">
                                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                                            Distance
+                                            Target Distance
                                         </label>
-                                        <span className="text-xl font-black text-white italic">{targetDistance}km</span>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => adjustDistance(-1)}
+                                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-xl font-bold transition-all active:scale-95"
+                                            >-</button>
+                                            <span className="text-xl font-black text-white italic min-w-[3rem] text-center">{targetDistance}<span className="text-[10px] font-bold not-italic ml-0.5">KM</span></span>
+                                            <button
+                                                onClick={() => adjustDistance(1)}
+                                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-xl font-bold transition-all active:scale-95"
+                                            >+</button>
+                                        </div>
                                     </div>
-                                    <input
-                                        type="range"
-                                        min="1"
-                                        max="50"
-                                        step="0.5"
-                                        value={targetDistance}
-                                        onChange={(e) => setTargetDistance(parseFloat(e.target.value))}
-                                        className="w-full accent-emerald-500"
-                                    />
                                 </div>
 
                                 {error && (
@@ -244,7 +297,7 @@ const RoutePlanner: React.FC = () => {
                                 <button
                                     onClick={generateRoutes}
                                     disabled={loading || !startPoint}
-                                    className={`w-full py-3.5 rounded-xl font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 text-xs ${loading || !startPoint
+                                    className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 text-xs ${loading || !startPoint
                                         ? 'bg-white/5 text-gray-600 cursor-not-allowed'
                                         : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/20 active:scale-[0.98]'
                                         }`}
@@ -252,15 +305,15 @@ const RoutePlanner: React.FC = () => {
                                     {loading ? (
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     ) : (
-                                        <><span>✨</span> GENERATE</>
+                                        <><span>✨</span> GENERATE ROUTES</>
                                     )}
                                 </button>
                             </div>
                         </div>
 
                         {generatedRoutes.length > 0 && (
-                            <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest opacity-50">Options</h2>
+                            <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 max-h-[500px] overflow-y-auto custom-scrollbar">
+                                <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest opacity-50 sticky top-0 bg-[#0a0c10]/5 backdrop-blur-md py-1">5 Options</h2>
                                 <div className="space-y-2">
                                     {generatedRoutes.map((route) => (
                                         <button
@@ -272,16 +325,16 @@ const RoutePlanner: React.FC = () => {
                                                 }`}
                                         >
                                             <div className="flex justify-between items-start mb-0.5">
-                                                <div className="font-black text-xs uppercase tracking-tight">{route.name}</div>
+                                                <div className="font-black text-xs uppercase tracking-tight line-clamp-1">{route.name}</div>
                                                 {selectedRouteId === route.id && (
                                                     <span className="text-emerald-400 text-xs">✓</span>
                                                 )}
                                             </div>
-                                            <div className="flex gap-4 text-[10px] font-bold text-gray-500">
+                                            <div className="flex gap-3 text-[10px] font-bold text-gray-500">
                                                 <span>📏 {(route.distance / 1000).toFixed(2)}km</span>
-                                                <span>⏱️ {Math.round(route.estimatedTime / 60)} min</span>
+                                                <span>⏱️ {Math.round(route.estimatedTime / 60)}m</span>
                                                 {route.elevationGain > 0 && (
-                                                    <span>{Math.round(route.elevationGain)}m ⛰️</span>
+                                                    <span>⛰️ {Math.round(route.elevationGain)}m</span>
                                                 )}
                                             </div>
                                         </button>
@@ -290,7 +343,7 @@ const RoutePlanner: React.FC = () => {
                                 {selectedRoute && (
                                     <button
                                         onClick={() => downloadGPX(selectedRoute)}
-                                        className="w-full mt-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 text-xs"
+                                        className="w-full mt-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 text-xs sticky bottom-0"
                                     >
                                         <span>💾</span> DOWNLOAD GPX
                                     </button>
