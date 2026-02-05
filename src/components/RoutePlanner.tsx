@@ -345,7 +345,7 @@ const RoutePlanner: React.FC = () => {
 
                         {generatedRoutes.length > 0 && (
                             <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 max-h-[500px] overflow-y-auto custom-scrollbar">
-                                <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest opacity-50 sticky top-0 bg-[#0a0c10]/5 backdrop-blur-md py-1">Routes</h2>
+                                <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest opacity-50 sticky top-0 py-1">Routes</h2>
                                 <div className="space-y-2">
                                     {[...generatedRoutes].sort((a, b) => a.elevationGain - b.elevationGain).map((route) => (
                                         <button
