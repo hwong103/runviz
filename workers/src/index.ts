@@ -72,7 +72,7 @@ export default {
         try {
             // Route handling
             if (url.pathname === '/auth/strava') {
-                return handleAuthStart(url, env, origin);
+                return handleAuthStart(url, env);
             }
 
             if (url.pathname === '/auth/callback') {
@@ -107,7 +107,7 @@ export default {
 };
 
 // Start OAuth flow
-function handleAuthStart(url: URL, env: Env, origin: string): Response {
+function handleAuthStart(url: URL, env: Env): Response {
     const redirectUri = url.searchParams.get('redirect_uri') || `${env.FRONTEND_URL}/callback`;
 
     const authUrl = new URL(STRAVA_AUTH_URL);

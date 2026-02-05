@@ -57,6 +57,7 @@ export function useActivities() {
 
             while (hasMore && page <= 20) {
                 console.log(`Fetching page ${page} (${perPage} per page)...`);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const response = await activitiesApi.list(page, perPage) as any;
 
                 if (!response || !response.activities || !Array.isArray(response.activities)) {

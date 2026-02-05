@@ -48,6 +48,7 @@ export function ActivityScatterChart({ activities }: ActivityScatterChartProps) 
             },
             tooltip: {
                 callbacks: {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     label: (context: any) => {
                         const pace = context.raw.y;
                         const distance = context.raw.x;
@@ -84,6 +85,7 @@ export function ActivityScatterChart({ activities }: ActivityScatterChartProps) 
                 },
                 ticks: {
                     color: 'rgba(255, 255, 255, 0.7)',
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     callback: (value: any) => {
                         const mins = Math.floor(value);
                         const secs = Math.round((value - mins) * 60);

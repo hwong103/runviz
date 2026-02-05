@@ -16,10 +16,7 @@ function BrandLogo({ brandName, className }: { brandName?: string; className?: s
     const logoUrl = getBrandLogoUrl(brandName, 48, 'dark');
     const fallbackEmoji = getBrandFallbackEmoji(brandName);
 
-    // Reset error state when brand changes
-    useEffect(() => {
-        setHasError(false);
-    }, [brandName]);
+    // State resets automatically when component remounts (controlled by key prop)
 
     if (!logoUrl || hasError) {
         return <span className={className}>{fallbackEmoji}</span>;
@@ -149,7 +146,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                                 <div className="flex-1 min-w-0 mr-2">
                                     <div className="flex gap-3 items-start">
                                         <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-white/5 rounded-xl border border-white/5 p-1.5 group-hover:border-emerald-500/30 transition-colors">
-                                            <BrandLogo brandName={shoe.brand_name} className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity" />
+                                            <BrandLogo key={shoe.brand_name} brandName={shoe.brand_name} className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight truncate leading-tight">

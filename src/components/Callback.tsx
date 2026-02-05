@@ -10,6 +10,16 @@ export function Callback() {
         const code = searchParams.get('code');
         const error = searchParams.get('error');
 
+        async function handleCallback(code: string) {
+            try {
+                await auth.handleCallback(code);
+                navigate('/');
+            } catch (err) {
+                console.error('Callback error:', err);
+                navigate('/?error=auth_failed');
+            }
+        }
+
         if (error) {
             console.error('OAuth error:', error);
             navigate('/?error=' + encodeURIComponent(error));
@@ -22,16 +32,6 @@ export function Callback() {
             navigate('/');
         }
     }, [searchParams, navigate]);
-
-    async function handleCallback(code: string) {
-        try {
-            await auth.handleCallback(code);
-            navigate('/');
-        } catch (err) {
-            console.error('Callback error:', err);
-            navigate('/?error=auth_failed');
-        }
-    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">

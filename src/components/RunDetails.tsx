@@ -23,9 +23,7 @@ function BrandLogo({ brandName, className }: { brandName?: string; className?: s
     const logoUrl = getBrandLogoUrl(brandName, 48, 'dark');
     const fallbackEmoji = getBrandFallbackEmoji(brandName);
 
-    useEffect(() => {
-        setHasError(false);
-    }, [brandName]);
+    // State resets automatically when component remounts (controlled by key prop)
 
     if (!logoUrl || hasError) {
         return <span className={className}>{fallbackEmoji}</span>;
@@ -89,7 +87,7 @@ function formatPace(paceMinKm: number) {
 export function RunDetails({ activity: initialActivity, allActivities, shoes, onClose, onSelect }: RunDetailsProps) {
     // Reset internal state when ID changes (navigation)
     const [activity, setActivity] = useState<Activity>(initialActivity);
-    useEffect(() => { setActivity(initialActivity); }, [initialActivity.id]);
+    useEffect(() => { setActivity(initialActivity); }, [initialActivity]);
 
     const [streams, setStreams] = useState<ActivityStreams | null>(null);
     const [loadingStreams, setLoadingStreams] = useState(false);
@@ -397,6 +395,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                     bodyFont: { size: 11 },
                     padding: 12,
                     callbacks: {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         label: (context: any) => {
                             let label = context.dataset.label || '';
                             if (label) label += ': ';
@@ -413,6 +412,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                     display: true,
                     grid: { display: false },
                     border: { display: false },
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' }, maxTicksLimit: 12, callback: (value: any) => viewMode === 'stream' ? Math.round(value) : value },
                     title: { display: true, text: 'KILOMETERS', color: '#4b5563', font: { size: 10, weight: 'black' }, padding: { top: 10 } }
                 },
@@ -485,7 +485,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                             <div className="text-gray-500 text-xs font-black uppercase tracking-widest">{format(activityDate, 'eeee, d MMM y').toUpperCase()}</div>
                             {stats.currentShoe && (
                                 <div className="text-emerald-400 text-xs font-black uppercase tracking-widest mt-3 flex items-center gap-2 bg-emerald-500/10 w-fit px-3 py-1.5 rounded-lg border border-emerald-500/20">
-                                    <BrandLogo brandName={stats.currentShoe.brand_name} className="text-sm" />
+                                    <BrandLogo key={stats.currentShoe.brand_name} brandName={stats.currentShoe.brand_name} className="text-sm" />
                                     {stats.currentShoe.name}
                                 </div>
                             )}
@@ -524,6 +524,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                     {loadingStreams ? (
                                         <div className="flex items-center justify-center h-full"><div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
                                     ) : chartData ? (
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         <Chart type='bar' data={chartData as any} options={chartOptions as any} />
                                     ) : <div className="flex items-center justify-center h-full text-gray-600 text-[10px] font-black uppercase tracking-widest">Performance data not available</div>}
                                 </div>
