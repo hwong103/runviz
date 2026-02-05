@@ -2,7 +2,17 @@
 
 A beautiful, mobile-friendly running stats dashboard that visualizes your Strava data with elite analytics.
 
-![RunViz Dashboard](https://via.placeholder.com/800x400?text=RunViz+Dashboard)
+![RunViz Dashboard](public/screenshots/dashboard-stats.jpg)
+
+## 📸 Screenshots
+
+| Activity Frequency | Race Predictions |
+|:---:|:---:|
+| <img src="public/screenshots/activity-frequency.jpg" width="400" /> | <img src="public/screenshots/race-predictions.jpg" width="400" /> |
+
+| Run Analysis | Shoe Tracker |
+|:---:|:---:|
+| <img src="public/screenshots/run-details.jpg" width="400" /> | <img src="public/screenshots/shoe-tracker.jpg" width="400" /> |
 
 ## ✨ Features
 
