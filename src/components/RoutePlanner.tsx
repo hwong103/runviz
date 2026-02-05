@@ -250,46 +250,48 @@ const RoutePlanner: React.FC = () => {
                     {/* Controls Panel */}
                     <div className="lg:col-span-4 space-y-4">
                         <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 shadow-2xl backdrop-blur-xl relative">
-                            <div className="relative mb-6" ref={suggestionRef}>
-                                <input
-                                    type="text"
-                                    placeholder="Search location..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors pr-24"
-                                />
-                                <div className="absolute right-3 inset-y-0 flex items-center gap-2 pointer-events-none">
-                                    <button
-                                        type="button"
-                                        onClick={useCurrentLocation}
-                                        className="text-gray-500 hover:text-emerald-400 transition-colors w-8 h-8 flex items-center justify-center active:scale-95 pointer-events-auto"
-                                        title="Use current location"
-                                    >
-                                        <span className="text-lg leading-none">🎯</span>
-                                    </button>
-                                    <div className="text-gray-500 flex items-center justify-center w-8 h-8 opacity-40">
-                                        {searching ? (
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        ) : (
-                                            <span className="text-lg leading-none">🔍</span>
-                                        )}
+                            <div className="mb-6" ref={suggestionRef}>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Search location..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors pr-24"
+                                    />
+                                    <div className="absolute right-3 inset-y-0 flex items-center gap-2 pointer-events-none">
+                                        <button
+                                            type="button"
+                                            onClick={useCurrentLocation}
+                                            className="text-gray-500 hover:text-emerald-400 transition-colors w-8 h-8 flex items-center justify-center active:scale-95 pointer-events-auto"
+                                            title="Use current location"
+                                        >
+                                            <span className="text-lg leading-none">🎯</span>
+                                        </button>
+                                        <div className="text-gray-500 flex items-center justify-center w-8 h-8 opacity-40">
+                                            {searching ? (
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            ) : (
+                                                <span className="text-lg leading-none">🔍</span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
 
-                                {showSuggestions && suggestions.length > 0 && (
-                                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1c22] border border-white/10 rounded-xl overflow-hidden z-[1001] shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
-                                        {suggestions.map((s, idx) => (
-                                            <button
-                                                key={idx}
-                                                onClick={() => selectSuggestion(s)}
-                                                className="w-full px-4 py-3 text-left text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5 last:border-0"
-                                            >
-                                                <div className="font-bold truncate">{s.display_name.split(',')[0]}</div>
-                                                <div className="text-[10px] opacity-50 truncate">{s.display_name.split(',').slice(1).join(',')}</div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
+                                    {showSuggestions && suggestions.length > 0 && (
+                                        <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1c22] border border-white/10 rounded-xl overflow-hidden z-[1001] shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                            {suggestions.map((s, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => selectSuggestion(s)}
+                                                    className="w-full px-4 py-3 text-left text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5 last:border-0"
+                                                >
+                                                    <div className="font-bold truncate">{s.display_name.split(',')[0]}</div>
+                                                    <div className="text-[10px] opacity-50 truncate">{s.display_name.split(',').slice(1).join(',')}</div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
 
                                 {resolvedAddress && !showSuggestions && (
                                     <div className="mt-2 text-[10px] font-bold text-emerald-400/70 uppercase tracking-wider line-clamp-1">
