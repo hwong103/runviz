@@ -55,6 +55,9 @@ const RoutePlanner: React.FC = () => {
     const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searching, setSearching] = useState(false);
+    const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
 
     // Load recent start point from local storage or detect location
     useEffect(() => {
@@ -73,6 +76,44 @@ const RoutePlanner: React.FC = () => {
             );
         }
     }, []);
+
+    // Reverse geocode when startPoint changes
+    useEffect(() => {
+        if (startPoint) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${startPoint[0]}&lon=${startPoint[1]}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.display_name) {
+                        setResolvedAddress(data.display_name.split(',').slice(0, 3).join(','));
+                    }
+                })
+                .catch(err => console.error("Geocoding error:", err));
+        }
+    }, [startPoint]);
+
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!searchQuery.trim()) return;
+
+        setSearching(true);
+        setError(null);
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                const pos: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                handlePickStart(pos);
+                setSearchQuery('');
+            } else {
+                setError('Location not found');
+            }
+        } catch (err) {
+            console.error("Search error:", err);
+            setError('Search failed');
+        } finally {
+            setSearching(false);
+        }
+    };
 
     const handlePickStart = useCallback((pos: [number, number]) => {
         setStartPoint(pos);
@@ -134,8 +175,8 @@ const RoutePlanner: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#0a0c10] text-gray-200">
-            <div className="max-w-[1600px] mx-auto px-6 py-10">
-                <header className="flex items-center justify-between mb-12">
+            <div className="max-w-[1600px] mx-auto px-6 py-8">
+                <header className="flex items-center justify-between mb-8">
                     <button
                         onClick={() => navigate('/')}
                         className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
@@ -143,7 +184,7 @@ const RoutePlanner: React.FC = () => {
                         <span className="group-hover:-translate-x-1 transition-transform font-bold text-xl">←</span>
                         <span className="text-xs font-black uppercase tracking-widest leading-none">Back</span>
                     </button>
-                    <h1 className="text-3xl font-black italic tracking-tighter">
+                    <h1 className="text-2xl font-black italic tracking-tighter">
                         <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                             ROUTE PLANNER
                         </span>
@@ -151,36 +192,51 @@ const RoutePlanner: React.FC = () => {
                     <div className="w-20" />
                 </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Controls Panel */}
-                    <div className="lg:col-span-4 space-y-6">
-                        <div className="bg-white/5 rounded-[2.5rem] p-8 border border-white/10 shadow-2xl backdrop-blur-xl">
-                            <h2 className="text-xl font-black text-white mb-8 flex items-center gap-3 tracking-tight">
-                                <span className="text-2xl">⚙️</span>
-                                PARAMETERS
-                            </h2>
-
-                            <div className="space-y-6">
-                                <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-3">
-                                        Target Distance (km)
-                                    </label>
-                                    <div className="flex items-center gap-4">
-                                        <input
-                                            type="range"
-                                            min="1"
-                                            max="50"
-                                            step="0.5"
-                                            value={targetDistance}
-                                            onChange={(e) => setTargetDistance(parseFloat(e.target.value))}
-                                            className="flex-1 accent-emerald-500"
-                                        />
-                                        <span className="text-2xl font-black text-white italic min-w-[3ch]">{targetDistance}</span>
+                    <div className="lg:col-span-4 space-y-4">
+                        <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 shadow-2xl backdrop-blur-xl">
+                            <form onSubmit={handleSearch} className="mb-6">
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Search location..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors pr-10"
+                                    />
+                                    <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+                                        {searching ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '🔍'}
+                                    </button>
+                                </div>
+                                {resolvedAddress && (
+                                    <div className="mt-2 text-[10px] font-bold text-emerald-400/70 uppercase tracking-wider line-clamp-1">
+                                        📍 {resolvedAddress}
                                     </div>
+                                )}
+                            </form>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <div className="flex justify-between items-end mb-2">
+                                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+                                            Distance
+                                        </label>
+                                        <span className="text-xl font-black text-white italic">{targetDistance}km</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="50"
+                                        step="0.5"
+                                        value={targetDistance}
+                                        onChange={(e) => setTargetDistance(parseFloat(e.target.value))}
+                                        className="w-full accent-emerald-500"
+                                    />
                                 </div>
 
                                 {error && (
-                                    <div className="p-4 bg-red-500/10 rounded-2xl border border-red-500/20 text-red-400 text-xs font-bold">
+                                    <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20 text-red-400 text-[10px] font-bold">
                                         {error}
                                     </div>
                                 )}
@@ -188,37 +244,37 @@ const RoutePlanner: React.FC = () => {
                                 <button
                                     onClick={generateRoutes}
                                     disabled={loading || !startPoint}
-                                    className={`w-full py-4 rounded-2xl font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${loading || !startPoint
+                                    className={`w-full py-3.5 rounded-xl font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 text-xs ${loading || !startPoint
                                         ? 'bg-white/5 text-gray-600 cursor-not-allowed'
                                         : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/20 active:scale-[0.98]'
                                         }`}
                                 >
                                     {loading ? (
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     ) : (
-                                        <><span>✨</span> GENERATE ROUTES</>
+                                        <><span>✨</span> GENERATE</>
                                     )}
                                 </button>
                             </div>
                         </div>
 
                         {generatedRoutes.length > 0 && (
-                            <div className="bg-white/5 rounded-[2.5rem] p-8 border border-white/10 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h2 className="text-xl font-black text-white mb-6 uppercase tracking-tight">Options</h2>
-                                <div className="space-y-3">
+                            <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest opacity-50">Options</h2>
+                                <div className="space-y-2">
                                     {generatedRoutes.map((route) => (
                                         <button
                                             key={route.id}
                                             onClick={() => setSelectedRouteId(route.id)}
-                                            className={`w-full p-4 rounded-2xl border transition-all text-left group ${selectedRouteId === route.id
+                                            className={`w-full p-3 rounded-xl border transition-all text-left group ${selectedRouteId === route.id
                                                 ? 'bg-emerald-500/10 border-emerald-500 text-white'
                                                 : 'bg-black/20 border-white/5 text-gray-400 hover:border-white/20'
                                                 }`}
                                         >
-                                            <div className="flex justify-between items-start mb-1">
-                                                <div className="font-black text-sm uppercase tracking-tight">{route.name}</div>
+                                            <div className="flex justify-between items-start mb-0.5">
+                                                <div className="font-black text-xs uppercase tracking-tight">{route.name}</div>
                                                 {selectedRouteId === route.id && (
-                                                    <span className="text-emerald-400">✓</span>
+                                                    <span className="text-emerald-400 text-xs">✓</span>
                                                 )}
                                             </div>
                                             <div className="flex gap-4 text-[10px] font-bold text-gray-500">
@@ -234,7 +290,7 @@ const RoutePlanner: React.FC = () => {
                                 {selectedRoute && (
                                     <button
                                         onClick={() => downloadGPX(selectedRoute)}
-                                        className="w-full mt-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3"
+                                        className="w-full mt-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 text-xs"
                                     >
                                         <span>💾</span> DOWNLOAD GPX
                                     </button>
