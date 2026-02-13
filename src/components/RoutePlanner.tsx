@@ -229,8 +229,8 @@ const RoutePlanner: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#0a0c10] text-gray-200">
-            <div className="max-w-[1600px] mx-auto px-6 py-8">
-                <header className="flex items-center justify-between mb-8">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 sm:py-8">
+                <header className="grid grid-cols-[auto_1fr_auto] items-center gap-2 mb-6 sm:mb-8">
                     <button
                         onClick={() => navigate('/')}
                         className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
@@ -238,18 +238,18 @@ const RoutePlanner: React.FC = () => {
                         <span className="group-hover:-translate-x-1 transition-transform font-bold text-xl">←</span>
                         <span className="text-xs font-black uppercase tracking-widest leading-none">Back</span>
                     </button>
-                    <h1 className="text-2xl font-black italic tracking-tighter">
+                    <h1 className="text-lg sm:text-2xl font-black italic tracking-tighter text-center truncate">
                         <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                             ROUTE PLANNER
                         </span>
                     </h1>
-                    <div className="w-20" />
+                    <div className="w-8 sm:w-20" />
                 </header>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     {/* Controls Panel */}
                     <div className="lg:col-span-4 space-y-4">
-                        <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 shadow-2xl backdrop-blur-xl relative">
+                        <div className="bg-white/5 rounded-[2rem] p-4 sm:p-6 border border-white/10 shadow-2xl backdrop-blur-xl relative">
                             <div className="mb-6" ref={suggestionRef}>
                                 <div className="relative">
                                     <input
@@ -344,7 +344,7 @@ const RoutePlanner: React.FC = () => {
                         </div>
 
                         {generatedRoutes.length > 0 && (
-                            <div className="bg-white/5 rounded-[2rem] p-6 border border-white/10 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 max-h-[500px] overflow-y-auto custom-scrollbar">
+                            <div className="bg-white/5 rounded-[2rem] p-4 sm:p-6 border border-white/10 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 max-h-[500px] overflow-y-auto custom-scrollbar">
                                 <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest opacity-50 sticky top-0 py-1">Routes</h2>
                                 <div className="space-y-2">
                                     {[...generatedRoutes].sort((a, b) => a.elevationGain - b.elevationGain).map((route) => (
@@ -386,11 +386,11 @@ const RoutePlanner: React.FC = () => {
 
                     {/* Map Panel */}
                     <div className="lg:col-span-8">
-                        <div className="bg-white/5 rounded-[3rem] p-3 border border-white/10 shadow-2xl h-[700px] relative overflow-hidden group">
+                        <div className="bg-white/5 rounded-[2rem] sm:rounded-[3rem] p-2 sm:p-3 border border-white/10 shadow-2xl h-[55vh] min-h-[360px] lg:h-[700px] relative overflow-hidden group">
                             <MapContainer
                                 center={startPoint || [-33.8688, 151.2093]}
                                 zoom={13}
-                                style={{ height: '100%', width: '100%', borderRadius: '2.5rem' }}
+                                style={{ height: '100%', width: '100%', borderRadius: '2rem' }}
                                 className="z-0"
                             >
                                 <TileLayer
@@ -412,7 +412,7 @@ const RoutePlanner: React.FC = () => {
                             </MapContainer>
                             {!startPoint && (
                                 <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-                                    <div className="bg-[#0a0c10]/80 backdrop-blur-md px-8 py-4 rounded-2xl border border-white/10 text-white font-black uppercase tracking-widest animate-pulse">
+                                    <div className="bg-[#0a0c10]/80 backdrop-blur-md px-4 sm:px-8 py-3 sm:py-4 rounded-2xl border border-white/10 text-white text-[10px] sm:text-sm font-black uppercase tracking-widest animate-pulse text-center">
                                         Click map to set start point
                                     </div>
                                 </div>

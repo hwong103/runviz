@@ -63,12 +63,12 @@ export function ActivityList({
     };
 
     return (
-        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10">
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-4 sm:p-6 border border-white/10">
+            <h2 className="text-xl font-bold text-white mb-6 flex flex-wrap items-center gap-3">
                 <span className="text-2xl">🏃</span>
                 <span>Training Log</span>
                 {selectedShoeId && selectedShoeName && (
-                    <div className="flex items-center gap-2 ml-auto">
+                    <div className="flex items-center gap-2 sm:ml-auto">
                         <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border border-emerald-500/30 flex items-center gap-2">
                             <span>👟</span>
                             <span>{selectedShoeName}</span>
@@ -98,10 +98,10 @@ export function ActivityList({
                             <div
                                 key={activity.id}
                                 onClick={() => onSelect?.(activity)}
-                                className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all duration-300 cursor-pointer group border border-transparent hover:border-white/10"
+                                className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all duration-300 cursor-pointer group border border-transparent hover:border-white/10"
                             >
                                 {/* Date */}
-                                <div className="w-16 text-center">
+                                <div className="w-full sm:w-16 flex items-center gap-2 sm:block sm:text-center">
                                     <div className="text-[10px] font-black uppercase tracking-tighter text-gray-500">{dateParts.weekday}</div>
                                     <div className="text-lg font-black text-white leading-none">{dateParts.day}</div>
                                     <div className="text-[10px] font-black uppercase tracking-tighter text-gray-500">{dateParts.month}</div>
@@ -119,7 +119,7 @@ export function ActivityList({
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-3 text-xs text-gray-500 font-bold mt-1">
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 font-bold mt-1">
                                         <span className="text-gray-300">{formatDistance(activity.distance)} km</span>
                                         <span>•</span>
                                         <span>{formatDuration(activity.moving_time)}</span>
@@ -147,7 +147,7 @@ export function ActivityList({
                                 </div>
 
                                 {/* Metrics */}
-                                <div className="flex items-center gap-4">
+                                <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-4">
                                     <div className="flex flex-col items-end gap-1">
                                         {activity.average_heartrate && (
                                             <div className="text-right hidden sm:block">

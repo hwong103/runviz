@@ -201,34 +201,90 @@ function App() {
 
       {/* Sticky Header with Controls */}
       <header className="sticky top-0 z-50 bg-[#0a0c10]/80 backdrop-blur-2xl border-b border-white/5 py-3">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            <span className="text-2xl sm:text-3xl">🏃‍♂️</span>
-            <h1 className="text-2xl font-black italic tracking-tighter hidden xl:block">
-              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                RUNVIZ
-              </span>
-            </h1>
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <span className="text-2xl sm:text-3xl">🏃‍♂️</span>
+              <h1 className="text-2xl font-black italic tracking-tighter hidden xl:block">
+                <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                  RUNVIZ
+                </span>
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <Link
+                to="/plan-route"
+                className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-3 sm:px-4 py-2 rounded-xl border border-emerald-500/20 transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-2"
+              >
+                <span>🗺️</span>
+                <span className="hidden sm:inline">Plan Route</span>
+              </Link>
+
+              {/* User Menu Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="flex items-center focus:outline-none group"
+                >
+                  {athlete?.profile && (
+                    <div className={`p-0.5 rounded-full border-2 transition-all ${isMenuOpen ? 'border-emerald-500' : 'border-emerald-500/20 group-hover:border-emerald-500/50'}`}>
+                      <img src={athlete.profile} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full ring-2 ring-black" alt="Profile" />
+                    </div>
+                  )}
+                </button>
+
+                {isMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-3 w-64 bg-[#11141b] rounded-2xl border border-white/10 shadow-2xl z-50 overflow-hidden py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="px-5 py-4 border-b border-white/5">
+                        <div className="font-black text-xs text-white uppercase tracking-wider">{athlete?.firstname} {athlete?.lastname}</div>
+                        <div className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">Athlete #{athlete?.id}</div>
+                      </div>
+
+                      <div className="p-2 space-y-1">
+                        <button
+                          onClick={() => {
+                            sync({ forceFull: true });
+                            setIsMenuOpen(false);
+                          }}
+                          disabled={syncing}
+                          className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/5 text-left transition-colors group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className={syncing ? 'animate-spin' : ''}>🔄</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white">Sync Data</span>
+                          </div>
+                          {syncing && <span className="text-[8px] font-black text-emerald-400 uppercase">Updating...</span>}
+                        </button>
+
+                        <button
+                          onClick={logout}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-left transition-colors group"
+                        >
+                          <span>🚪</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-red-400">Logout</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              to="/plan-route"
-              className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-xl border border-emerald-500/20 transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-2"
-            >
-              <span>🗺️</span>
-              <span className="hidden sm:inline">Plan Route</span>
-            </Link>
-          </div>
-
-          {/* Time Controls: Condensed on mobile */}
-          <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-3">
+          {/* Time Controls: Wrapped on mobile */}
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             <div className="flex items-center p-1 bg-black/40 rounded-xl border border-white/5">
               {(['all', 'year', 'month'] as const).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all ${viewPeriod.mode === mode
+                  className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all ${viewPeriod.mode === mode
                     ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                     : 'text-gray-500 hover:text-white'
                     }`}
@@ -238,7 +294,7 @@ function App() {
               ))}
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {viewPeriod.mode !== 'all' && (
                 <select
                   value={viewPeriod.year}
@@ -260,69 +316,15 @@ function App() {
               )}
             </div>
           </div>
-
-          {/* User Menu Dropdown */}
-          <div className="relative shrink-0">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex items-center focus:outline-none group"
-            >
-              {athlete?.profile && (
-                <div className={`p-0.5 rounded-full border-2 transition-all ${isMenuOpen ? 'border-emerald-500' : 'border-emerald-500/20 group-hover:border-emerald-500/50'}`}>
-                  <img src={athlete.profile} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full ring-2 ring-black" alt="Profile" />
-                </div>
-              )}
-            </button>
-
-            {isMenuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsMenuOpen(false)}
-                />
-                <div className="absolute right-0 mt-3 w-64 bg-[#11141b] rounded-2xl border border-white/10 shadow-2xl z-50 overflow-hidden py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-5 py-4 border-b border-white/5">
-                    <div className="font-black text-xs text-white uppercase tracking-wider">{athlete?.firstname} {athlete?.lastname}</div>
-                    <div className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">Athlete #{athlete?.id}</div>
-                  </div>
-
-                  <div className="p-2 space-y-1">
-                    <button
-                      onClick={() => {
-                        sync({ forceFull: true });
-                        setIsMenuOpen(false);
-                      }}
-                      disabled={syncing}
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/5 text-left transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className={syncing ? 'animate-spin' : ''}>🔄</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white">Sync Data</span>
-                      </div>
-                      {syncing && <span className="text-[8px] font-black text-emerald-400 uppercase">Updating...</span>}
-                    </button>
-
-                    <button
-                      onClick={logout}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-left transition-colors group"
-                    >
-                      <span>🚪</span>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-red-400">Logout</span>
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
         </div>
       </header>
 
-      <main className="max-w-[1600px] mx-auto px-6 py-10 space-y-10">
+      <main className="max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 py-5 sm:py-6 lg:py-10 space-y-6 lg:space-y-10">
         {/* Highlight Stats */}
         <StatsOverview activities={filteredActivities} period={viewPeriod} />
 
         {/* Row 1: Fitness & Race Predictions */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
           <div className="lg:col-span-2">
             <FitnessChart activities={activities} period={viewPeriod} />
           </div>
@@ -330,10 +332,10 @@ function App() {
         </div>
 
         {/* Row 2: Heatmap & Shoe Tracker */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          <div className="lg:col-span-2 bg-white/5 rounded-[2.5rem] p-8 border border-white/10 h-full">
-            <h3 className="text-xl font-black text-white mb-8 flex items-center gap-3 tracking-tight">
-              <span className="text-2xl">📊</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 items-start">
+          <div className="lg:col-span-2 bg-white/5 rounded-[2.5rem] p-4 sm:p-6 lg:p-8 border border-white/10 h-full">
+            <h3 className="text-lg sm:text-xl font-black text-white mb-4 sm:mb-8 flex items-center gap-3 tracking-tight">
+              <span className="text-xl sm:text-2xl">📊</span>
               ACTIVITY FREQUENCY
             </h3>
             <CalendarHeatmap
@@ -364,7 +366,7 @@ function App() {
         />
       </main>
 
-      <footer className="border-t border-white/5 py-20 bg-black/40">
+      <footer className="border-t border-white/5 py-12 sm:py-20 bg-black/40">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-4 mb-8">
             <div className="h-[1px] w-12 bg-white/10" />

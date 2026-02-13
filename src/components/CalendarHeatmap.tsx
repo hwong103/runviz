@@ -135,8 +135,8 @@ export function CalendarHeatmap({
     };
 
     return (
-        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10 overflow-x-auto">
-            <div className={isMonthView ? '' : 'min-w-[700px]'}>
+        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-4 sm:p-6 border border-white/10 overflow-x-auto">
+            <div className="min-w-[300px]">
                 {/* Month labels */}
                 <div className="flex mb-2 text-[10px] text-gray-500 font-bold uppercase tracking-tighter ml-8 h-4 relative">
                     {monthLabels.map((m, i) => (
@@ -195,7 +195,7 @@ export function CalendarHeatmap({
                 </div>
 
                 {/* Legend */}
-                <div className="flex items-center gap-6 mt-6">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-6">
                     <div className="flex items-center gap-2 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
                         <span>Less</span>
                         <div className="w-3 h-3 rounded-[2px] bg-white/5" />

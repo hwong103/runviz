@@ -156,15 +156,15 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
     };
 
     return (
-        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10">
-            <div className="flex items-center justify-between mb-6">
+        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-4 sm:p-6 border border-white/10">
+            <div className="flex flex-wrap items-center gap-3 mb-6">
                 <h2 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
                     <span className="text-2xl">💪</span>
                     Fitness
                 </h2>
 
                 <div
-                    className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                    className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider sm:ml-auto"
                     style={{ backgroundColor: `${interpretation.color}20`, color: interpretation.color, border: `1px solid ${interpretation.color}40` }}
                 >
                     {interpretation.description}

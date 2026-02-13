@@ -206,7 +206,7 @@ export function RaceTimePredictions({
 
     if (!predictions) {
         return (
-            <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10">
+            <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-4 sm:p-6 border border-white/10">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
                     <span>🏁</span>
                     <span>Race Predictions</span>
@@ -221,13 +221,13 @@ export function RaceTimePredictions({
     }
 
     return (
-        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10 relative">
-            <div className="flex items-center justify-between mb-6">
+        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-4 sm:p-6 border border-white/10 relative">
+            <div className="flex flex-wrap items-center gap-3 mb-6">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                     <span>🏁</span>
                     <span>Race Predictions</span>
                 </h2>
-                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-wider relative z-10">
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-wider relative z-10 sm:ml-auto">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -293,7 +293,7 @@ export function RaceTimePredictions({
                                 </span>
                             )}
                         </div>
-                        <div className="flex items-baseline gap-3">
+                        <div className="flex flex-wrap items-baseline gap-3">
                             <span className="text-2xl font-black text-white">
                                 {formatTime(pred.time)}
                             </span>
