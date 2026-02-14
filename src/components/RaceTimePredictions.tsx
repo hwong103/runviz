@@ -72,20 +72,25 @@ export function RaceTimePredictions({
         let currentEnd: Date;
         let previousStart: Date;
         let previousEnd: Date;
+        const today = startOfDay(new Date());
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth();
 
         if (period.mode === 'month' && period.month !== null) {
             currentStart = startOfMonth(new Date(period.year, period.month));
-            currentEnd = endOfMonth(currentStart);
+            const isCurrentMonth = period.year === currentYear && period.month === currentMonth;
+            currentEnd = isCurrentMonth ? today : endOfMonth(currentStart);
             previousStart = startOfMonth(subMonths(currentStart, 1));
             previousEnd = endOfMonth(previousStart);
         } else if (period.mode === 'year') {
             currentStart = startOfYear(new Date(period.year, 0));
-            currentEnd = endOfYear(currentStart);
+            const isCurrentYear = period.year === currentYear;
+            currentEnd = isCurrentYear ? today : endOfYear(currentStart);
             previousStart = startOfYear(new Date(period.year - 1, 0));
             previousEnd = endOfYear(previousStart);
         } else {
             // All time - compare last 90 days to previous 90 days
-            currentEnd = startOfDay(new Date());
+            currentEnd = today;
             currentStart = subDays(currentEnd, 90);
             previousEnd = subDays(currentStart, 1);
             previousStart = subDays(previousEnd, 90);
