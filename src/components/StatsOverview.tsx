@@ -137,12 +137,16 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
             />
             <StatCard
                 label="Ramp"
-                value={`${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)}`}
-                unit="km/wk"
+                value={
+                    stats.weeklyRampPercent !== null
+                        ? `${stats.weeklyRampPercent >= 0 ? '+' : ''}${stats.weeklyRampPercent.toFixed(0)}`
+                        : `${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)}`
+                }
+                unit={stats.weeklyRampPercent !== null ? '%' : 'km/wk'}
                 icon="📈"
                 color={rampColorClass(stats.weeklyRampPercent)}
                 helpMetric="ramp"
-                helpText="Week-over-week distance change (last 7 days vs previous 7). Around 0-10% is safer, >20% is an aggressive ramp."
+                helpText="Week-over-week distance change (last 7 days vs previous 7). Displayed as % when prior-week distance exists; otherwise shown as km/wk."
                 activeHelp={activeHelp}
                 onToggleHelp={setActiveHelp}
             />
