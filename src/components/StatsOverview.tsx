@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Activity } from '../types';
 import { isRun } from '../types';
 import {
@@ -19,7 +19,30 @@ interface StatsOverviewProps {
     };
 }
 
+type HelpMetric = 'acwr' | 'ramp' | 'consistency';
+
 export function StatsOverview({ activities, period }: StatsOverviewProps) {
+    const [activeHelp, setActiveHelp] = useState<HelpMetric | null>(null);
+
+    useEffect(() => {
+        if (!activeHelp) return;
+
+        const handleClickOutside = () => setActiveHelp(null);
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setActiveHelp(null);
+        };
+
+        setTimeout(() => {
+            window.addEventListener('click', handleClickOutside);
+            window.addEventListener('keydown', handleEsc);
+        }, 0);
+
+        return () => {
+            window.removeEventListener('click', handleClickOutside);
+            window.removeEventListener('keydown', handleEsc);
+        };
+    }, [activeHelp]);
+
     const stats = useMemo(() => {
         // Filter activities by period
         const filteredActivities = activities.filter((a) => {
@@ -107,6 +130,10 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 unit=""
                 icon="⚖️"
                 color={acwrColorClass(stats.acwr)}
+                helpMetric="acwr"
+                helpText="Acute:Chronic Workload Ratio (ATL/CTL). 0.8-1.3 is generally balanced, >1.5 usually means a sharp load spike."
+                activeHelp={activeHelp}
+                onToggleHelp={setActiveHelp}
             />
             <StatCard
                 label="Ramp"
@@ -114,6 +141,10 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 unit="km/wk"
                 icon="📈"
                 color={rampColorClass(stats.weeklyRampPercent)}
+                helpMetric="ramp"
+                helpText="Week-over-week distance change (last 7 days vs previous 7). Around 0-10% is safer, >20% is an aggressive ramp."
+                activeHelp={activeHelp}
+                onToggleHelp={setActiveHelp}
             />
             <StatCard
                 label="Consistency"
@@ -121,6 +152,10 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 unit="%"
                 icon="🎯"
                 color={consistencyColorClass(stats.consistencyScore)}
+                helpMetric="consistency"
+                helpText="Score from recent weekly run frequency and stability. 75+ strong routine, 50-74 building, below 50 inconsistent."
+                activeHelp={activeHelp}
+                onToggleHelp={setActiveHelp}
             />
         </div>
     );
@@ -174,15 +209,54 @@ interface StatCardProps {
     unit: string;
     icon: string;
     color?: string;
+    helpMetric?: HelpMetric;
+    helpText?: string;
+    activeHelp?: HelpMetric | null;
+    onToggleHelp?: (metric: HelpMetric | null) => void;
 }
 
-function StatCard({ label, value, unit, icon, color = "text-white" }: StatCardProps) {
+function StatCard({
+    label,
+    value,
+    unit,
+    icon,
+    color = "text-white",
+    helpMetric,
+    helpText,
+    activeHelp,
+    onToggleHelp,
+}: StatCardProps) {
+    const showHelp = !!helpMetric && activeHelp === helpMetric;
+
     return (
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/10 hover:border-white/20 transition-all duration-300 group">
-            <div className="flex items-center gap-2 mb-3">
+        <div className="relative bg-white/5 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/10 hover:border-white/20 transition-all duration-300 group">
+            <div className="flex items-center gap-2 mb-3 pr-6">
                 <span className="text-xl group-hover:scale-110 transition-transform duration-300">{icon}</span>
                 <span className="text-[9px] sm:text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">{label}</span>
             </div>
+            {helpMetric && helpText && onToggleHelp && (
+                <>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleHelp(showHelp ? null : helpMetric);
+                        }}
+                        className="absolute top-3 right-3 w-5 h-5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] text-gray-400 hover:text-white transition-colors flex items-center justify-center"
+                        aria-label={`Help for ${label}`}
+                        title={`Help for ${label}`}
+                    >
+                        ?
+                    </button>
+                    {showHelp && (
+                        <div className="absolute top-10 right-2 z-20 w-64 bg-[#1a1d24] border border-white/10 rounded-xl shadow-2xl p-3 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1">{label}</div>
+                            <div className="text-[11px] text-gray-300 leading-relaxed font-medium normal-case">
+                                {helpText}
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
             <div className="flex items-baseline gap-1 flex-wrap">
                 <span className={`text-2xl sm:text-3xl font-black tracking-tighter ${color}`}>{value}</span>
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{unit}</span>
