@@ -146,6 +146,7 @@ runviz/
 | Variable | Description |
 |----------|-------------|
 | `VITE_API_URL` | Your Cloudflare Workers URL |
+| `VITE_LOGO_DEV_TOKEN` | Optional Logo.dev publishable token for shoe logos |
 
 ### Cloudflare Secrets
 

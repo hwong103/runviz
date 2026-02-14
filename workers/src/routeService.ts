@@ -14,9 +14,6 @@ export async function handleRouteGeneration(
     env: Env,
     origin: string
 ): Promise<Response> {
-    // We allow public access to route generation for now to make it easier to test
-    // If we want to restrict it, we can re-enable this check later.
-    /*
     const sessionId = getSessionId(request);
     if (!sessionId) {
         return new Response(
@@ -24,7 +21,14 @@ export async function handleRouteGeneration(
             { status: 401, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
         );
     }
-    */
+
+    const stored = await env.TOKENS.get(`session:${sessionId}`);
+    if (!stored) {
+        return new Response(
+            JSON.stringify({ error: 'Session expired' }),
+            { status: 401, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+        );
+    }
 
     try {
         const body = await request.json() as RouteRequest;

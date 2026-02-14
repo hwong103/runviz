@@ -4,7 +4,8 @@ compatibility_date = "2024-01-01"
 
 [vars]
 FRONTEND_URL = "https://hwong103.github.io/runviz"
-ORS_API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImJmOWFiMWY1N2JmODQzNTRiN2YxMjRiNjBmZWFhZGU2IiwiaCI6Im11cm11cjY0In0="
+# ORS_API_KEY must be configured as a Wrangler secret:
+# wrangler secret put ORS_API_KEY
 
 [[kv_namespaces]]
 binding = "TOKENS"

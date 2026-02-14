@@ -5,8 +5,9 @@
  * Falls back to emojis if logos can't be loaded.
  */
 
-// Logo.dev publishable key
-const LOGO_DEV_TOKEN = 'pk_YOjQY2c3QbS2MH1RiYG5Jw';
+// Optional Logo.dev publishable key.
+// If absent, logo URLs are disabled and UI falls back to brand emoji.
+const LOGO_DEV_TOKEN = import.meta.env.VITE_LOGO_DEV_TOKEN;
 
 // Brand name to domain mapping
 const BRAND_DOMAINS: Record<string, string> = {
@@ -76,6 +77,7 @@ function findBrandKey(brandName: string): string | null {
  * Get Logo.dev URL for a brand
  */
 export function getBrandLogoUrl(brandName?: string, size: number = 64, theme?: 'light' | 'dark'): string | null {
+    if (!LOGO_DEV_TOKEN) return null;
     if (!brandName) return null;
 
     const brandKey = findBrandKey(brandName);
