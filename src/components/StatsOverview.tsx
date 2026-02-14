@@ -5,9 +5,15 @@ import {
     calculateAcwr,
     calculateWeeklyRamp,
     calculateConsistencyScore,
+    calculateLongRunRatio,
+    calculateEfficiencyIndex,
+    calculateGapTrend,
     acwrColorClass,
     rampColorClass,
     consistencyColorClass,
+    longRunRatioColorClass,
+    efficiencyColorClass,
+    gapTrendColorClass,
 } from '../analytics/trainingHealth';
 
 interface StatsOverviewProps {
@@ -20,7 +26,7 @@ interface StatsOverviewProps {
     };
 }
 
-type HelpMetric = 'acwr' | 'ramp' | 'consistency';
+type HelpMetric = 'acwr' | 'ramp' | 'consistency' | 'longRunRatio' | 'efficiency' | 'gapTrend';
 
 export function StatsOverview({ activities, allActivities, period }: StatsOverviewProps) {
     const [activeHelp, setActiveHelp] = useState<HelpMetric | null>(null);
@@ -86,6 +92,9 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
         const acwr = calculateAcwr(allActivities, selectedPeriodEnd);
         const weeklyRamp = calculateWeeklyRamp(allActivities, selectedPeriodEnd);
         const consistencyScore = calculateConsistencyScore(allActivities, selectedPeriodEnd);
+        const longRunRatio = calculateLongRunRatio(allActivities, selectedPeriodEnd);
+        const efficiencyIndex = calculateEfficiencyIndex(allActivities, selectedPeriodEnd);
+        const gapTrendSecPerKm = calculateGapTrend(allActivities, selectedPeriodEnd);
 
         return {
             runCount: filteredActivities.length,
@@ -97,6 +106,9 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
             weeklyRampKm: weeklyRamp.rampKm,
             weeklyRampPercent: weeklyRamp.rampPercent,
             consistencyScore,
+            longRunRatio: longRunRatio.ratio,
+            efficiencyIndex,
+            gapTrendSecPerKm,
             ...streakData,
         };
     }, [activities, allActivities, period]);
@@ -107,8 +119,15 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const formatSignedSeconds = (seconds: number | null) => {
+        if (seconds === null) return '--';
+        const abs = Math.abs(seconds);
+        const sign = seconds > 0 ? '+' : '-';
+        return `${sign}${abs.toFixed(0)}`;
+    };
+
     return (
-        <div className="relative z-20 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-4">
+        <div className="relative z-20 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-2 sm:gap-4">
             <StatCard
                 label="Runs"
                 value={stats.runCount.toString()}
@@ -174,6 +193,39 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                 color={consistencyColorClass(stats.consistencyScore)}
                 helpMetric="consistency"
                 helpText="Score from recent weekly run frequency and stability, anchored to the selected period end date. 75+ strong routine, 50-74 building, below 50 inconsistent."
+                activeHelp={activeHelp}
+                onToggleHelp={setActiveHelp}
+            />
+            <StatCard
+                label="Long Run %"
+                value={stats.longRunRatio !== null ? stats.longRunRatio.toFixed(0) : '--'}
+                unit="%"
+                icon="🧱"
+                color={longRunRatioColorClass(stats.longRunRatio)}
+                helpMetric="longRunRatio"
+                helpText="Longest run as a % of that anchored week's total distance. Around 20-35% is common; very high values may indicate imbalance."
+                activeHelp={activeHelp}
+                onToggleHelp={setActiveHelp}
+            />
+            <StatCard
+                label="Efficiency"
+                value={stats.efficiencyIndex !== null ? stats.efficiencyIndex.toFixed(2) : '--'}
+                unit="m/beat"
+                icon="❤️"
+                color={efficiencyColorClass(stats.efficiencyIndex)}
+                helpMetric="efficiency"
+                helpText="Distance per heartbeat over the trailing 28 days (anchored). Higher usually means better aerobic efficiency. Requires HR data."
+                activeHelp={activeHelp}
+                onToggleHelp={setActiveHelp}
+            />
+            <StatCard
+                label="GAP Trend"
+                value={formatSignedSeconds(stats.gapTrendSecPerKm)}
+                unit="s/km"
+                icon="⛰️"
+                color={gapTrendColorClass(stats.gapTrendSecPerKm)}
+                helpMetric="gapTrend"
+                helpText="Change in estimated GAP pace: latest 14 days vs prior 14 (anchored). Negative is improving (faster), positive is slowing."
                 activeHelp={activeHelp}
                 onToggleHelp={setActiveHelp}
             />

@@ -1,6 +1,7 @@
 import type { Activity } from '../types';
 import { isRun } from '../types';
 import { activitiesToDailyLoads, calculateTrainingLoadHistory } from './trainingLoad';
+import { gapAdjustmentFactor } from './gapCalculator';
 
 interface WeeklyDistanceWindow {
     currentKm: number;
@@ -134,5 +135,137 @@ export function rampColorClass(rampPercent: number | null): string {
 export function consistencyColorClass(score: number): string {
     if (score >= 75) return 'text-emerald-400';
     if (score >= 50) return 'text-yellow-400';
+    return 'text-orange-400';
+}
+
+export function calculateLongRunRatio(
+    activities: Activity[],
+    anchorDate: Date
+): { ratio: number | null; longestKm: number; weeklyKm: number } {
+    const end = new Date(anchorDate);
+    end.setHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setDate(end.getDate() - 6);
+    start.setHours(0, 0, 0, 0);
+
+    const weeklyRuns = activities.filter(a => {
+        if (!isRun(a)) return false;
+        const d = new Date(a.start_date_local);
+        return d >= start && d <= end;
+    });
+
+    const weeklyKm = weeklyRuns.reduce((sum, a) => sum + a.distance / 1000, 0);
+    const longestKm = weeklyRuns.reduce((max, a) => Math.max(max, a.distance / 1000), 0);
+    const ratio = weeklyKm > 0 ? (longestKm / weeklyKm) * 100 : null;
+
+    return { ratio, longestKm, weeklyKm };
+}
+
+export function longRunRatioColorClass(ratio: number | null): string {
+    if (ratio === null) return 'text-gray-400';
+    if (ratio > 45) return 'text-red-400';
+    if (ratio > 35) return 'text-yellow-400';
+    if (ratio >= 20) return 'text-emerald-400';
+    return 'text-blue-400';
+}
+
+export function calculateEfficiencyIndex(
+    activities: Activity[],
+    anchorDate: Date,
+    days = 28
+): number | null {
+    const end = new Date(anchorDate);
+    end.setHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setDate(end.getDate() - (days - 1));
+    start.setHours(0, 0, 0, 0);
+
+    let totalDistanceMeters = 0;
+    let totalHeartBeats = 0;
+
+    for (const a of activities) {
+        if (!isRun(a) || !a.average_heartrate || a.average_heartrate <= 0) continue;
+        const d = new Date(a.start_date_local);
+        if (d < start || d > end) continue;
+
+        totalDistanceMeters += a.distance;
+        totalHeartBeats += (a.average_heartrate / 60) * a.moving_time;
+    }
+
+    if (totalHeartBeats <= 0) return null;
+    return totalDistanceMeters / totalHeartBeats; // meters per heartbeat, higher is better
+}
+
+export function efficiencyColorClass(index: number | null): string {
+    if (index === null) return 'text-gray-400';
+    if (index >= 2.8) return 'text-emerald-400';
+    if (index >= 2.3) return 'text-yellow-400';
+    return 'text-orange-400';
+}
+
+function estimatedGapPaceMinPerKm(activity: Activity): number | null {
+    if (!isRun(activity) || activity.distance <= 0 || activity.moving_time <= 0) return null;
+
+    const actualPaceMinKm = (activity.moving_time / activity.distance) * 1000 / 60;
+    // Approximate mean grade from total climb over distance; clamp to sane range.
+    const avgGrade = Math.min(0.25, Math.max(0, activity.total_elevation_gain / activity.distance));
+    const adjustment = gapAdjustmentFactor(avgGrade);
+    if (!isFinite(adjustment) || adjustment <= 0) return null;
+
+    return actualPaceMinKm / adjustment;
+}
+
+function averageGapPaceInWindow(activities: Activity[], start: Date, end: Date): number | null {
+    let weightedGapTime = 0;
+    let totalDistanceKm = 0;
+
+    for (const a of activities) {
+        const d = new Date(a.start_date_local);
+        if (d < start || d > end) continue;
+
+        const gapPace = estimatedGapPaceMinPerKm(a);
+        if (!gapPace) continue;
+
+        const distanceKm = a.distance / 1000;
+        totalDistanceKm += distanceKm;
+        weightedGapTime += gapPace * distanceKm;
+    }
+
+    if (totalDistanceKm <= 0) return null;
+    return weightedGapTime / totalDistanceKm;
+}
+
+export function calculateGapTrend(
+    activities: Activity[],
+    anchorDate: Date
+): number | null {
+    const runs = activities.filter(a => isRun(a) && new Date(a.start_date_local) <= anchorDate);
+    if (runs.length === 0) return null;
+
+    const endCurrent = new Date(anchorDate);
+    endCurrent.setHours(23, 59, 59, 999);
+    const startCurrent = new Date(endCurrent);
+    startCurrent.setDate(endCurrent.getDate() - 13);
+    startCurrent.setHours(0, 0, 0, 0);
+
+    const endPrevious = new Date(startCurrent);
+    endPrevious.setDate(startCurrent.getDate() - 1);
+    endPrevious.setHours(23, 59, 59, 999);
+    const startPrevious = new Date(endPrevious);
+    startPrevious.setDate(endPrevious.getDate() - 13);
+    startPrevious.setHours(0, 0, 0, 0);
+
+    const currentGap = averageGapPaceInWindow(runs, startCurrent, endCurrent);
+    const previousGap = averageGapPaceInWindow(runs, startPrevious, endPrevious);
+    if (currentGap === null || previousGap === null) return null;
+
+    // Negative means faster (improved) GAP pace.
+    return (currentGap - previousGap) * 60; // sec/km delta
+}
+
+export function gapTrendColorClass(deltaSecPerKm: number | null): string {
+    if (deltaSecPerKm === null) return 'text-gray-400';
+    if (deltaSecPerKm <= -8) return 'text-emerald-400';
+    if (deltaSecPerKm <= 5) return 'text-yellow-400';
     return 'text-orange-400';
 }
