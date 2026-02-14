@@ -18,6 +18,10 @@ interface RaceTimePredictionsProps {
     restHR?: number;
 }
 
+function clamp(value: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, value));
+}
+
 // Race distances in meters
 const RACE_DISTANCES = [
     { name: '5K', meters: 5000 },
@@ -176,15 +180,52 @@ export function RaceTimePredictions({
             };
         });
 
+        // Race Readiness Score (0-100)
+        // Blend of fitness, freshness, quality density, and long-run support.
+        const window28Start = subDays(currentEnd, 27);
+        const recent28Runs = runs.filter(r => {
+            const d = new Date(r.start_date_local);
+            return d >= window28Start && d <= currentEnd;
+        });
+
+        const qualityRuns = recent28Runs.filter(r => {
+            const highEffortByHR = !!r.average_heartrate && r.average_heartrate >= maxHR * 0.82;
+            const highEffortBySpeed = currentAvgSpeed ? r.average_speed >= currentAvgSpeed * 1.03 : false;
+            const meaningfulDistance = r.distance >= 5000;
+            return meaningfulDistance && (highEffortByHR || highEffortBySpeed || (r.suffer_score || 0) >= 50);
+        });
+
+        const longRunWindowStart = subDays(currentEnd, 13);
+        const recentLongRuns = runs.filter(r => {
+            const d = new Date(r.start_date_local);
+            return d >= longRunWindowStart && d <= currentEnd;
+        });
+        const longestRecentRunKm = recentLongRuns.reduce((max, r) => Math.max(max, r.distance / 1000), 0);
+
+        const fitnessScore = clamp((ctl - 8) / 32, 0, 1) * 35; // CTL contribution
+        const freshnessScore = (1 - clamp(Math.abs(tsb - 8) / 25, 0, 1)) * 25; // Optimal around +8
+        const qualityScore = clamp(qualityRuns.length / 6, 0, 1) * 20; // ~1.5 quality sessions/week
+        const longRunScore = clamp(longestRecentRunKm / 16, 0, 1) * 20; // Support toward HM readiness
+        const readinessScore = Math.round(fitnessScore + freshnessScore + qualityScore + longRunScore);
+
+        const readinessBand =
+            readinessScore >= 75 ? 'ready'
+                : readinessScore >= 55 ? 'building'
+                    : 'base';
+
         return {
             predictions: racePredictions,
             ctl,
             tsb,
-            hasPreviousPeriod: previousRuns.length > 0
+            hasPreviousPeriod: previousRuns.length > 0,
+            readinessScore,
+            readinessBand,
+            qualityRuns: qualityRuns.length,
+            longestRecentRunKm
         };
     }, [activities, period, maxHR, restHR]);
 
-    const [activeTooltip, setActiveTooltip] = useState<'ctl' | 'tsb' | null>(null);
+    const [activeTooltip, setActiveTooltip] = useState<'ctl' | 'tsb' | 'readiness' | null>(null);
 
     // Close tooltip when clicking outside or pressing escape
     useEffect(() => {
@@ -249,6 +290,20 @@ export function RaceTimePredictions({
                     >
                         TSB {predictions.tsb > 0 ? '+' : ''}{predictions.tsb.toFixed(0)}
                     </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTooltip(activeTooltip === 'readiness' ? null : 'readiness');
+                        }}
+                        className={`px-2 py-1 rounded cursor-help transition-colors ${predictions.readinessBand === 'ready'
+                            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                            : predictions.readinessBand === 'building'
+                                ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                                : 'bg-gray-500/20 text-gray-300 hover:bg-gray-500/30'
+                            } ${activeTooltip === 'readiness' ? 'ring-2 ring-white/20' : ''}`}
+                    >
+                        READY {predictions.readinessScore}
+                    </button>
 
                     {/* Custom Popup Tooltip */}
                     {activeTooltip && (
@@ -260,7 +315,7 @@ export function RaceTimePredictions({
                                         Weighted average of your daily training load over the last 42 days. Higher values indicate higher fitness but higher fatigue.
                                     </div>
                                 </>
-                            ) : (
+                            ) : activeTooltip === 'tsb' ? (
                                 <>
                                     <div className={`mb-1 ${predictions.tsb > 0 ? 'text-emerald-400' : 'text-yellow-400'}`}>Training Stress Balance (Form)</div>
                                     <div className="text-gray-400 font-medium normal-case leading-relaxed">
@@ -268,6 +323,19 @@ export function RaceTimePredictions({
                                         <br />
                                         <span className="text-emerald-500 block mt-1">+ Positive: Fresh & Ready</span>
                                         <span className="text-red-400 block">- Negative: Fatigued & Building</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="text-emerald-400 mb-1">Race Readiness Score (0-100)</div>
+                                    <div className="text-gray-400 font-medium normal-case leading-relaxed">
+                                        Composite of fitness (CTL), freshness (TSB), quality sessions (28d), and long-run support (14d).
+                                        <span className="block mt-1 text-emerald-500">75+: Ready to race</span>
+                                        <span className="block text-yellow-400">55-74: Building fitness</span>
+                                        <span className="block text-gray-300">&lt;55: Base phase</span>
+                                        <span className="block mt-1 text-[10px] text-gray-500">
+                                            Quality runs: {predictions.qualityRuns} | Longest recent: {predictions.longestRecentRunKm.toFixed(1)} km
+                                        </span>
                                     </div>
                                 </>
                             )}
@@ -306,7 +374,7 @@ export function RaceTimePredictions({
             </div>
 
             <div className="mt-4 text-[9px] text-gray-600 text-center font-medium">
-                Based on fitness (CTL), freshness (TSB), and recent runs
+                Based on fitness, freshness, quality density, and long-run support
             </div>
         </div>
     );
