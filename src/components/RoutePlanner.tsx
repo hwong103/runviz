@@ -229,7 +229,7 @@ const RoutePlanner: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#0a0c10] text-gray-200">
-            <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 sm:py-8">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 sm:py-8 pb-6 sm:pb-8">
                 <header className="grid grid-cols-[auto_1fr_auto] items-center gap-2 mb-6 sm:mb-8">
                     <button
                         onClick={() => navigate('/')}
@@ -344,7 +344,7 @@ const RoutePlanner: React.FC = () => {
                         </div>
 
                         {generatedRoutes.length > 0 && (
-                            <div className="bg-white/5 rounded-[2rem] p-4 sm:p-6 border border-white/10 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 max-h-[500px] overflow-y-auto custom-scrollbar">
+                            <div className="bg-white/5 rounded-[2rem] p-4 sm:p-6 border border-white/10 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 max-h-[42vh] sm:max-h-[500px] overflow-y-auto custom-scrollbar">
                                 <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest opacity-50 sticky top-0 py-1">Routes</h2>
                                 <div className="space-y-2">
                                     {[...generatedRoutes].sort((a, b) => a.elevationGain - b.elevationGain).map((route) => (
@@ -386,7 +386,7 @@ const RoutePlanner: React.FC = () => {
 
                     {/* Map Panel */}
                     <div className="lg:col-span-8">
-                        <div className="bg-white/5 rounded-[2rem] sm:rounded-[3rem] p-2 sm:p-3 border border-white/10 shadow-2xl h-[55vh] min-h-[360px] lg:h-[700px] relative overflow-hidden group">
+                        <div className="bg-white/5 rounded-[2rem] sm:rounded-[3rem] p-2 sm:p-3 border border-white/10 shadow-2xl h-[44svh] min-h-[280px] sm:h-[55vh] sm:min-h-[360px] lg:h-[700px] relative overflow-hidden group">
                             <MapContainer
                                 center={startPoint || [-33.8688, 151.2093]}
                                 zoom={13}
