@@ -71,7 +71,7 @@ export function CalendarHeatmap({
             const week: Array<{ date: string; distance: number; dayOfWeek: number; currentMonth: boolean; inRange: boolean } | null> = [];
 
             for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-                const dateStr = current.toISOString().split('T')[0];
+                const dateStr = format(current, 'yyyy-MM-dd');
                 const inYear = current.getFullYear() === year;
                 const inMonth = isMonthView ? current.getMonth() === month : true;
                 const inRange = isMonthView

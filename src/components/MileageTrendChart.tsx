@@ -15,6 +15,7 @@ import {
 import { Chart } from 'react-chartjs-2';
 import { format, subDays, startOfDay, eachDayOfInterval, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
 import type { Activity } from '../types';
+import { parseActivityLocalDate } from '../utils/activityDate';
 
 ChartJS.register(
     CategoryScale,
@@ -65,7 +66,7 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
         const dailyMileage = new Map<string, number>();
         activities.forEach(a => {
             if (a.type !== 'Run' && a.sport_type !== 'Run') return;
-            const date = new Date(a.start_date_local);
+            const date = parseActivityLocalDate(a.start_date_local);
             if (isWithinInterval(date, { start: startDate, end: endDate })) {
                 const dateStr = format(date, 'yyyy-MM-dd');
                 dailyMileage.set(dateStr, (dailyMileage.get(dateStr) || 0) + a.distance / 1000);
@@ -78,7 +79,7 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
         // Calculate trailing moving sum (using ALL activities for accurate rolling totals)
         const allRuns = activities
             .filter(a => a.type === 'Run' || a.sport_type === 'Run')
-            .sort((a, b) => new Date(a.start_date_local).getTime() - new Date(b.start_date_local).getTime());
+            .sort((a, b) => parseActivityLocalDate(a.start_date_local).getTime() - parseActivityLocalDate(b.start_date_local).getTime());
 
         const trailingData = dateRange.map(currentDate => {
             const windowStart = subDays(currentDate, trailingDays - 1);
@@ -86,7 +87,7 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
 
             const sum = allRuns
                 .filter(a => {
-                    const d = new Date(a.start_date_local);
+                    const d = parseActivityLocalDate(a.start_date_local);
                     return d >= windowStart && d <= windowEnd;
                 })
                 .reduce((s, a) => s + a.distance / 1000, 0);

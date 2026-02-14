@@ -2,6 +2,7 @@ import type { Activity } from '../types';
 import { isRun } from '../types';
 import { activitiesToDailyLoads, calculateTrainingLoadHistory } from './trainingLoad';
 import { gapAdjustmentFactor } from './gapCalculator';
+import { parseActivityLocalDate } from '../utils/activityDate';
 
 interface WeeklyDistanceWindow {
     currentKm: number;
@@ -29,7 +30,7 @@ function getWeeklyDistanceWindow(activities: Activity[], anchorDate: Date): Week
 
     for (const activity of activities) {
         if (!isRun(activity)) continue;
-        const d = new Date(activity.start_date_local);
+        const d = parseActivityLocalDate(activity.start_date_local);
         if (d >= startCurrent && d <= end) {
             currentKm += activity.distance / 1000;
         } else if (d >= startPrevious && d <= endPrevious) {
@@ -47,7 +48,7 @@ function getWeeklyRunCounts(activities: Activity[], anchorDate: Date, weeks = 6)
 
     for (const activity of activities) {
         if (!isRun(activity)) continue;
-        const d = new Date(activity.start_date_local);
+        const d = parseActivityLocalDate(activity.start_date_local);
         const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
         if (diffDays < 0) continue;
         const weekIndex = Math.floor(diffDays / 7);
@@ -72,11 +73,11 @@ export function calculateAcwr(
     maxHR = 185,
     restHR = 60
 ): number | null {
-    const runs = activities.filter(a => isRun(a) && new Date(a.start_date_local) <= anchorDate);
+    const runs = activities.filter(a => isRun(a) && parseActivityLocalDate(a.start_date_local) <= anchorDate);
     if (runs.length === 0) return null;
 
     const dailyLoads = activitiesToDailyLoads(runs, maxHR, restHR);
-    const dates = runs.map(r => new Date(r.start_date_local));
+    const dates = runs.map(r => parseActivityLocalDate(r.start_date_local));
     const start = new Date(Math.min(...dates.map(d => d.getTime())));
     const end = new Date(anchorDate);
 
@@ -93,7 +94,7 @@ export function calculateWeeklyRamp(activities: Activity[], anchorDate: Date): {
     rampKm: number;
     rampPercent: number | null;
 } {
-    const eligible = activities.filter(a => isRun(a) && new Date(a.start_date_local) <= anchorDate);
+    const eligible = activities.filter(a => isRun(a) && parseActivityLocalDate(a.start_date_local) <= anchorDate);
     const { currentKm, previousKm } = getWeeklyDistanceWindow(eligible, anchorDate);
     const rampKm = currentKm - previousKm;
     const rampPercent = previousKm > 0 ? (rampKm / previousKm) * 100 : null;
@@ -102,7 +103,7 @@ export function calculateWeeklyRamp(activities: Activity[], anchorDate: Date): {
 }
 
 export function calculateConsistencyScore(activities: Activity[], anchorDate: Date, weeks = 6): number {
-    const eligible = activities.filter(a => isRun(a) && new Date(a.start_date_local) <= anchorDate);
+    const eligible = activities.filter(a => isRun(a) && parseActivityLocalDate(a.start_date_local) <= anchorDate);
     const counts = getWeeklyRunCounts(eligible, anchorDate, weeks);
     if (counts.every(c => c === 0)) return 0;
 
@@ -150,7 +151,7 @@ export function calculateLongRunRatio(
 
     const weeklyRuns = activities.filter(a => {
         if (!isRun(a)) return false;
-        const d = new Date(a.start_date_local);
+        const d = parseActivityLocalDate(a.start_date_local);
         return d >= start && d <= end;
     });
 
@@ -185,7 +186,7 @@ export function calculateEfficiencyIndex(
 
     for (const a of activities) {
         if (!isRun(a) || !a.average_heartrate || a.average_heartrate <= 0) continue;
-        const d = new Date(a.start_date_local);
+        const d = parseActivityLocalDate(a.start_date_local);
         if (d < start || d > end) continue;
 
         totalDistanceMeters += a.distance;
@@ -220,7 +221,7 @@ function averageGapPaceInWindow(activities: Activity[], start: Date, end: Date):
     let totalDistanceKm = 0;
 
     for (const a of activities) {
-        const d = new Date(a.start_date_local);
+        const d = parseActivityLocalDate(a.start_date_local);
         if (d < start || d > end) continue;
 
         const gapPace = estimatedGapPaceMinPerKm(a);
@@ -239,7 +240,7 @@ export function calculateGapTrend(
     activities: Activity[],
     anchorDate: Date
 ): number | null {
-    const runs = activities.filter(a => isRun(a) && new Date(a.start_date_local) <= anchorDate);
+    const runs = activities.filter(a => isRun(a) && parseActivityLocalDate(a.start_date_local) <= anchorDate);
     if (runs.length === 0) return null;
 
     const endCurrent = new Date(anchorDate);

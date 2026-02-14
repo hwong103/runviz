@@ -13,9 +13,10 @@ import {
 import { Bar, Chart } from 'react-chartjs-2';
 import type { Activity, ActivityStreams, Gear } from '../types';
 import { isRun } from '../types';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { activities as activitiesApi, gear as gearApi } from '../services/api';
 import { getBrandLogoUrl, getBrandFallbackEmoji } from '../services/logoService';
+import { parseActivityLocalDate } from '../utils/activityDate';
 
 // Brand logo component with fallback support
 function BrandLogo({ brandName, className }: { brandName?: string; className?: string }) {
@@ -57,10 +58,6 @@ interface RunDetailsProps {
     onClose: () => void;
     onSelect?: (activity: Activity) => void;
 }
-
-const parseLocalTime = (dateStr: string) => {
-    return parseISO(dateStr.replace('Z', ''));
-};
 
 const FOOD_EQUIVALENTS = [
     { name: 'Mozzarella Sticks', cals: 100 },
@@ -141,10 +138,10 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
 
     const runs = useMemo(() =>
         allActivities.filter(isRun)
-            .sort((a, b) => new Date(b.start_date_local).getTime() - new Date(a.start_date_local).getTime())
+            .sort((a, b) => parseActivityLocalDate(b.start_date_local).getTime() - parseActivityLocalDate(a.start_date_local).getTime())
         , [allActivities]);
 
-    const activityDate = useMemo(() => parseLocalTime(activity.start_date_local), [activity.start_date_local]);
+    const activityDate = useMemo(() => parseActivityLocalDate(activity.start_date_local), [activity.start_date_local]);
 
     const stats = useMemo(() => {
         // --- LONG DISTANCE HISTOGRAM ---
@@ -210,7 +207,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
         const top10 = similarSortedByPace.slice(0, 15).map(r => {
             const p = (r.moving_time / r.distance) * 1000 / 60;
             const isCurrent = r.id === activity.id;
-            const date = parseLocalTime(r.start_date_local);
+            const date = parseActivityLocalDate(r.start_date_local);
 
             const daysAgo = (new Date().getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
             let recencyColor = 'bg-gray-700';

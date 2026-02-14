@@ -6,6 +6,7 @@ import {
     calculateTrainingLoadHistory,
 } from '../analytics/trainingLoad';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, startOfDay, subMonths } from 'date-fns';
+import { parseActivityLocalDate } from '../utils/activityDate';
 
 interface RaceTimePredictionsProps {
     activities: Activity[];
@@ -98,12 +99,12 @@ export function RaceTimePredictions({
 
         // Filter runs for current and previous periods
         const currentRuns = runs.filter(r => {
-            const date = new Date(r.start_date_local);
+            const date = parseActivityLocalDate(r.start_date_local);
             return date >= currentStart && date <= currentEnd;
         });
 
         const previousRuns = runs.filter(r => {
-            const date = new Date(r.start_date_local);
+            const date = parseActivityLocalDate(r.start_date_local);
             return date >= previousStart && date <= previousEnd;
         });
 
@@ -189,7 +190,7 @@ export function RaceTimePredictions({
         // Blend of fitness, freshness, quality density, and long-run support.
         const window28Start = subDays(currentEnd, 27);
         const recent28Runs = runs.filter(r => {
-            const d = new Date(r.start_date_local);
+            const d = parseActivityLocalDate(r.start_date_local);
             return d >= window28Start && d <= currentEnd;
         });
 
@@ -202,7 +203,7 @@ export function RaceTimePredictions({
 
         const longRunWindowStart = subDays(currentEnd, 13);
         const recentLongRuns = runs.filter(r => {
-            const d = new Date(r.start_date_local);
+            const d = parseActivityLocalDate(r.start_date_local);
             return d >= longRunWindowStart && d <= currentEnd;
         });
         const longestRecentRunKm = recentLongRuns.reduce((max, r) => Math.max(max, r.distance / 1000), 0);

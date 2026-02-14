@@ -7,6 +7,21 @@
 
 import type { TrainingLoadMetrics, Activity } from '../types';
 
+function toLocalDateKey(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function fromDateKey(dateKey: string): Date {
+    const [yearStr, monthStr, dayStr] = dateKey.split('-');
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+    return new Date(year, month - 1, day);
+}
+
 /**
  * Constants for training load calculations
  */
@@ -109,7 +124,7 @@ export function calculateTrainingLoadHistory(
     const allDates = Array.from(dailyLoads.keys()).sort();
     if (allDates.length === 0) return [];
 
-    const firstActivityDate = new Date(allDates[0]);
+    const firstActivityDate = fromDateKey(allDates[0]);
     const calculationStart = firstActivityDate < startDate ? firstActivityDate : startDate;
 
     const current = new Date(calculationStart);
@@ -121,7 +136,7 @@ export function calculateTrainingLoadHistory(
     viewEnd.setHours(23, 59, 59, 999);
 
     while (current <= viewEnd) {
-        const dateStr = current.toISOString().split('T')[0];
+        const dateStr = toLocalDateKey(current);
         const trimp = dailyLoads.get(dateStr) || 0;
 
         // Update CTL (fitness) and ATL (fatigue) using exponential decay

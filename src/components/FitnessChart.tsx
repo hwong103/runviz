@@ -11,7 +11,7 @@ import {
     Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, startOfDay } from 'date-fns';
+import { startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, startOfDay, format, parseISO } from 'date-fns';
 import type { Activity } from '../types';
 import {
     activitiesToDailyLoads,
@@ -69,7 +69,7 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
         return calculateTrainingLoadHistory(dailyLoads, startDate, endDate);
     }, [activities, period, maxHR, restHR]);
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
     const displayMetric = useMemo(() => {
         if (metrics.length === 0) return null;
         const todayMatch = metrics.find(m => m.date === todayStr);
@@ -83,8 +83,7 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
 
     const chartData = {
         labels: metrics.map((m) => {
-            const date = new Date(m.date);
-            return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+            return format(parseISO(m.date), 'd MMM');
         }),
         datasets: [
             {

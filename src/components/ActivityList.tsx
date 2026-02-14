@@ -1,7 +1,8 @@
 import type { Activity, Gear } from '../types';
 import { formatDuration } from '../analytics/heartRateZones';
-import { format, parseISO, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { getBrandLogoUrl } from '../services/logoService';
+import { parseActivityLocalDate } from '../utils/activityDate';
 
 interface ActivityListProps {
     activities: Activity[];
@@ -20,10 +21,6 @@ function BrandLogo({ brandName }: { brandName?: string }) {
         <img src={logoUrl} alt={brandName} className="w-5 h-5 object-contain" />
     ) : null;
 }
-
-const parseLocalTime = (dateStr: string) => {
-    return parseISO(dateStr.replace('Z', ''));
-};
 
 export function ActivityList({
     activities,
@@ -53,7 +50,7 @@ export function ActivityList({
     };
 
     const formatDate = (dateStr: string) => {
-        const date = parseLocalTime(dateStr);
+        const date = parseActivityLocalDate(dateStr);
         return {
             weekday: format(date, 'eee'),
             day: format(date, 'd'),

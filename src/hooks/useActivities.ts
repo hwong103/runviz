@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { activities as activitiesApi } from '../services/api';
 import * as cache from '../services/cache';
 import type { Activity } from '../types';
+import { parseActivityLocalDate } from '../utils/activityDate';
 
 interface SyncState {
     activities: Activity[];
@@ -9,6 +10,13 @@ interface SyncState {
     syncing: boolean;
     error: string | null;
     lastSync: Date | null;
+}
+
+function activitySortTimestamp(activity: Activity): number {
+    if (activity.start_date) {
+        return new Date(activity.start_date).getTime();
+    }
+    return parseActivityLocalDate(activity.start_date_local).getTime();
 }
 
 export function useActivities() {
@@ -117,7 +125,7 @@ export function useActivities() {
 
             setState({
                 activities: finalActivities.sort((a, b) =>
-                    new Date(b.start_date || b.start_date_local).getTime() - new Date(a.start_date || a.start_date_local).getTime()
+                    activitySortTimestamp(b) - activitySortTimestamp(a)
                 ),
                 loading: false,
                 syncing: false,

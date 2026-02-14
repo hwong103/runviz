@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type { Activity } from '../types';
 import { isRun } from '../types';
 import {
@@ -15,6 +16,7 @@ import {
     efficiencyColorClass,
     gapTrendColorClass,
 } from '../analytics/trainingHealth';
+import { activityLocalDateKey, parseActivityLocalDate } from '../utils/activityDate';
 
 interface StatsOverviewProps {
     activities: Activity[];
@@ -70,7 +72,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
         const filteredActivities = activities.filter((a) => {
             if (!isRun(a)) return false;
 
-            const date = new Date(a.start_date_local);
+            const date = parseActivityLocalDate(a.start_date_local);
             const year = date.getFullYear();
             const month = date.getMonth();
 
@@ -247,7 +249,7 @@ function calculateStreaks(activities: Activity[]) {
 
     // Get unique dates with runs
     const runDates = new Set(
-        activities.map(a => new Date(a.start_date_local).toISOString().split('T')[0])
+        activities.map(a => activityLocalDateKey(a.start_date_local))
     );
 
     const sortedDates = Array.from(runDates).sort();
@@ -259,9 +261,9 @@ function calculateStreaks(activities: Activity[]) {
         currentStreak = 1;
         longestStreak = 1;
         for (let i = 1; i < sortedDates.length; i++) {
-            const d1 = new Date(sortedDates[i - 1]);
-            const d2 = new Date(sortedDates[i]);
-            const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+            const d1 = parseISO(sortedDates[i - 1]);
+            const d2 = parseISO(sortedDates[i]);
+            const diffDays = differenceInCalendarDays(d2, d1);
 
             if (diffDays === 1) {
                 currentStreak++;
@@ -275,9 +277,9 @@ function calculateStreaks(activities: Activity[]) {
     // Break logic
     let longestBreak = 0;
     for (let i = 1; i < sortedDates.length; i++) {
-        const d1 = new Date(sortedDates[i - 1]);
-        const d2 = new Date(sortedDates[i]);
-        const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) - 1;
+        const d1 = parseISO(sortedDates[i - 1]);
+        const d2 = parseISO(sortedDates[i]);
+        const diffDays = differenceInCalendarDays(d2, d1) - 1;
         longestBreak = Math.max(longestBreak, diffDays);
     }
 

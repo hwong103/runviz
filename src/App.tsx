@@ -12,6 +12,7 @@ import { RaceTimePredictions } from './components/RaceTimePredictions';
 import type { Activity, Gear } from './types';
 import { isRun } from './types';
 import { gear as gearApi } from './services/api';
+import { parseActivityLocalDate } from './utils/activityDate';
 
 interface ViewPeriod {
   mode: 'all' | 'year' | 'month';
@@ -197,7 +198,7 @@ function App() {
   const availableYears = useMemo(() => {
     const years = new Set<number>();
     activities.forEach(a => {
-      const year = new Date(a.start_date_local).getFullYear();
+      const year = parseActivityLocalDate(a.start_date_local).getFullYear();
       years.add(year);
     });
     if (years.size === 0) years.add(new Date().getFullYear());
@@ -208,7 +209,7 @@ function App() {
   const filteredActivities = useMemo(() => {
     return activities.filter((a) => {
       if (!isRun(a)) return false;
-      const date = new Date(a.start_date_local);
+      const date = parseActivityLocalDate(a.start_date_local);
       const year = date.getFullYear();
       const month = date.getMonth();
 
