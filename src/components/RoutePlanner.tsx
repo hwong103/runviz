@@ -345,8 +345,10 @@ const RoutePlanner: React.FC = () => {
 
                         {generatedRoutes.length > 0 && (
                             <div className="bg-white/5 rounded-[2rem] p-4 sm:p-6 border border-white/10 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 max-h-[42vh] sm:max-h-[500px] overflow-y-auto custom-scrollbar">
-                                <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest opacity-50 sticky top-0 py-1">Routes</h2>
-                                <div className="space-y-2">
+                                <h2 className="text-sm font-black text-white mb-4 uppercase tracking-widest opacity-50 sticky top-0 py-1 z-10 bg-[#11141b]/95 backdrop-blur-sm">
+                                    Routes
+                                </h2>
+                                <div className="space-y-2 pb-16">
                                     {[...generatedRoutes].sort((a, b) => a.elevationGain - b.elevationGain).map((route) => (
                                         <button
                                             key={route.id}
@@ -375,7 +377,7 @@ const RoutePlanner: React.FC = () => {
                                 {selectedRoute && (
                                     <button
                                         onClick={() => downloadGPX(selectedRoute)}
-                                        className="w-full mt-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 text-xs sticky bottom-0"
+                                        className="w-full mt-4 py-3.5 rounded-xl bg-[#1a1d24]/95 hover:bg-[#1f232d]/95 border border-white/10 text-white font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 text-xs sticky bottom-0 z-10 backdrop-blur-sm"
                                     >
                                         <span>💾</span> DOWNLOAD GPX
                                     </button>
