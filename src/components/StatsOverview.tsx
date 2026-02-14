@@ -127,7 +127,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
     };
 
     return (
-        <div className="relative z-20 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-2 sm:gap-4">
+        <div className="relative z-20 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-4">
             <StatCard
                 label="Runs"
                 value={stats.runCount.toString()}
