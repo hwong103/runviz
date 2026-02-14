@@ -214,7 +214,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                 icon="❤️"
                 color={efficiencyColorClass(stats.efficiencyIndex)}
                 helpMetric="efficiency"
-                helpText="Distance per heartbeat over the trailing 28 days (anchored). Higher usually means better aerobic efficiency. Requires HR data."
+                helpText="Distance per heartbeat over trailing 28 days (anchored). Higher is better. Rough guide: <1.00 low, 1.00-1.19 moderate, >=1.20 strong. Example: 0.94 means ~0.94m per heartbeat and suggests room to improve aerobic efficiency."
                 activeHelp={activeHelp}
                 onToggleHelp={setActiveHelp}
             />

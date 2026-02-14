@@ -198,8 +198,8 @@ export function calculateEfficiencyIndex(
 
 export function efficiencyColorClass(index: number | null): string {
     if (index === null) return 'text-gray-400';
-    if (index >= 2.8) return 'text-emerald-400';
-    if (index >= 2.3) return 'text-yellow-400';
+    if (index >= 1.2) return 'text-emerald-400';
+    if (index >= 1.0) return 'text-yellow-400';
     return 'text-orange-400';
 }
 
