@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
@@ -39,6 +39,9 @@ function App() {
 
   // Store additionally fetched gear (e.g. retired shoes not in athlete profile)
   const [additionalGear, setAdditionalGear] = useState<Map<string, Gear>>(new Map());
+  // Track request lifecycle so we do not repeatedly fetch failed/in-flight gear IDs.
+  const inFlightGearIds = useRef<Set<string>>(new Set());
+  const failedGearIds = useRef<Set<string>>(new Set());
 
   // Consolidated list of all known shoes
   const allShoes = useMemo(() => {
@@ -61,7 +64,12 @@ function App() {
 
     const missingIds = new Set<string>();
     activities.forEach(a => {
-      if (a.gear_id && !knownIds.has(a.gear_id)) {
+      if (
+        a.gear_id &&
+        !knownIds.has(a.gear_id) &&
+        !failedGearIds.current.has(a.gear_id) &&
+        !inFlightGearIds.current.has(a.gear_id)
+      ) {
         // Only fetch if it looks like a gear ID
         if (a.gear_id.startsWith('g') || a.gear_id.startsWith('b')) {
           missingIds.add(a.gear_id);
@@ -70,10 +78,11 @@ function App() {
     });
 
     if (missingIds.size > 0) {
-      console.log('Fetching missing gear:', Array.from(missingIds));
+      const idsToFetch = Array.from(missingIds).slice(0, 5); // Fetch max 5 at a time to be safe
+      idsToFetch.forEach(id => inFlightGearIds.current.add(id));
+      console.log('Fetching missing gear:', idsToFetch);
       // Fetch individually (Strava doesn't have a bulk endpoint for this)
       // Limit concurrency to avoid triggering rate limits too aggressively
-      const idsToFetch = Array.from(missingIds).slice(0, 5); // Fetch max 5 at a time to be safe
 
       Promise.all(idsToFetch.map(id =>
         gearApi.get(id)
@@ -83,14 +92,13 @@ function App() {
         setAdditionalGear(prev => {
           const next = new Map(prev);
           results.forEach(r => {
+            inFlightGearIds.current.delete(r.id);
             if (r.success && r.gear) {
               next.set(r.id, r.gear);
+              failedGearIds.current.delete(r.id);
             } else {
-              // Mark as fetched but failed to prevent infinite loops, using a placeholder if needed
-              // or just don't add it (will retry later? No, better to blacklist optionally, 
-              // but for now simple retry logic is okay as long as we check knownIds including map keys)
-              // Actually, simply not adding it might cause loops. Let's rely on standard caching or just accept retries for now.
-              // To be better, we could add a null entry.
+              // Do not retry this ID continuously; it is likely retired/inaccessible/rate-limited.
+              failedGearIds.current.add(r.id);
             }
           });
           return next;
@@ -98,6 +106,13 @@ function App() {
       });
     }
   }, [activities, athlete?.shoes, athlete?.gear, additionalGear]); // Dependencies ensure we retry if new activities load
+
+  // Reset gear fetch state when athlete changes (or logs out/in).
+  useEffect(() => {
+    inFlightGearIds.current.clear();
+    failedGearIds.current.clear();
+    setAdditionalGear(new Map());
+  }, [athlete?.id]);
 
   // Calculate available availableYears from activities
   const availableYears = useMemo(() => {
