@@ -85,6 +85,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
         const totalDistance = filteredActivities.reduce((sum, a) => sum + a.distance, 0);
         const totalTime = filteredActivities.reduce((sum, a) => sum + a.moving_time, 0);
         const avgPace = totalDistance > 0 ? (totalTime / totalDistance) * 1000 / 60 : 0;
+        const avgDurationMins = filteredActivities.length > 0 ? (totalTime / filteredActivities.length) / 60 : 0;
         const longestRunDistance = filteredActivities.reduce((max, a) => Math.max(max, a.distance), 0);
 
         // Streak calculation
@@ -101,6 +102,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
             totalDistance: totalDistance / 1000, // km
             avgDistance: filteredActivities.length > 0 ? (totalDistance / 1000) / filteredActivities.length : 0,
             avgPace,
+            avgDurationMins,
             longestRun: longestRunDistance / 1000,
             acwr,
             weeklyRampKm: weeklyRamp.rampKm,
@@ -139,6 +141,13 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                 value={stats.totalDistance.toFixed(1)}
                 unit="km"
                 icon="📏"
+            />
+            <StatCard
+                label="Avg Duration"
+                value={stats.avgDurationMins > 0 ? stats.avgDurationMins.toFixed(0) : '--'}
+                unit="min"
+                icon="⏱️"
+                color="text-cyan-400"
             />
             <StatCard
                 label="Avg Pace"
