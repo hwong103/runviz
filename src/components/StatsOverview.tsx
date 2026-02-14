@@ -108,7 +108,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
     };
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-4">
+        <div className="relative z-20 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-4">
             <StatCard
                 label="Runs"
                 value={stats.runCount.toString()}
@@ -249,7 +249,7 @@ function StatCard({
     const showHelp = !!helpMetric && activeHelp === helpMetric;
 
     return (
-        <div className="relative bg-white/5 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/10 hover:border-white/20 transition-all duration-300 group">
+        <div className={`relative bg-white/5 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/10 hover:border-white/20 transition-all duration-300 group ${showHelp ? 'z-30' : 'z-0'}`}>
             <div className="flex items-center gap-2 mb-3 pr-6">
                 <span className="text-xl group-hover:scale-110 transition-transform duration-300">{icon}</span>
                 <span className="text-[9px] sm:text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">{label}</span>
@@ -268,7 +268,7 @@ function StatCard({
                         ?
                     </button>
                     {showHelp && (
-                        <div className="absolute top-10 right-2 z-20 w-64 bg-[#1a1d24] border border-white/10 rounded-xl shadow-2xl p-3 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="absolute top-10 right-2 z-50 w-64 bg-[#1a1d24] border border-white/10 rounded-xl shadow-2xl p-3 animate-in fade-in zoom-in-95 duration-200">
                             <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1">{label}</div>
                             <div className="text-[11px] text-gray-300 leading-relaxed font-medium normal-case">
                                 {helpText}
