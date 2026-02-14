@@ -12,6 +12,7 @@ import {
 
 interface StatsOverviewProps {
     activities: Activity[];
+    allActivities: Activity[];
     period: {
         mode: 'all' | 'year' | 'month';
         year: number;
@@ -21,7 +22,7 @@ interface StatsOverviewProps {
 
 type HelpMetric = 'acwr' | 'ramp' | 'consistency';
 
-export function StatsOverview({ activities, period }: StatsOverviewProps) {
+export function StatsOverview({ activities, allActivities, period }: StatsOverviewProps) {
     const [activeHelp, setActiveHelp] = useState<HelpMetric | null>(null);
 
     useEffect(() => {
@@ -44,6 +45,21 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
     }, [activeHelp]);
 
     const stats = useMemo(() => {
+        const now = new Date();
+        const selectedPeriodEnd = (() => {
+            if (period.mode === 'all') return now;
+            if (period.mode === 'year') {
+                if (period.year === now.getFullYear()) return now;
+                return new Date(period.year, 11, 31, 23, 59, 59, 999);
+            }
+            if (period.mode === 'month' && period.month !== null) {
+                const isCurrentMonth = period.year === now.getFullYear() && period.month === now.getMonth();
+                if (isCurrentMonth) return now;
+                return new Date(period.year, period.month + 1, 0, 23, 59, 59, 999);
+            }
+            return now;
+        })();
+
         // Filter activities by period
         const filteredActivities = activities.filter((a) => {
             if (!isRun(a)) return false;
@@ -67,9 +83,9 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
 
         // Streak calculation
         const streakData = calculateStreaks(filteredActivities);
-        const acwr = calculateAcwr(filteredActivities);
-        const weeklyRamp = calculateWeeklyRamp(filteredActivities);
-        const consistencyScore = calculateConsistencyScore(filteredActivities);
+        const acwr = calculateAcwr(allActivities, selectedPeriodEnd);
+        const weeklyRamp = calculateWeeklyRamp(allActivities, selectedPeriodEnd);
+        const consistencyScore = calculateConsistencyScore(allActivities, selectedPeriodEnd);
 
         return {
             runCount: filteredActivities.length,
@@ -83,7 +99,7 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
             consistencyScore,
             ...streakData,
         };
-    }, [activities, period]);
+    }, [activities, allActivities, period]);
 
     const formatPace = (pace: number) => {
         const mins = Math.floor(pace);
@@ -131,7 +147,7 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 icon="⚖️"
                 color={acwrColorClass(stats.acwr)}
                 helpMetric="acwr"
-                helpText="Acute:Chronic Workload Ratio (ATL/CTL). 0.8-1.3 is generally balanced, >1.5 usually means a sharp load spike."
+                helpText="Acute:Chronic Workload Ratio (ATL/CTL), anchored to the selected period end date. 0.8-1.3 is generally balanced, >1.5 means a sharp load spike."
                 activeHelp={activeHelp}
                 onToggleHelp={setActiveHelp}
             />
@@ -146,7 +162,7 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 icon="📈"
                 color={rampColorClass(stats.weeklyRampPercent)}
                 helpMetric="ramp"
-                helpText="Week-over-week distance change (last 7 days vs previous 7). Displayed as % when prior-week distance exists; otherwise shown as km/wk."
+                helpText="Week-over-week distance change (7 days vs prior 7), anchored to the selected period end date. Displayed as % when prior-week distance exists; otherwise km/wk."
                 activeHelp={activeHelp}
                 onToggleHelp={setActiveHelp}
             />
@@ -157,7 +173,7 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 icon="🎯"
                 color={consistencyColorClass(stats.consistencyScore)}
                 helpMetric="consistency"
-                helpText="Score from recent weekly run frequency and stability. 75+ strong routine, 50-74 building, below 50 inconsistent."
+                helpText="Score from recent weekly run frequency and stability, anchored to the selected period end date. 75+ strong routine, 50-74 building, below 50 inconsistent."
                 activeHelp={activeHelp}
                 onToggleHelp={setActiveHelp}
             />

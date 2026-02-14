@@ -415,7 +415,7 @@ function App() {
 
       <main className="max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 py-5 sm:py-6 lg:py-10 space-y-6 lg:space-y-10">
         {/* Highlight Stats */}
-        <StatsOverview activities={filteredActivities} period={viewPeriod} />
+        <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} />
 
         {/* Row 1: Fitness & Race Predictions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">

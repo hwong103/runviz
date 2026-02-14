@@ -7,8 +7,8 @@ interface WeeklyDistanceWindow {
     previousKm: number;
 }
 
-function getWeeklyDistanceWindow(activities: Activity[]): WeeklyDistanceWindow {
-    const end = new Date();
+function getWeeklyDistanceWindow(activities: Activity[], anchorDate: Date): WeeklyDistanceWindow {
+    const end = new Date(anchorDate);
     end.setHours(23, 59, 59, 999);
 
     const startCurrent = new Date(end);
@@ -39,9 +39,9 @@ function getWeeklyDistanceWindow(activities: Activity[]): WeeklyDistanceWindow {
     return { currentKm, previousKm };
 }
 
-function getWeeklyRunCounts(activities: Activity[], weeks = 6): number[] {
+function getWeeklyRunCounts(activities: Activity[], anchorDate: Date, weeks = 6): number[] {
     const counts = Array.from({ length: weeks }, () => 0);
-    const now = new Date();
+    const now = new Date(anchorDate);
     now.setHours(23, 59, 59, 999);
 
     for (const activity of activities) {
@@ -65,14 +65,19 @@ function standardDeviation(values: number[]): number {
     return Math.sqrt(variance);
 }
 
-export function calculateAcwr(activities: Activity[], maxHR = 185, restHR = 60): number | null {
-    const runs = activities.filter(isRun);
+export function calculateAcwr(
+    activities: Activity[],
+    anchorDate: Date,
+    maxHR = 185,
+    restHR = 60
+): number | null {
+    const runs = activities.filter(a => isRun(a) && new Date(a.start_date_local) <= anchorDate);
     if (runs.length === 0) return null;
 
     const dailyLoads = activitiesToDailyLoads(runs, maxHR, restHR);
     const dates = runs.map(r => new Date(r.start_date_local));
     const start = new Date(Math.min(...dates.map(d => d.getTime())));
-    const end = new Date();
+    const end = new Date(anchorDate);
 
     const history = calculateTrainingLoadHistory(dailyLoads, start, end);
     if (history.length === 0) return null;
@@ -83,19 +88,21 @@ export function calculateAcwr(activities: Activity[], maxHR = 185, restHR = 60):
     return latest.atl / latest.ctl;
 }
 
-export function calculateWeeklyRamp(activities: Activity[]): {
+export function calculateWeeklyRamp(activities: Activity[], anchorDate: Date): {
     rampKm: number;
     rampPercent: number | null;
 } {
-    const { currentKm, previousKm } = getWeeklyDistanceWindow(activities);
+    const eligible = activities.filter(a => isRun(a) && new Date(a.start_date_local) <= anchorDate);
+    const { currentKm, previousKm } = getWeeklyDistanceWindow(eligible, anchorDate);
     const rampKm = currentKm - previousKm;
     const rampPercent = previousKm > 0 ? (rampKm / previousKm) * 100 : null;
 
     return { rampKm, rampPercent };
 }
 
-export function calculateConsistencyScore(activities: Activity[], weeks = 6): number {
-    const counts = getWeeklyRunCounts(activities, weeks);
+export function calculateConsistencyScore(activities: Activity[], anchorDate: Date, weeks = 6): number {
+    const eligible = activities.filter(a => isRun(a) && new Date(a.start_date_local) <= anchorDate);
+    const counts = getWeeklyRunCounts(eligible, anchorDate, weeks);
     if (counts.every(c => c === 0)) return 0;
 
     const averageRuns = counts.reduce((sum, c) => sum + c, 0) / counts.length;
