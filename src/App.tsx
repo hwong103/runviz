@@ -24,6 +24,60 @@ const MONTHS = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
+const GEAR_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
+const GEAR_FAILURE_RETRY_MS = 1000 * 60 * 60 * 12; // 12 hours
+const MAX_GEAR_FETCH_PER_SESSION = 10;
+
+interface GearCachePayload {
+  updatedAt: number;
+  gear: Record<string, Gear>;
+  failed: Record<string, number>;
+}
+
+function gearCacheKey(athleteId: number): string {
+  return `runviz_gear_cache_v1_${athleteId}`;
+}
+
+function loadGearCache(athleteId: number): GearCachePayload | null {
+  try {
+    const raw = localStorage.getItem(gearCacheKey(athleteId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as GearCachePayload;
+    if (!parsed.updatedAt || Date.now() - parsed.updatedAt > GEAR_CACHE_TTL_MS) {
+      localStorage.removeItem(gearCacheKey(athleteId));
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function saveGearCache(athleteId: number, gearMap: Map<string, Gear>, failedMap: Map<string, number>) {
+  try {
+    const gear: Record<string, Gear> = {};
+    gearMap.forEach((value, key) => {
+      gear[key] = value;
+    });
+
+    const failed: Record<string, number> = {};
+    failedMap.forEach((value, key) => {
+      if (Date.now() - value < GEAR_FAILURE_RETRY_MS) {
+        failed[key] = value;
+      }
+    });
+
+    const payload: GearCachePayload = {
+      updatedAt: Date.now(),
+      gear,
+      failed,
+    };
+    localStorage.setItem(gearCacheKey(athleteId), JSON.stringify(payload));
+  } catch {
+    // Ignore cache write failures.
+  }
+}
+
 function App() {
   const { isAuthenticated, athlete, loading: authLoading, login, logout } = useAuth();
   const { activities, syncing, sync } = useActivities();
@@ -41,7 +95,8 @@ function App() {
   const [additionalGear, setAdditionalGear] = useState<Map<string, Gear>>(new Map());
   // Track request lifecycle so we do not repeatedly fetch failed/in-flight gear IDs.
   const inFlightGearIds = useRef<Set<string>>(new Set());
-  const failedGearIds = useRef<Set<string>>(new Set());
+  const failedGearIds = useRef<Map<string, number>>(new Map());
+  const gearFetchCount = useRef(0);
 
   // Consolidated list of all known shoes
   const allShoes = useMemo(() => {
@@ -55,6 +110,7 @@ function App() {
   // Effect: Identify and fetch missing gear IDs
   useEffect(() => {
     if (activities.length === 0) return;
+    if (!athlete?.id) return;
 
     const knownIds = new Set([
       ...(athlete?.shoes || []).map(s => s.id),
@@ -64,10 +120,12 @@ function App() {
 
     const missingIds = new Set<string>();
     activities.forEach(a => {
+      const failedAt = a.gear_id ? failedGearIds.current.get(a.gear_id) : undefined;
+      const isFailureCoolingDown = failedAt ? Date.now() - failedAt < GEAR_FAILURE_RETRY_MS : false;
       if (
         a.gear_id &&
         !knownIds.has(a.gear_id) &&
-        !failedGearIds.current.has(a.gear_id) &&
+        !isFailureCoolingDown &&
         !inFlightGearIds.current.has(a.gear_id)
       ) {
         // Only fetch if it looks like a gear ID
@@ -78,7 +136,13 @@ function App() {
     });
 
     if (missingIds.size > 0) {
-      const idsToFetch = Array.from(missingIds).slice(0, 5); // Fetch max 5 at a time to be safe
+      const remainingBudget = MAX_GEAR_FETCH_PER_SESSION - gearFetchCount.current;
+      if (remainingBudget <= 0) return;
+
+      const idsToFetch = Array.from(missingIds).slice(0, Math.min(5, remainingBudget)); // Fetch max 5 at a time
+      if (idsToFetch.length === 0) return;
+
+      gearFetchCount.current += idsToFetch.length;
       idsToFetch.forEach(id => inFlightGearIds.current.add(id));
       console.log('Fetching missing gear:', idsToFetch);
       // Fetch individually (Strava doesn't have a bulk endpoint for this)
@@ -98,20 +162,35 @@ function App() {
               failedGearIds.current.delete(r.id);
             } else {
               // Do not retry this ID continuously; it is likely retired/inaccessible/rate-limited.
-              failedGearIds.current.add(r.id);
+              failedGearIds.current.set(r.id, Date.now());
             }
           });
+          saveGearCache(athlete.id, next, failedGearIds.current);
           return next;
         });
       });
     }
-  }, [activities, athlete?.shoes, athlete?.gear, additionalGear]); // Dependencies ensure we retry if new activities load
+  }, [activities, athlete?.id, athlete?.shoes, athlete?.gear, additionalGear]);
 
   // Reset gear fetch state when athlete changes (or logs out/in).
   useEffect(() => {
     inFlightGearIds.current.clear();
     failedGearIds.current.clear();
-    setAdditionalGear(new Map());
+    gearFetchCount.current = 0;
+
+    if (!athlete?.id) {
+      setAdditionalGear(new Map());
+      return;
+    }
+
+    const cached = loadGearCache(athlete.id);
+    if (!cached) {
+      setAdditionalGear(new Map());
+      return;
+    }
+
+    setAdditionalGear(new Map(Object.entries(cached.gear)));
+    failedGearIds.current = new Map(Object.entries(cached.failed).map(([id, ts]) => [id, Number(ts)]));
   }, [athlete?.id]);
 
   // Calculate available availableYears from activities
