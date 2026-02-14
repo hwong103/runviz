@@ -1,6 +1,14 @@
 import { useMemo } from 'react';
 import type { Activity } from '../types';
 import { isRun } from '../types';
+import {
+    calculateAcwr,
+    calculateWeeklyRamp,
+    calculateConsistencyScore,
+    acwrColorClass,
+    rampColorClass,
+    consistencyColorClass,
+} from '../analytics/trainingHealth';
 
 interface StatsOverviewProps {
     activities: Activity[];
@@ -36,6 +44,9 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
 
         // Streak calculation
         const streakData = calculateStreaks(filteredActivities);
+        const acwr = calculateAcwr(filteredActivities);
+        const weeklyRamp = calculateWeeklyRamp(filteredActivities);
+        const consistencyScore = calculateConsistencyScore(filteredActivities);
 
         return {
             runCount: filteredActivities.length,
@@ -43,7 +54,11 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
             avgDistance: filteredActivities.length > 0 ? (totalDistance / 1000) / filteredActivities.length : 0,
             avgPace,
             longestRun: longestRunDistance / 1000,
-            ...streakData
+            acwr,
+            weeklyRampKm: weeklyRamp.rampKm,
+            weeklyRampPercent: weeklyRamp.rampPercent,
+            consistencyScore,
+            ...streakData,
         };
     }, [activities, period]);
 
@@ -54,7 +69,7 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
     };
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-4">
             <StatCard
                 label="Runs"
                 value={stats.runCount.toString()}
@@ -66,13 +81,6 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 value={stats.totalDistance.toFixed(1)}
                 unit="km"
                 icon="📏"
-            />
-            <StatCard
-                label="Avg Dist"
-                value={stats.avgDistance.toFixed(1)}
-                unit="km"
-                icon="📏"
-                color="text-blue-400"
             />
             <StatCard
                 label="Avg Pace"
@@ -92,6 +100,27 @@ export function StatsOverview({ activities, period }: StatsOverviewProps) {
                 unit="days"
                 icon="🔥"
                 color="text-orange-400"
+            />
+            <StatCard
+                label="ACWR"
+                value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
+                unit=""
+                icon="⚖️"
+                color={acwrColorClass(stats.acwr)}
+            />
+            <StatCard
+                label="Ramp"
+                value={`${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)}`}
+                unit="km/wk"
+                icon="📈"
+                color={rampColorClass(stats.weeklyRampPercent)}
+            />
+            <StatCard
+                label="Consistency"
+                value={stats.consistencyScore.toString()}
+                unit="%"
+                icon="🎯"
+                color={consistencyColorClass(stats.consistencyScore)}
             />
         </div>
     );
@@ -149,13 +178,13 @@ interface StatCardProps {
 
 function StatCard({ label, value, unit, icon, color = "text-white" }: StatCardProps) {
     return (
-        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all duration-300 group">
+        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/10 hover:border-white/20 transition-all duration-300 group">
             <div className="flex items-center gap-2 mb-3">
                 <span className="text-xl group-hover:scale-110 transition-transform duration-300">{icon}</span>
-                <span className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">{label}</span>
+                <span className="text-[9px] sm:text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">{label}</span>
             </div>
-            <div className="flex items-baseline gap-1.5">
-                <span className={`text-3xl font-black tracking-tighter ${color}`}>{value}</span>
+            <div className="flex items-baseline gap-1 flex-wrap">
+                <span className={`text-2xl sm:text-3xl font-black tracking-tighter ${color}`}>{value}</span>
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{unit}</span>
             </div>
         </div>
