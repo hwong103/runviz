@@ -18,7 +18,7 @@ interface ActivityListProps {
 function BrandLogo({ brandName }: { brandName?: string }) {
     const logoUrl = getBrandLogoUrl(brandName, 32, 'dark');
     return logoUrl ? (
-        <img src={logoUrl} alt={brandName} className="w-5 h-5 object-contain" />
+        <img src={logoUrl} alt={brandName} className="block w-5 h-5 object-contain" />
     ) : null;
 }
 

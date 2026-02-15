@@ -24,17 +24,23 @@ function BrandLogo({ brandName, className }: { brandName?: string; className?: s
     const logoUrl = getBrandLogoUrl(brandName, 48, 'dark');
     const fallbackEmoji = getBrandFallbackEmoji(brandName);
 
-    // State resets automatically when component remounts (controlled by key prop)
+    useEffect(() => {
+        setHasError(false);
+    }, [brandName]);
 
     if (!logoUrl || hasError) {
-        return <span className={className}>{fallbackEmoji}</span>;
+        return (
+            <span className={`${className} inline-flex items-center justify-center leading-none`}>
+                {fallbackEmoji}
+            </span>
+        );
     }
 
     return (
         <img
             src={logoUrl}
             alt={brandName || 'Brand'}
-            className={`${className} w-5 h-5 object-contain`}
+            className={`${className} block w-5 h-5 object-contain`}
             onError={() => setHasError(true)}
         />
     );
