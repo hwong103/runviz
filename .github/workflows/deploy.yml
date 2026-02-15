@@ -17,6 +17,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: github-pages
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,11 +31,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check Logo Token
+        run: |
+          if [ -n "$VITE_LOGO_DEV_TOKEN" ]; then
+            echo "VITE_LOGO_DEV_TOKEN is configured for build."
+          else
+            echo "::warning::VITE_LOGO_DEV_TOKEN is missing in build environment."
+          fi
+        env:
+          VITE_LOGO_DEV_TOKEN: ${{ vars.VITE_LOGO_DEV_TOKEN || secrets.VITE_LOGO_DEV_TOKEN }}
+
       - name: Build
         run: npm run build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
-          VITE_LOGO_DEV_TOKEN: ${{ vars.VITE_LOGO_DEV_TOKEN != '' && vars.VITE_LOGO_DEV_TOKEN || secrets.VITE_LOGO_DEV_TOKEN }}
+          VITE_LOGO_DEV_TOKEN: ${{ vars.VITE_LOGO_DEV_TOKEN || secrets.VITE_LOGO_DEV_TOKEN }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
