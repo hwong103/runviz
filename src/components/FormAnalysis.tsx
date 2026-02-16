@@ -41,23 +41,23 @@ export default function FormAnalysisPage() {
     useEffect(() => {
         const init = async () => {
             try {
-                // Initialize Google API Client
-                const gapi = (window as any).gapi;
-                if (gapi) {
-                    gapi.load('picker', () => { console.log('Picker loaded'); });
-                }
-
-                const [status, history] = await Promise.all([
-                    googleApi.getSessionStatus(),
-                    listFormAnalyses()
-                ]);
-                setGoogleConnected(status.connected);
+                // Load local history (this should always work)
+                const history = await listFormAnalyses();
                 setSessions(history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
             } catch (error) {
-                console.error('Failed to initialize Form Lab:', error);
-            } finally {
-                setLoading(false);
+                console.warn('Failed to load form analysis history:', error);
             }
+
+            try {
+                // Check Google connection (may 404 if worker not yet deployed with these routes)
+                const status = await googleApi.getSessionStatus();
+                setGoogleConnected(status.connected);
+            } catch (error) {
+                console.warn('Google Photos status check unavailable (worker may need redeployment):', error);
+                setGoogleConnected(false);
+            }
+
+            setLoading(false);
         };
         init();
 

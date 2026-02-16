@@ -44,28 +44,36 @@ async function getDB(): Promise<IDBPDatabase<RunVizDB>> {
         upgrade(database, oldVersion) {
             if (oldVersion < 1) {
                 // Activities store
-                const activityStore = database.createObjectStore('activities', {
-                    keyPath: 'id',
-                });
-                activityStore.createIndex('by-date', 'start_date_local');
+                if (!database.objectStoreNames.contains('activities')) {
+                    const activityStore = database.createObjectStore('activities', {
+                        keyPath: 'id',
+                    });
+                    activityStore.createIndex('by-date', 'start_date_local');
+                }
 
                 // Streams store
-                database.createObjectStore('streams', {
-                    keyPath: 'activityId',
-                });
+                if (!database.objectStoreNames.contains('streams')) {
+                    database.createObjectStore('streams', {
+                        keyPath: 'activityId',
+                    });
+                }
 
                 // Meta store for sync state
-                database.createObjectStore('meta', {
-                    keyPath: 'key',
-                });
+                if (!database.objectStoreNames.contains('meta')) {
+                    database.createObjectStore('meta', {
+                        keyPath: 'key',
+                    });
+                }
             }
 
             if (oldVersion < 2) {
                 // Form Analysis store
-                const formStore = database.createObjectStore('form_analyses', {
-                    keyPath: 'id',
-                });
-                formStore.createIndex('by-activity', 'activityId');
+                if (!database.objectStoreNames.contains('form_analyses')) {
+                    const formStore = database.createObjectStore('form_analyses', {
+                        keyPath: 'id',
+                    });
+                    formStore.createIndex('by-activity', 'activityId');
+                }
             }
         },
     });
