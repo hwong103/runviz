@@ -50,6 +50,7 @@ export interface Activity {
         polyline?: string;
     };
     gear?: Gear;
+    description?: string;
     // Extended fields from streams
     streams?: ActivityStreams;
 }
@@ -168,4 +169,46 @@ export function isRun(activity: Activity): boolean {
         runTypes.includes(activity.type) ||
         runTypes.includes(activity.sport_type)
     );
+}
+
+export interface FormVideo {
+    id: string;
+    filename: string;
+    mimeType: string;
+    creationTime: string;
+    durationSec: number;
+    width: number;
+    height: number;
+    mediaItemId: string; // stable ID for re-fetching baseUrl later
+    baseUrl: string; // short-lived, ~60 min expiry
+}
+
+export interface FormAnalysis {
+    id: string;
+    activityId?: number;
+    videoId: string;
+    clipStartSec: number;
+    clipEndSec: number;
+    createdAt: string;
+    analysisVersion: string;
+    modelVersion: string;
+    metrics: {
+        cadence: number;
+        strideLength?: number;
+        verticalOscillation: number;
+        trunkLean: number;
+        overstrideFlag: boolean;
+    };
+    series: {
+        timestamp: number;
+        cadence: number;
+        verticalOscillation: number;
+        trunkLean: number;
+    }[];
+    commentary: {
+        tips: string[];
+        baselineComparison: string;
+        confidence: number;
+    };
+    lastWrittenAt?: string;
 }

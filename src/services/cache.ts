@@ -2,7 +2,7 @@
 
 import { openDB } from 'idb';
 import type { DBSchema, IDBPDatabase } from 'idb';
-import type { Activity, ActivityStreams } from '../types';
+import type { Activity, ActivityStreams, FormAnalysis } from '../types';
 
 interface RunVizDB extends DBSchema {
     activities: {
@@ -26,6 +26,13 @@ interface RunVizDB extends DBSchema {
             value: string | number | Date;
         };
     };
+    form_analyses: {
+        key: string;
+        value: FormAnalysis;
+        indexes: {
+            'by-activity': number;
+        };
+    };
 }
 
 let db: IDBPDatabase<RunVizDB> | null = null;
@@ -33,23 +40,33 @@ let db: IDBPDatabase<RunVizDB> | null = null;
 async function getDB(): Promise<IDBPDatabase<RunVizDB>> {
     if (db) return db;
 
-    db = await openDB<RunVizDB>('runviz', 1, {
-        upgrade(database) {
-            // Activities store
-            const activityStore = database.createObjectStore('activities', {
-                keyPath: 'id',
-            });
-            activityStore.createIndex('by-date', 'start_date_local');
+    db = await openDB<RunVizDB>('runviz', 2, {
+        upgrade(database, oldVersion) {
+            if (oldVersion < 1) {
+                // Activities store
+                const activityStore = database.createObjectStore('activities', {
+                    keyPath: 'id',
+                });
+                activityStore.createIndex('by-date', 'start_date_local');
 
-            // Streams store
-            database.createObjectStore('streams', {
-                keyPath: 'activityId',
-            });
+                // Streams store
+                database.createObjectStore('streams', {
+                    keyPath: 'activityId',
+                });
 
-            // Meta store for sync state
-            database.createObjectStore('meta', {
-                keyPath: 'key',
-            });
+                // Meta store for sync state
+                database.createObjectStore('meta', {
+                    keyPath: 'key',
+                });
+            }
+
+            if (oldVersion < 2) {
+                // Form Analysis store
+                const formStore = database.createObjectStore('form_analyses', {
+                    keyPath: 'id',
+                });
+                formStore.createIndex('by-activity', 'activityId');
+            }
         },
     });
 
@@ -119,4 +136,26 @@ export async function clearCache(): Promise<void> {
     await database.clear('activities');
     await database.clear('streams');
     await database.clear('meta');
+    await database.clear('form_analyses');
+}
+
+// Form Analysis operations
+export async function saveFormAnalysis(analysis: FormAnalysis): Promise<void> {
+    const database = await getDB();
+    await database.put('form_analyses', analysis);
+}
+
+export async function getFormAnalysisByActivity(activityId: number): Promise<FormAnalysis | undefined> {
+    const database = await getDB();
+    return database.getFromIndex('form_analyses', 'by-activity', activityId);
+}
+
+export async function listFormAnalyses(): Promise<FormAnalysis[]> {
+    const database = await getDB();
+    return database.getAll('form_analyses');
+}
+
+export async function deleteFormAnalysis(id: string): Promise<void> {
+    const database = await getDB();
+    await database.delete('form_analyses', id);
 }

@@ -316,6 +316,14 @@ function App() {
                 <span className="hidden sm:inline">Plan Route</span>
               </Link>
 
+              <Link
+                to="/form-analysis"
+                className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 px-3 sm:px-4 py-2 rounded-xl border border-cyan-500/20 transition-all font-black text-[10px] uppercase tracking-widest flex items-center gap-2"
+              >
+                <span>🧪</span>
+                <span className="hidden sm:inline">Form Lab</span>
+              </Link>
+
               {/* User Menu Dropdown */}
               <div className="relative">
                 <button

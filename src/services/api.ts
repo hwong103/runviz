@@ -50,6 +50,24 @@ export const auth = {
     async getSession(): Promise<{ authenticated: boolean; athlete?: { id: number; firstname: string; lastname: string; profile: string } }> {
         return fetchApi('/auth/session');
     },
+
+    async getStravaScopes(): Promise<{ scopes: string }> {
+        return fetchApi('/auth/strava/scopes');
+    },
+};
+
+export const google = {
+    getLoginUrl(): string {
+        return `${API_URL}/auth/google`;
+    },
+
+    async getSessionStatus(): Promise<{ connected: boolean }> {
+        return fetchApi('/auth/google/session');
+    },
+
+    async getToken(): Promise<{ accessToken: string }> {
+        return fetchApi('/auth/google/token');
+    },
 };
 
 // Activity endpoints
@@ -65,6 +83,13 @@ export const activities = {
     async getStreams(id: number): Promise<ActivityStreams> {
         const keys = 'time,distance,latlng,altitude,heartrate,cadence,velocity_smooth,grade_smooth';
         return fetchApi(`/api/activities/${id}/streams?keys=${keys}&key_by_type=true`);
+    },
+
+    async update(id: number, payload: { description: string }): Promise<Activity> {
+        return fetchApi(`/api/activities/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
     },
 };
 

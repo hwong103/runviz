@@ -6,6 +6,7 @@ import App from './App.tsx'
 import { Callback } from './components/Callback.tsx'
 
 const RoutePlanner = lazy(() => import('./components/RoutePlanner.tsx'))
+const FormAnalysis = lazy(() => import('./components/FormAnalysis.tsx'))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/" element={<App />} />
           <Route path="/callback" element={<Callback />} />
           <Route path="/plan-route" element={<RoutePlanner />} />
+          <Route path="/form-analysis" element={<FormAnalysis />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
