@@ -40,6 +40,12 @@ export default function FormAnalysisPage() {
     // Initialize
     useEffect(() => {
         const init = async () => {
+            // Load Google API and Picker namespace
+            const gapi = (window as any).gapi;
+            if (gapi) {
+                gapi.load('picker', { callback: () => console.log('Google Picker initialized') });
+            }
+
             try {
                 // Load local history (this should always work)
                 const history = await listFormAnalyses();
@@ -102,6 +108,12 @@ export default function FormAnalysisPage() {
     const handleBack = () => navigate('/');
 
     const openPicker = async () => {
+        if (!(window as any).google?.picker) {
+            console.error('Google Picker not loaded yet');
+            alert('Google Picker is still loading. Please wait a moment and try again.');
+            return;
+        }
+
         try {
             const { accessToken } = await googleApi.getToken();
 
