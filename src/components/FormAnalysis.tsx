@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useActivities } from '../hooks/useActivities';
-import { activities as activitiesApi, google as googleApi } from '../services/api';
+import { activities as activitiesApi } from '../services/api';
 import { saveFormAnalysis, listFormAnalyses } from '../services/cache';
 import type { Activity, FormAnalysis, FormVideo } from '../types';
 import { isRun } from '../types';
@@ -13,6 +13,8 @@ const SAMPLE_FPS = 15;
 const CADENCE_MIN = 120;
 const CADENCE_MAX = 220;
 
+const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-matroska'];
+
 export default function FormAnalysisPage() {
     const navigate = useNavigate();
     const { activities } = useActivities();
@@ -21,8 +23,8 @@ export default function FormAnalysisPage() {
     const [loading, setLoading] = useState(true);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisProgress, setAnalysisProgress] = useState(0);
-    const [googleConnected, setGoogleConnected] = useState(false);
     const [sessions, setSessions] = useState<FormAnalysis[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
 
     // Selection State
     const [selectedVideo, setSelectedVideo] = useState<FormVideo | null>(null);
@@ -36,45 +38,20 @@ export default function FormAnalysisPage() {
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Initialize
     useEffect(() => {
         const init = async () => {
-            // Load Google API and Picker namespace
-            const gapi = (window as any).gapi;
-            if (gapi) {
-                gapi.load('picker', { callback: () => console.log('Google Picker initialized') });
-            }
-
             try {
-                // Load local history (this should always work)
                 const history = await listFormAnalyses();
                 setSessions(history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
             } catch (error) {
                 console.warn('Failed to load form analysis history:', error);
             }
-
-            try {
-                // Check Google connection (may 404 if worker not yet deployed with these routes)
-                const status = await googleApi.getSessionStatus();
-                setGoogleConnected(status.connected);
-            } catch (error) {
-                console.warn('Google Photos status check unavailable (worker may need redeployment):', error);
-                setGoogleConnected(false);
-            }
-
             setLoading(false);
         };
         init();
-
-        // Listen for Google Auth success
-        const handleMessage = (event: MessageEvent) => {
-            if (event.data === 'google_auth_success') {
-                googleApi.getSessionStatus().then(status => setGoogleConnected(status.connected));
-            }
-        };
-        window.addEventListener('message', handleMessage);
-        return () => window.removeEventListener('message', handleMessage);
     }, []);
 
     // Auto-match activity when video is selected
@@ -107,59 +84,51 @@ export default function FormAnalysisPage() {
 
     const handleBack = () => navigate('/');
 
-    const openPicker = async () => {
-        if (!(window as any).google?.picker) {
-            console.error('Google Picker not loaded yet');
-            alert('Google Picker is still loading. Please wait a moment and try again.');
+    const handleFileSelect = (file: File) => {
+        if (!ACCEPTED_VIDEO_TYPES.includes(file.type)) {
+            alert('Please select a video file (MP4, MOV, WebM, AVI, or MKV).');
             return;
         }
 
-        const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-        if (!apiKey) {
-            alert('Google API Key (VITE_GOOGLE_API_KEY) is missing. Please add it to your environment variables.');
-            return;
+        const objectUrl = URL.createObjectURL(file);
+
+        // Try to extract creation date from file metadata
+        const creationTime = file.lastModified
+            ? new Date(file.lastModified).toISOString()
+            : new Date().toISOString();
+
+        setSelectedVideo({
+            id: crypto.randomUUID(),
+            filename: file.name,
+            mimeType: file.type,
+            creationTime,
+            durationSec: 0, // will be read from video element
+            width: 0,
+            height: 0,
+            mediaItemId: '',
+            baseUrl: objectUrl,
+        });
+        setClipRange([0, 30]);
+        setCurrentAnalysis(null);
+    };
+
+    const handleFileDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const file = e.dataTransfer.files[0];
+        if (file) handleFileSelect(file);
+    };
+
+    const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) handleFileSelect(file);
+    };
+
+    const clearVideo = () => {
+        if (selectedVideo?.baseUrl?.startsWith('blob:')) {
+            URL.revokeObjectURL(selectedVideo.baseUrl);
         }
-
-        try {
-            const { accessToken } = await googleApi.getToken();
-            console.log('Picker: API Key present:', !!apiKey, '| Token present:', !!accessToken);
-
-            // Use DocsView filtered to video MIME types
-            const videoView = new (window as any).google.picker.DocsView()
-                .setIncludeFolders(true)
-                .setMimeTypes('video/mp4,video/quicktime,video/webm,video/avi');
-
-            const picker = new (window as any).google.picker.PickerBuilder()
-                .addView(videoView)
-                .setOAuthToken(accessToken)
-                .setDeveloperKey(apiKey)
-                .setOrigin(window.location.origin)
-                .setCallback(async (data: any) => {
-                    if (data.action === (window as any).google.picker.Action.PICKED) {
-                        const item = data.docs[0];
-                        console.log('Picked item:', item);
-
-                        setSelectedVideo({
-                            id: item.id,
-                            filename: item.name,
-                            mimeType: item.mimeType,
-                            creationTime: item.lastEditedUtc ? new Date(item.lastEditedUtc).toISOString() : new Date().toISOString(),
-                            durationSec: 0,
-                            width: item.width || 0,
-                            height: item.height || 0,
-                            mediaItemId: item.id,
-                            baseUrl: item.url,
-                        });
-                        setClipRange([0, 30]);
-                        setCurrentAnalysis(null);
-                    }
-                })
-                .build();
-            picker.setVisible(true);
-        } catch (error) {
-            console.error('Failed to open picker:', error);
-            alert('Failed to open video picker. Check browser console for details.');
-        }
+        setSelectedVideo(null);
     };
 
     const runAnalysis = async () => {
@@ -299,6 +268,15 @@ export default function FormAnalysisPage() {
 
     return (
         <div className="min-h-screen bg-[#0a0c10] text-gray-200">
+            {/* Hidden file input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/mp4,video/quicktime,video/webm,video/x-msvideo,video/x-matroska"
+                onChange={handleFileInputChange}
+                className="hidden"
+            />
+
             <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
                 <header className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-12">
                     <div className="flex items-center gap-4">
@@ -324,23 +302,12 @@ export default function FormAnalysisPage() {
                         </div>
                     </div>
 
-                    {!googleConnected ? (
-                        <button
-                            onClick={() => window.open(googleApi.getLoginUrl(), 'google_auth', 'width=600,height=600')}
-                            className="bg-white text-black font-black py-4 px-8 rounded-2xl flex items-center gap-3 hover:bg-gray-200 transition-all uppercase tracking-widest text-[11px] shadow-2xl shadow-white/10"
-                        >
-                            <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
-                            Connect Photos
-                        </button>
-                    ) : (
-                        <div className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-emerald-500/5">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                            Photos Connected
-                        </div>
-                    )}
+                    <div className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-emerald-500/5">
+                        <span className="relative flex h-2 w-2">
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        100% On-Device
+                    </div>
                 </header>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
@@ -357,14 +324,27 @@ export default function FormAnalysisPage() {
                             </h2>
 
                             {!selectedVideo ? (
-                                <button
-                                    onClick={openPicker}
-                                    disabled={!googleConnected}
-                                    className="w-full bg-cyan-500 hover:bg-cyan-400 disabled:opacity-30 disabled:grayscale text-black font-black py-6 rounded-[1.5rem] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-cyan-500/20 uppercase tracking-widest text-xs flex flex-col items-center gap-2"
+                                <div
+                                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                                    onDragLeave={() => setIsDragging(false)}
+                                    onDrop={handleFileDrop}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className={`w-full cursor-pointer border-2 border-dashed rounded-[1.5rem] py-10 transition-all flex flex-col items-center gap-3 ${isDragging
+                                            ? 'border-cyan-400 bg-cyan-500/10 scale-[1.02]'
+                                            : 'border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/5'
+                                        }`}
                                 >
-                                    <span className="text-2xl">➕</span>
-                                    <span>Select from Photos</span>
-                                </button>
+                                    <span className="text-4xl">{isDragging ? '📥' : '🎬'}</span>
+                                    <span className="text-xs font-black text-white uppercase tracking-widest">
+                                        {isDragging ? 'Drop Video Here' : 'Upload Video'}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">
+                                        Drag & drop or click to browse • MP4, MOV, WebM
+                                    </span>
+                                    <span className="text-[8px] font-bold text-gray-600 uppercase tracking-wider mt-1">
+                                        🔒 Video stays on your device — never uploaded
+                                    </span>
+                                </div>
                             ) : (
                                 <div className="space-y-6">
                                     <div className="p-5 bg-black/40 rounded-2xl border border-white/5 relative group/item">
@@ -373,7 +353,7 @@ export default function FormAnalysisPage() {
                                             {format(new Date(selectedVideo.creationTime), 'MMM d, h:mm a')}
                                         </div>
                                         <button
-                                            onClick={() => setSelectedVideo(null)}
+                                            onClick={clearVideo}
                                             className="absolute -top-2 -right-2 w-8 h-8 bg-black border border-white/10 rounded-full flex items-center justify-center hover:bg-red-500/20 hover:text-red-400 transition-all opacity-0 group-hover/item:opacity-100"
                                         >
                                             ✕
@@ -503,8 +483,14 @@ export default function FormAnalysisPage() {
                                                 ref={videoRef}
                                                 src={selectedVideo.baseUrl}
                                                 className="w-full h-full object-contain"
-                                                crossOrigin="anonymous"
                                                 playsInline
+                                                controls
+                                                onLoadedMetadata={(e) => {
+                                                    const vid = e.currentTarget;
+                                                    const dur = Math.floor(vid.duration);
+                                                    setClipRange([0, Math.min(30, dur)]);
+                                                    setSelectedVideo(prev => prev ? { ...prev, durationSec: dur, width: vid.videoWidth, height: vid.videoHeight } : null);
+                                                }}
                                             />
                                             {isAnalyzing && (
                                                 <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-6">
@@ -537,21 +523,26 @@ export default function FormAnalysisPage() {
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="text-center z-10">
+                                    <div
+                                        className={`text-center z-10 w-full py-16 border-2 border-dashed rounded-[2rem] transition-all cursor-pointer ${isDragging
+                                                ? 'border-cyan-400 bg-cyan-500/10'
+                                                : 'border-white/5 hover:border-cyan-500/30'
+                                            }`}
+                                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                                        onDragLeave={() => setIsDragging(false)}
+                                        onDrop={handleFileDrop}
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
                                         <div className="w-32 h-32 bg-cyan-500/10 rounded-full flex items-center justify-center mb-8 mx-auto ring-1 ring-cyan-500/20 shadow-2xl">
-                                            <span className="text-5xl animate-bounce">🧪</span>
+                                            <span className="text-5xl">{isDragging ? '📥' : '🧪'}</span>
                                         </div>
                                         <h3 className="text-3xl font-black text-white mb-6 italic tracking-tight uppercase">Ready for Discovery?</h3>
-                                        <p className="text-gray-500 max-w-sm mx-auto mb-10 font-bold uppercase tracking-widest leading-relaxed text-[11px]">
-                                            Select a treadmill side-profile video to begin the kinetic chain analysis.
+                                        <p className="text-gray-500 max-w-sm mx-auto mb-4 font-bold uppercase tracking-widest leading-relaxed text-[11px]">
+                                            Drop a treadmill side-profile video to begin the kinetic chain analysis.
                                         </p>
-                                        <button
-                                            onClick={openPicker}
-                                            disabled={!googleConnected}
-                                            className="border border-white/20 hover:border-cyan-500/50 hover:bg-cyan-500/5 px-10 py-4 rounded-2xl transition-all uppercase tracking-widest text-[10px] font-black text-gray-400 hover:text-cyan-400"
-                                        >
-                                            Launch Picker Widget
-                                        </button>
+                                        <p className="text-gray-600 text-[9px] font-bold uppercase tracking-wider">
+                                            🔒 Video stays on your device — it is never uploaded
+                                        </p>
                                     </div>
                                 )}
                             </div>
