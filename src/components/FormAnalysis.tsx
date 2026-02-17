@@ -114,30 +114,41 @@ export default function FormAnalysisPage() {
             return;
         }
 
+        const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+        if (!apiKey) {
+            alert('Google API Key (VITE_GOOGLE_API_KEY) is missing. Please add it to your environment variables.');
+            return;
+        }
+
         try {
             const { accessToken } = await googleApi.getToken();
+            console.log('Picker: API Key present:', !!apiKey, '| Token present:', !!accessToken);
+
+            // Use DocsView filtered to video MIME types
+            const videoView = new (window as any).google.picker.DocsView()
+                .setIncludeFolders(true)
+                .setMimeTypes('video/mp4,video/quicktime,video/webm,video/avi');
 
             const picker = new (window as any).google.picker.PickerBuilder()
-                .addView(new (window as any).google.picker.DocsView((window as any).google.picker.ViewId.VIDEO)
-                    .setParent('root')
-                    .setIncludeFolders(true)
-                )
+                .addView(videoView)
                 .setOAuthToken(accessToken)
+                .setDeveloperKey(apiKey)
+                .setOrigin(window.location.origin)
                 .setCallback(async (data: any) => {
                     if (data.action === (window as any).google.picker.Action.PICKED) {
                         const item = data.docs[0];
-                        // Fetch full details including baseUrl and width/height
-                        // Note: Picker returns some fields, but we might need to re-fetch if we want creationTime
+                        console.log('Picked item:', item);
+
                         setSelectedVideo({
                             id: item.id,
                             filename: item.name,
                             mimeType: item.mimeType,
-                            creationTime: item.creationTime || new Date().toISOString(),
-                            durationSec: 0, // Will load from video element
+                            creationTime: item.lastEditedUtc ? new Date(item.lastEditedUtc).toISOString() : new Date().toISOString(),
+                            durationSec: 0,
                             width: item.width || 0,
                             height: item.height || 0,
                             mediaItemId: item.id,
-                            baseUrl: item.url, // This might not be the raw video URL, may need more logic
+                            baseUrl: item.url,
                         });
                         setClipRange([0, 30]);
                         setCurrentAnalysis(null);
@@ -147,6 +158,7 @@ export default function FormAnalysisPage() {
             picker.setVisible(true);
         } catch (error) {
             console.error('Failed to open picker:', error);
+            alert('Failed to open video picker. Check browser console for details.');
         }
     };
 

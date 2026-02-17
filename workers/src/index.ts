@@ -448,7 +448,7 @@ function handleGoogleAuthStart(env: Env): Response {
     authUrl.searchParams.set('client_id', env.GOOGLE_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', env.GOOGLE_REDIRECT_URI);
     authUrl.searchParams.set('response_type', 'code');
-    authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/photospicker.mediaitems.readonly');
+    authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/drive.readonly');
     authUrl.searchParams.set('access_type', 'offline');
     authUrl.searchParams.set('prompt', 'consent');
 
