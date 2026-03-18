@@ -126,13 +126,13 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
     }, [activities, shoes, fetchedGear]);
 
     return (
-        <div className="bg-white/5 backdrop-blur-3xl rounded-[2.5rem] p-8 border border-white/10 shadow-2xl h-full flex flex-col">
+        <div className="rv-panel px-6 py-6 sm:px-7 h-full flex flex-col">
             <div className="flex justify-between items-center mb-8">
-                <h3 className="text-xl font-black text-white flex items-center gap-3 tracking-tight">
-                    <span className="text-2xl">👟</span>
-                    SHOE TRACKER
-                </h3>
-                <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest bg-white/5 px-2 py-1 rounded-md">
+                <div>
+                    <p className="rv-kicker mb-2">Equipment Log</p>
+                    <h3 className="text-2xl font-bold tracking-tight text-[var(--rv-text)]">Shoe tracker</h3>
+                </div>
+                <span className="rounded-full border border-white/[0.08] bg-white/5 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
                     {shoeStats.length} pairs
                 </span>
             </div>
@@ -143,23 +143,23 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                         <div
                             key={shoe.id}
                             onClick={() => onSelectShoe?.(shoe.id)}
-                            className={`rounded-2xl p-5 border transition-all group cursor-pointer ${selectedShoeId === shoe.id
-                                ? 'bg-emerald-500/10 border-emerald-500 ring-1 ring-emerald-500/50'
-                                : 'bg-black/40 border-white/5 hover:border-emerald-500/30'
+                            className={`rounded-[1.7rem] p-5 border transition-all group cursor-pointer ${selectedShoeId === shoe.id
+                                ? 'bg-[var(--rv-blue)]/10 border-[var(--rv-blue)] ring-1 ring-[var(--rv-blue)]/40'
+                                : 'bg-black/20 border-white/[0.06] hover:border-white/[0.15]'
                                 }`}
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1 min-w-0 mr-2">
                                     <div className="flex gap-3 items-start">
-                                        <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-white/5 rounded-xl border border-white/5 p-1.5 group-hover:border-emerald-500/30 transition-colors">
+                                        <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-white/5 rounded-xl border border-white/5 p-1.5 transition-colors group-hover:border-[var(--rv-blue)]/30">
                                             <BrandLogo key={shoe.brand_name} brandName={shoe.brand_name} className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight truncate leading-tight">
+                                            <h4 className="text-sm font-black text-white transition-colors uppercase tracking-tight truncate leading-tight group-hover:text-[var(--rv-blue)]">
                                                 {shoe.name}
                                             </h4>
                                             {shoe.brand_name && (
-                                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest block truncate mt-1">
+                                                <span className="mt-1 block truncate text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
                                                     {shoe.brand_name}
                                                 </span>
                                             )}
@@ -168,24 +168,24 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
                                     {shoe.primary && (
-                                        <span className="bg-emerald-500/20 text-emerald-400 text-[8px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase">Primary</span>
+                                        <span className="rounded-full bg-[var(--rv-blue)]/20 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.22em] text-[var(--rv-blue)]">Primary</span>
                                     )}
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <div className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-1">Period</div>
-                                    <div className="text-lg font-black text-white group-hover:text-emerald-400 transition-colors">
+                                    <div className="mb-1 text-[9px] font-black uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">Period</div>
+                                    <div className="text-lg font-black text-white transition-colors group-hover:text-[var(--rv-blue)]">
                                         {shoe.periodDistance.toFixed(1)}
-                                        <span className="text-gray-500 text-[10px] font-bold ml-1 uppercase">km</span>
+                                        <span className="ml-1 text-[10px] font-bold uppercase text-[var(--rv-text-faint)]">km</span>
                                     </div>
                                 </div>
                                 <div className="border-l border-white/5 pl-4">
-                                    <div className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-1">Lifetime</div>
+                                    <div className="mb-1 text-[9px] font-black uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">Lifetime</div>
                                     <div className="text-lg font-black text-white/60">
                                         {shoe.lifetimeDistance > 0 ? shoe.lifetimeDistance.toFixed(0) : '---'}
-                                        <span className="text-gray-600 text-[10px] font-bold ml-1 uppercase">km</span>
+                                        <span className="ml-1 text-[10px] font-bold uppercase text-[var(--rv-text-faint)]">km</span>
                                     </div>
                                 </div>
                             </div>
@@ -194,7 +194,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                             {shoe.lifetimeDistance > 0 && (
                                 <div className="mt-4">
                                     <div className="flex justify-between text-[8px] font-black uppercase tracking-widest mb-1.5">
-                                        <span className="text-gray-600">Lifespan</span>
+                                        <span className="text-[var(--rv-text-faint)]">Lifespan</span>
                                         <span className={shoe.lifetimeDistance > 700 ? 'text-orange-400' : 'text-gray-500'}>
                                             {Math.min(100, Math.round((shoe.lifetimeDistance / 800) * 100))}%
                                         </span>
@@ -203,7 +203,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                                         <div
                                             className={`h-full transition-all duration-1000 ${shoe.lifetimeDistance > 800 ? 'bg-red-500' :
                                                 shoe.lifetimeDistance > 700 ? 'bg-orange-500' :
-                                                    'bg-emerald-500/50'
+                                                    'bg-[var(--rv-blue)]'
                                                 }`}
                                             style={{ width: `${Math.min(100, (shoe.lifetimeDistance / 800) * 100)}%` }}
                                         />
@@ -215,7 +215,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full py-10 text-center opacity-50">
                         <span className="text-4xl mb-4 grayscale">👟</span>
-                        <p className="text-gray-400 text-xs font-black uppercase tracking-widest italic">No shoes used in this period</p>
+                        <p className="text-xs font-black uppercase tracking-widest italic text-[var(--rv-text-dim)]">No shoes used in this period</p>
                     </div>
                 )}
             </div>

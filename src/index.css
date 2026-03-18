@@ -1,13 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
     --color-gray-900: #0a0c10;
 }
 
+:root {
+    --rv-bg: #041723;
+    --rv-bg-elevated: #0a2030;
+    --rv-bg-panel: rgba(12, 30, 44, 0.78);
+    --rv-bg-panel-strong: rgba(15, 35, 51, 0.92);
+    --rv-border: rgba(246, 242, 241, 0.09);
+    --rv-border-strong: rgba(0, 147, 214, 0.38);
+    --rv-text: #f6f2f1;
+    --rv-text-dim: rgba(246, 242, 241, 0.6);
+    --rv-text-faint: rgba(246, 242, 241, 0.36);
+    --rv-blue: #0093d6;
+    --rv-yellow: #fff917;
+    --rv-green: #13c38b;
+    --rv-orange: #ff8e2b;
+    --rv-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+}
+
 body {
-    background-color: var(--color-gray-900);
+    background:
+        radial-gradient(circle at top left, rgba(0, 147, 214, 0.12), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(255, 249, 23, 0.08), transparent 18%),
+        linear-gradient(180deg, #061824 0%, #041723 100%);
+    color: var(--rv-text);
+    font-family: "Space Grotesk", sans-serif;
     margin: 0;
     overscroll-behavior-y: none;
+}
+
+a {
+    color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+#root {
+    min-height: 100vh;
 }
 
 @utility no-scrollbar {
@@ -21,4 +59,83 @@ body {
 
 @utility mask-gradient {
     mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+
+.rv-panel {
+    background: var(--rv-bg-panel);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--rv-border);
+    border-radius: 1.75rem;
+    box-shadow: var(--rv-shadow);
+}
+
+.rv-panel-strong {
+    background: var(--rv-bg-panel-strong);
+}
+
+.rv-panel-accent {
+    border-color: var(--rv-border-strong);
+    box-shadow:
+        inset 0 0 0 1px rgba(0, 147, 214, 0.12),
+        var(--rv-shadow);
+}
+
+.rv-kicker {
+    color: var(--rv-blue);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.38em;
+    text-transform: uppercase;
+}
+
+.rv-metric {
+    color: var(--rv-text);
+    font-style: italic;
+    font-weight: 700;
+    letter-spacing: -0.06em;
+    line-height: 0.92;
+}
+
+.rv-chip {
+    align-items: center;
+    background: rgba(246, 242, 241, 0.05);
+    border: 1px solid rgba(246, 242, 241, 0.1);
+    border-radius: 999px;
+    color: var(--rv-text-dim);
+    display: inline-flex;
+    font-size: 0.65rem;
+    font-weight: 700;
+    gap: 0.55rem;
+    letter-spacing: 0.2em;
+    padding: 0.65rem 0.95rem;
+    text-transform: uppercase;
+}
+
+.rv-grid-lines {
+    background-image:
+        linear-gradient(rgba(246, 242, 241, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(246, 242, 241, 0.035) 1px, transparent 1px);
+    background-position: center;
+    background-size: 54px 54px;
+}
+
+.custom-scrollbar {
+    scrollbar-color: rgba(246, 242, 241, 0.18) transparent;
+    scrollbar-width: thin;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(246, 242, 241, 0.16);
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
 }

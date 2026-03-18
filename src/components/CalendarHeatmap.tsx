@@ -135,10 +135,10 @@ export function CalendarHeatmap({
     };
 
     return (
-        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-4 sm:p-6 border border-white/10 overflow-x-auto">
+        <div className="rounded-[1.6rem] border border-white/[0.06] bg-black/10 p-4 overflow-x-auto sm:p-5">
             <div className="min-w-[300px]">
                 {/* Month labels */}
-                <div className="flex mb-2 text-[10px] text-gray-500 font-bold uppercase tracking-tighter ml-8 h-4 relative">
+                <div className="relative ml-8 mb-2 flex h-4 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
                     {monthLabels.map((m, i) => (
                         <div
                             key={i}
@@ -152,7 +152,7 @@ export function CalendarHeatmap({
 
                 <div className="flex gap-0.5">
                     {/* Day labels */}
-                    <div className="flex flex-col gap-0.5 text-[9px] text-gray-600 font-bold pr-2 select-none uppercase">
+                    <div className="flex flex-col gap-0.5 pr-2 text-[9px] font-bold uppercase text-[var(--rv-text-faint)] select-none">
                         <span className="h-3">S</span>
                         <span className="h-3">M</span>
                         <span className="h-3">T</span>
@@ -196,7 +196,7 @@ export function CalendarHeatmap({
 
                 {/* Legend */}
                 <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-6">
-                    <div className="flex items-center gap-2 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
                         <span>Less</span>
                         <div className="w-3 h-3 rounded-[2px] bg-white/5" />
                         <div className="w-3 h-3 rounded-[2px] bg-emerald-900/60" />
@@ -206,7 +206,7 @@ export function CalendarHeatmap({
                         <span>More</span>
                     </div>
                     {onSelectDay && (
-                        <div className="text-[10px] text-emerald-400/70 italic">
+                        <div className="text-[10px] italic text-[var(--rv-blue)]/80">
                             Click a day to view run details
                         </div>
                     )}
@@ -216,10 +216,10 @@ export function CalendarHeatmap({
             {/* Custom Tooltip */}
             {hoveredDay && (
                 <div
-                    className="fixed z-[200] pointer-events-none -translate-x-1/2 -translate-y-full px-3 py-2 bg-[#11141b] border border-white/10 rounded-xl shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
+                    className="rv-panel fixed z-[200] pointer-events-none -translate-x-1/2 -translate-y-full px-3 py-2 animate-in fade-in zoom-in-95 duration-150"
                     style={{ left: hoveredDay.x, top: hoveredDay.y }}
                 >
-                    <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-0.5">
+                    <div className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-blue)]">
                         {format(parseISO(hoveredDay.date), 'MMM d, yyyy')}
                     </div>
                     <div className="text-xs font-bold text-white">

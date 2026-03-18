@@ -131,7 +131,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
     };
 
     return (
-        <div className="relative z-20 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-4">
+        <div className="relative z-20 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
             <StatCard
                 label="Runs"
                 value={stats.runCount.toString()}
@@ -321,10 +321,14 @@ function StatCard({
     }, [showHelp]);
 
     return (
-        <div ref={cardRef} className={`relative bg-white/5 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/10 hover:border-white/20 transition-all duration-300 group ${showHelp ? 'z-30' : 'z-0'}`}>
-            <div className="flex items-center gap-2 mb-3 pr-6">
-                <span className="text-xl group-hover:scale-110 transition-transform duration-300">{icon}</span>
-                <span className="text-[9px] sm:text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">{label}</span>
+        <div
+            ref={cardRef}
+            className={`rv-panel relative overflow-hidden p-4 sm:p-5 transition-all duration-300 group hover:-translate-y-1 hover:border-white/20 ${showHelp ? 'z-30' : 'z-0'}`}
+        >
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
+            <div className="flex items-center gap-2 mb-4 pr-6">
+                <span className="text-xl opacity-80 group-hover:scale-110 transition-transform duration-300">{icon}</span>
+                <span className="text-[10px] text-[var(--rv-text-faint)] font-bold uppercase tracking-[0.28em]">{label}</span>
             </div>
             {helpMetric && helpText && onToggleHelp && (
                 <>
@@ -333,16 +337,16 @@ function StatCard({
                             e.stopPropagation();
                             onToggleHelp(showHelp ? null : helpMetric);
                         }}
-                        className="absolute top-3 right-3 w-5 h-5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] text-gray-400 hover:text-white transition-colors flex items-center justify-center"
+                        className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[10px] text-[var(--rv-text-faint)] transition-colors hover:bg-white/10 hover:text-white"
                         aria-label={`Help for ${label}`}
                         title={`Help for ${label}`}
                     >
                         ?
                     </button>
                     {showHelp && (
-                        <div className={`absolute top-10 z-50 w-64 max-w-[calc(100vw-1rem)] bg-[#1a1d24] border border-white/10 rounded-xl shadow-2xl p-3 animate-in fade-in zoom-in-95 duration-200 ${tooltipAlign === 'left' ? 'left-2 right-auto' : 'right-2 left-auto'}`}>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1">{label}</div>
-                            <div className="text-[11px] text-gray-300 leading-relaxed font-medium normal-case">
+                        <div className={`rv-panel absolute top-10 z-50 w-64 max-w-[calc(100vw-1rem)] p-3 animate-in fade-in zoom-in-95 duration-200 ${tooltipAlign === 'left' ? 'left-2 right-auto' : 'right-2 left-auto'}`}>
+                            <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-blue)]">{label}</div>
+                            <div className="text-[11px] leading-relaxed font-medium normal-case text-[var(--rv-text-dim)]">
                                 {helpText}
                             </div>
                         </div>
@@ -350,8 +354,8 @@ function StatCard({
                 </>
             )}
             <div className="flex items-baseline gap-1 flex-wrap">
-                <span className={`text-2xl sm:text-3xl font-black tracking-tighter ${color}`}>{value}</span>
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{unit}</span>
+                <span className={`rv-metric text-3xl sm:text-4xl ${color}`}>{value}</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">{unit}</span>
             </div>
         </div>
     );
