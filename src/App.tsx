@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
@@ -111,6 +112,8 @@ function App() {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const avatarRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [magicEmail, setMagicEmail] = useState('');
   const [magicSending, setMagicSending] = useState(false);
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
@@ -288,11 +291,28 @@ function App() {
   }, [selectedShoeId, allShoes]);
 
   const athleteLabel = athlete ? `${athlete.firstname} ${athlete.lastname}`.trim() : 'Athlete';
-  const activePeriodLabel = viewPeriod.mode === 'all'
-    ? 'Live sync'
-    : viewPeriod.mode === 'year'
-      ? `${viewPeriod.year} overview`
-      : `${MONTHS[viewPeriod.month ?? 0]} ${viewPeriod.year}`;
+
+  useEffect(() => {
+    if (!isMenuOpen || !avatarRef.current) return;
+
+    const updateMenuPosition = () => {
+      if (!avatarRef.current) return;
+      const rect = avatarRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + 12,
+        right: window.innerWidth - rect.right,
+      });
+    };
+
+    updateMenuPosition();
+    window.addEventListener('resize', updateMenuPosition);
+    window.addEventListener('scroll', updateMenuPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosition, true);
+    };
+  }, [isMenuOpen]);
 
   if (authLoading) {
     return (
@@ -444,9 +464,6 @@ function App() {
                   <LabGlyph className="h-8 w-8 text-[var(--rv-blue)]" />
                   <div>
                     <BrandWordmark compact />
-                    <p className="mt-1 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
-                      {activePeriodLabel}
-                    </p>
                   </div>
                 </div>
 
@@ -476,7 +493,7 @@ function App() {
                     {syncing ? 'Syncing...' : 'Sync Data'}
                   </button>
 
-                  <div className="relative">
+                  <div ref={avatarRef} className="relative">
                     <button
                       onClick={() => setIsMenuOpen((open) => !open)}
                       className="flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 transition hover:border-white/20"
@@ -492,42 +509,50 @@ function App() {
                     </button>
 
                     {isMenuOpen && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
-                        <div className="rv-panel rv-panel-strong absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden p-2">
-                          <div className="border-b border-white/5 px-4 py-4">
-                            <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
-                            <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">RunViz account</div>
+                      createPortal(
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
+                          <div
+                            className="rv-panel rv-panel-strong fixed z-50 w-72 overflow-hidden p-2"
+                            style={{ top: menuPos.top, right: menuPos.right }}
+                          >
+                            <div className="border-b border-white/5 px-4 py-4">
+                              <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
+                              <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
+                                RunViz account
+                              </div>
+                            </div>
+                            <div className="space-y-1 px-2 py-2">
+                              <button
+                                onClick={() => {
+                                  sync({ forceFull: true });
+                                  setIsMenuOpen(false);
+                                }}
+                                disabled={syncing}
+                                className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-white/5"
+                              >
+                                <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Full Sync</span>
+                                <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-blue)]">{syncing ? 'Running' : 'Start'}</span>
+                              </button>
+                              <button
+                                onClick={logout}
+                                className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-red-500/10"
+                              >
+                                <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Logout</span>
+                                <span className="text-[10px] uppercase tracking-[0.22em] text-[#ff7f64]">Exit</span>
+                              </button>
+                            </div>
                           </div>
-                          <div className="space-y-1 px-2 py-2">
-                            <button
-                              onClick={() => {
-                                sync({ forceFull: true });
-                                setIsMenuOpen(false);
-                              }}
-                              disabled={syncing}
-                              className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-white/5"
-                            >
-                              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Full Sync</span>
-                              <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-blue)]">{syncing ? 'Running' : 'Start'}</span>
-                            </button>
-                            <button
-                              onClick={logout}
-                              className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-red-500/10"
-                            >
-                              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Logout</span>
-                              <span className="text-[10px] uppercase tracking-[0.22em] text-[#ff7f64]">Exit</span>
-                            </button>
-                          </div>
-                        </div>
-                      </>
+                        </>,
+                        document.body
+                      )
                     )}
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-full border border-white/[0.08] bg-white/[0.04] p-1 no-scrollbar">
+                <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-full border border-white/[0.08] bg-white/[0.04] p-0.5 no-scrollbar">
                   {([
                     { mode: 'all', label: 'All' },
                     { mode: 'year', label: 'Year' },
@@ -536,7 +561,7 @@ function App() {
                     <button
                       key={mode}
                       onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                      className={`shrink-0 rounded-full px-3 py-1.5 text-[8px] font-bold uppercase tracking-[0.18em] transition sm:px-3.5 ${viewPeriod.mode === mode
+                      className={`shrink-0 rounded-full px-3 py-1.5 text-[8px] font-bold uppercase tracking-[0.22em] transition sm:px-4 ${viewPeriod.mode === mode
                         ? 'bg-[var(--rv-blue)] text-white shadow-[0_10px_24px_rgba(0,147,214,0.3)]'
                         : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-text)]'
                         }`}
@@ -551,7 +576,7 @@ function App() {
                     <select
                       value={viewPeriod.year}
                       onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value, 10) }))}
-                      className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
+                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
                     >
                       {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
@@ -561,7 +586,7 @@ function App() {
                     <select
                       value={viewPeriod.month || 0}
                       onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value, 10) }))}
-                      className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
+                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
                     >
                       {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
                     </select>

@@ -176,10 +176,15 @@ export function CalendarHeatmap({
                                             onMouseEnter={(e) => {
                                                 if (isInteractive) {
                                                     const rect = e.currentTarget.getBoundingClientRect();
+                                                    const TOOLTIP_WIDTH = 140;
+                                                    const clampedX = Math.min(
+                                                        window.innerWidth - TOOLTIP_WIDTH / 2,
+                                                        Math.max(TOOLTIP_WIDTH / 2, rect.left + rect.width / 2)
+                                                    );
                                                     setHoveredDay({
                                                         date: day!.date,
                                                         distance: day!.distance,
-                                                        x: rect.left + rect.width / 2,
+                                                        x: clampedX,
                                                         y: rect.top - 10
                                                     });
                                                 }
