@@ -54,101 +54,66 @@ cd runviz
 
 For Strava, go to [Strava API Settings](https://www.strava.com/settings/api), create a new application, set **Authorization Callback Domain** to your frontend host, for example `runviz-stats.pages.dev`, and note your **Client ID** and **Client Secret**.
 
-### 3. Deploy Cloudflare Workers Backend
+### 3. Deploy The Unified Cloudflare Worker
 
 ```bash
-# Install wrangler CLI
-npm install -g wrangler
-
-# Login to Cloudflare
-wrangler login
-
-# Navigate to workers directory
-cd workers
+# Install dependencies
+npm install
 
 # Create KV namespace
-wrangler kv:namespace create TOKENS
-# Copy the id and update wrangler.toml
+npx wrangler kv:namespace create TOKENS
+# Copy the id into wrangler.jsonc
 
 # Create D1
 npx wrangler d1 create runviz-db
-# Copy the database_id into workers/wrangler.toml
+# Copy the database_id into wrangler.jsonc
 
 # Set secrets
-wrangler secret put BETTER_AUTH_SECRET
-wrangler secret put RESEND_API_KEY
-wrangler secret put STRAVA_CLIENT_ID
-wrangler secret put STRAVA_CLIENT_SECRET
-wrangler secret put ORS_API_KEY
-wrangler secret put GOOGLE_CLIENT_ID
-wrangler secret put GOOGLE_CLIENT_SECRET
-wrangler secret put GOOGLE_REDIRECT_URI
+npx wrangler secret put BETTER_AUTH_SECRET
+npx wrangler secret put RESEND_API_KEY
+npx wrangler secret put STRAVA_CLIENT_ID
+npx wrangler secret put STRAVA_CLIENT_SECRET
+npx wrangler secret put ORS_API_KEY
+npx wrangler secret put GOOGLE_CLIENT_ID
+npx wrangler secret put GOOGLE_CLIENT_SECRET
+npx wrangler secret put GOOGLE_REDIRECT_URI
 
-# Update worker vars in wrangler.toml
-# FRONTEND_URL=https://your-pages-domain.pages.dev
-# FRONTEND_PREVIEW_HOST=your-pages-domain.pages.dev
+# Update vars in wrangler.jsonc
+# FRONTEND_URL=https://runviz.hwong103.work
+# FRONTEND_PREVIEW_HOST=runviz.runviz-stats.workers.dev
 
-# Deploy
-npm install
 npm run deploy
 ```
 
-### 4. Update Frontend Config
+### 4. Frontend Config
 
 Create `.env` in the root directory:
 
 ```env
-VITE_API_URL=https://runviz-api.YOUR_SUBDOMAIN.workers.dev
 # Optional if serving from a subpath instead of /
 # VITE_BASE_PATH=/
 ```
 
-### 5. Deploy Frontend to Cloudflare Pages
-
-```bash
-# Back to root
-cd ..
-
-# Install deps and build
-npm install
-npm run build
-```
-
-Then in Cloudflare:
-
-1. Go to Workers & Pages and create or open your Pages project.
-2. Connect the GitHub repo.
-3. Set the build command to `npm run build`.
-4. Set the build output directory to `dist`.
-5. Add `VITE_API_URL` as a Pages environment variable if you do not want to rely on `.env.production`.
-6. Deploy and visit `https://YOUR_PROJECT.pages.dev`.
-
-Because this app uses React Router, SPA fallback needs to be configured in the deployment target. For the current Cloudflare setup in this repo, that is handled by the root [`wrangler.jsonc`](./wrangler.jsonc) via `assets.not_found_handling = "single-page-application"`.
+The app and API now deploy together through the root [`wrangler.jsonc`](./wrangler.jsonc). The Worker script handles `/api/*` and Better Auth routes, and Cloudflare serves the React app from `dist` for all other routes.
 
 ## 🛠️ Development
 
 ```bash
-# Frontend
 npm install
 npm run dev
 
-# Workers (in another terminal)
-cd workers
-npm install
-npm run dev
+# In another terminal, run the unified Worker with assets
+npm run preview:worker
 ```
 
 Useful Cloudflare-specific commands:
 
 ```bash
-# Preview the built frontend in a Pages-like local environment
-npm run preview:pages
+# Preview the built app with the Worker runtime and static assets
+npm run preview:worker
 
-# Deploy only the Worker from the repo root
-npm run deploy:worker
-
-# Use live Cloudflare bindings during Worker development
-cd workers && npm run dev:remote
+# Deploy the unified Worker and static assets
+npm run deploy
 ```
 
 ## 📁 Project Structure
@@ -161,9 +126,9 @@ runviz/
 │   ├── hooks/         # Custom hooks
 │   ├── services/      # API and caching
 │   └── types/         # TypeScript types
-├── workers/           # Cloudflare Workers backend
+├── workers/           # Worker source used by the root Cloudflare deploy
 │   └── src/
-│       └── index.ts   # OAuth & API proxy
+│       └── index.ts   # OAuth, auth, Strava proxy, asset fallback
 └── .github/
     └── workflows/     # GitHub Actions deployment
 ```
@@ -174,8 +139,8 @@ runviz/
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_API_URL` | Your Cloudflare Workers URL |
-| `VITE_BASE_PATH` | Optional public base path. Leave unset for Cloudflare Pages root deployments |
+| `VITE_API_URL` | Optional override for the API origin. Leave unset for the unified same-origin Worker setup |
+| `VITE_BASE_PATH` | Optional public base path |
 | `VITE_LOGO_DEV_TOKEN` | Optional Logo.dev publishable token for shoe logos |
 
 ### Cloudflare Secrets
@@ -196,8 +161,9 @@ runviz/
 | Var | Description |
 |-----|-------------|
 | `DB` | D1 database binding used by Better Auth |
+| `TOKENS` | KV namespace used for legacy session and OAuth state storage |
 | `FRONTEND_URL` | Exact production Pages origin allowed for CORS and OAuth fallback redirects |
-| `FRONTEND_PREVIEW_HOST` | Preview host suffix for branch deploys, for example `runviz-stats.pages.dev` |
+| `FRONTEND_PREVIEW_HOST` | Preview host suffix for branch deploys, for example `runviz.runviz-stats.workers.dev` |
 | `ADDITIONAL_FRONTEND_URLS` | Optional comma-separated list of extra allowed frontend origins |
 
 ### 🗺️ Map API Setup

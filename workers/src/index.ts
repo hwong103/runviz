@@ -16,6 +16,7 @@ import {
  */
 
 export interface Env {
+    ASSETS: Fetcher;
     DB: D1Database;
     TOKENS: KVNamespace;
     STRAVA_CLIENT_ID: string;
@@ -194,7 +195,7 @@ export default {
                 return await handleApiRequest(request, url, env, origin, auth);
             }
 
-            return new Response(`Not Found: ${url.pathname}`, { status: 404, headers: corsHeaders(origin, env) });
+            return env.ASSETS.fetch(request);
         } catch (error) {
             console.error('Worker error:', error);
             return new Response(
