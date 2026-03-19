@@ -159,6 +159,26 @@ function App() {
     });
   }, [isMenuOpen]);
 
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleWindowClick = () => setIsMenuOpen(false);
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMenuOpen(false);
+    };
+
+    const timer = window.setTimeout(() => {
+      window.addEventListener('click', handleWindowClick);
+      window.addEventListener('keydown', handleEsc);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('click', handleWindowClick);
+      window.removeEventListener('keydown', handleEsc);
+    };
+  }, [isMenuOpen]);
+
   // Consolidated list of all known shoes
   const allShoes = useMemo(() => {
     const profileShoes = [...(athlete?.shoes || []), ...(athlete?.gear || [])];
@@ -513,7 +533,8 @@ function App() {
                   <button
                     type="button"
                     ref={avatarRef}
-                    onClick={() => {
+                    onClick={(event) => {
+                      event.stopPropagation();
                       if (isMenuOpen) {
                         setIsMenuOpen(false);
                         return;
@@ -550,6 +571,7 @@ function App() {
               <div
                 className="rv-panel rv-panel-strong fixed z-50 w-72 overflow-hidden p-2 animate-in fade-in zoom-in-95 duration-150"
                 style={{ top: menuPos.top, right: menuPos.right }}
+                onClick={(event) => event.stopPropagation()}
               >
                 <div className="border-b border-white/5 px-4 py-3">
                   <div className="flex items-center gap-3">
