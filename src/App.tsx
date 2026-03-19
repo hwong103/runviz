@@ -488,7 +488,7 @@ function App() {
       <div className="min-h-screen">
         <div className="min-w-0">
           <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#070f1a]/90 backdrop-blur-2xl">
-            <div className="mx-auto flex h-[60px] max-w-[1720px] items-center gap-4 px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto flex min-h-[60px] max-w-[1720px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:flex-nowrap sm:px-6 sm:py-0 lg:px-8">
               <div className="flex shrink-0 items-center gap-2.5">
                 <LabGlyph className="h-6 w-6 text-[var(--rv-blue)]" />
                 <span className="text-[1.35rem] font-bold tracking-[-0.06em] text-[var(--rv-text)]">
@@ -496,10 +496,10 @@ function App() {
                 </span>
               </div>
 
-              <div className="h-5 w-px shrink-0 bg-white/[0.08]" />
+              <div className="hidden h-5 w-px shrink-0 bg-white/[0.08] sm:block" />
 
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <div className="flex items-center gap-0.5 rounded-full border border-white/[0.07] bg-white/[0.03] p-0.5">
+              <div className="order-3 flex w-full min-w-0 flex-wrap items-center gap-2 sm:order-none sm:w-auto sm:flex-1">
+                <div className="flex flex-wrap items-center gap-0.5 rounded-full border border-white/[0.07] bg-white/[0.03] p-0.5">
                   {([
                     { mode: 'all', label: 'All' },
                     { mode: 'year', label: 'Year' },
@@ -522,7 +522,7 @@ function App() {
                   <select
                     value={viewPeriod.year}
                     onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value, 10) }))}
-                    className="rv-pill-label rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
+                    className="rv-pill-label min-w-0 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
                   >
                     {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
@@ -532,7 +532,7 @@ function App() {
                   <select
                     value={viewPeriod.month || 0}
                     onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value, 10) }))}
-                    className="rv-pill-label rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
+                    className="rv-pill-label min-w-0 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
                   >
                     {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
                   </select>
@@ -540,7 +540,7 @@ function App() {
 
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="ml-auto flex shrink-0 items-center gap-2 sm:ml-0">
                 <button
                   onClick={() => sync({ forceFull: true })}
                   disabled={syncing}

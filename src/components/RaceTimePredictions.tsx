@@ -297,7 +297,7 @@ export function RaceTimePredictions({
                     <p className="rv-kicker mb-2">Race Predictions</p>
                     <h2 className="rv-section-title text-[1.7rem]">Projected race shape</h2>
                 </div>
-                <div ref={tooltipAnchorRef} className="rv-pill-label relative z-10 flex items-center gap-2 sm:ml-auto">
+                <div ref={tooltipAnchorRef} className="rv-pill-label relative z-10 flex flex-wrap items-center gap-2 sm:ml-auto sm:justify-end">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();

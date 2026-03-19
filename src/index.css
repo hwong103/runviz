@@ -46,6 +46,7 @@ body {
     font-kerning: normal;
     line-height: var(--rv-leading-body);
     margin: 0;
+    overflow-x: hidden;
     overscroll-behavior-y: none;
     text-rendering: optimizeLegibility;
 }
@@ -63,6 +64,7 @@ textarea {
 
 #root {
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 .sr-only {

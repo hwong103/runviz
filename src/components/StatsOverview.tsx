@@ -136,7 +136,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
 
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3 sm:grid-cols-6">
                 <StatCard
                     label="Runs"
                     value={stats.runCount.toString()}
@@ -179,7 +179,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
 
             <div>
                 <p className="rv-kicker mb-2 px-1">Training Health</p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3 lg:grid-cols-6">
                     <StatCard
                         label="ACWR"
                         value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}

@@ -183,7 +183,7 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             </div>
 
             {/* Current values */}
-            <div className="mt-6 grid grid-cols-3 gap-3 border-t border-white/5 pt-6">
+            <div className="mt-6 grid grid-cols-1 gap-3 border-t border-white/5 pt-6 min-[420px]:grid-cols-3">
                 <div className="rounded-[1.4rem] border border-white/[0.06] bg-black/[0.15] px-3 py-4 text-center">
                     <div className="rv-metric text-3xl text-[#13C38B]">
                         {displayMetric ? displayMetric.ctl.toFixed(0) : '-'}
