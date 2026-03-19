@@ -132,15 +132,18 @@ export function SetupPage({
               </div>
 
               <div className="rv-panel rv-panel-strong max-w-xl px-5 py-5 sm:px-6">
-                <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--rv-text-faint)]">
+                <label htmlFor="setup-magic-email" className="mb-2 block text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--rv-text-faint)]">
                   Magic link
                 </label>
                 <div className="flex flex-col gap-3">
                   <input
+                    id="setup-magic-email"
+                    name="email"
                     type="email"
                     value={magicEmail}
                     onChange={(e) => setMagicEmail(e.target.value)}
                     placeholder="you@example.com"
+                    autoComplete="email"
                     className="rv-field px-4 py-3 text-sm"
                   />
                   <button

@@ -140,13 +140,16 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
             <div className="flex-1 space-y-4">
                 {shoeStats.length > 0 ? (
                     shoeStats.map(shoe => (
-                        <div
+                        <button
                             key={shoe.id}
+                            type="button"
                             onClick={() => onSelectShoe?.(shoe.id)}
-                            className={`rounded-[1.7rem] p-5 border transition-all group cursor-pointer ${selectedShoeId === shoe.id
+                            className={`group rounded-[1.7rem] border p-5 text-left transition-all focus-visible:border-[var(--rv-blue)] ${selectedShoeId === shoe.id
                                 ? 'bg-[var(--rv-blue)]/10 border-[var(--rv-blue)] ring-1 ring-[var(--rv-blue)]/40'
                                 : 'bg-black/20 border-white/[0.06] hover:border-white/[0.15]'
                                 }`}
+                            aria-pressed={selectedShoeId === shoe.id}
+                            aria-label={`${selectedShoeId === shoe.id ? 'Clear' : 'Filter by'} shoe ${shoe.name}`}
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1 min-w-0 mr-2">
@@ -210,7 +213,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                                     </div>
                                 </div>
                             )}
-                        </div>
+                        </button>
                     ))
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full py-10 text-center opacity-50">

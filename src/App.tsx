@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { lazy, Suspense, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
@@ -6,14 +6,23 @@ import { SetupPage } from './components/SetupPage';
 import { StatsOverview } from './components/StatsOverview';
 import { CalendarHeatmap } from './components/CalendarHeatmap';
 import { ActivityList } from './components/ActivityList';
-import { FitnessChart } from './components/FitnessChart';
-import { RunDetails } from './components/RunDetails';
-import { ShoeTracker } from './components/ShoeTracker';
-import { RaceTimePredictions } from './components/RaceTimePredictions';
 import type { Activity, Gear } from './types';
 import { isRun } from './types';
 import { gear as gearApi } from './services/api';
 import { parseActivityLocalDate } from './utils/activityDate';
+
+const FitnessChart = lazy(() =>
+  import('./components/FitnessChart').then((module) => ({ default: module.FitnessChart }))
+);
+const RunDetails = lazy(() =>
+  import('./components/RunDetails').then((module) => ({ default: module.RunDetails }))
+);
+const ShoeTracker = lazy(() =>
+  import('./components/ShoeTracker').then((module) => ({ default: module.ShoeTracker }))
+);
+const RaceTimePredictions = lazy(() =>
+  import('./components/RaceTimePredictions').then((module) => ({ default: module.RaceTimePredictions }))
+);
 
 interface ViewPeriod {
   mode: 'all' | 'year' | 'month';
@@ -92,7 +101,7 @@ function App() {
     sendMagicLink,
     logout,
   } = useAuth();
-  const { activities, syncing, sync, lastSync } = useActivities();
+  const { activities, syncing, sync, lastSync } = useActivities(isAuthenticated && !needsStravaConnect);
   const [viewPeriod, setViewPeriod] = useState<ViewPeriod>({
     mode: 'month',
     year: new Date().getFullYear(),
@@ -302,7 +311,7 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <div className="rv-grid-lines flex min-h-screen items-center justify-center px-4 py-10">
+      <main className="rv-grid-lines flex min-h-screen items-center justify-center px-4 py-10">
         <div className="rv-shell-card flex w-full max-w-5xl flex-col gap-8 overflow-hidden px-6 py-8 sm:px-10 lg:flex-row lg:items-end lg:px-12 lg:py-12">
           <div className="flex-1 space-y-5">
             <p className="rv-kicker">For Ambitious Runners</p>
@@ -348,16 +357,19 @@ function App() {
                 </p>
               )}
               <div className="rounded-3xl border border-white/8 bg-white/[0.04] p-4">
-                <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--rv-text-faint)]">
+                <label htmlFor="magic-email" className="mb-2 block text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--rv-text-faint)]">
                   Magic link
                 </label>
                 <div className="flex flex-col gap-3">
                   <input
+                    id="magic-email"
+                    name="email"
                     type="email"
                     value={magicEmail}
                     onChange={(e) => setMagicEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-[var(--rv-text)] outline-none transition placeholder:text-[var(--rv-text-faint)] focus:border-[var(--rv-blue)]"
+                    autoComplete="email"
+                    className="rv-field w-full px-4 py-3 text-sm"
                   />
                   <button
                     onClick={async () => {
@@ -390,7 +402,7 @@ function App() {
             <p className="mt-6 text-xs uppercase tracking-[0.25em] text-[var(--rv-text-faint)]">Connect Strava during setup after sign-in.</p>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -412,18 +424,20 @@ function App() {
   return (
     <div className="min-h-screen text-[var(--rv-text)]">
       {selectedActivity && (
-        <RunDetails
-          activity={selectedActivity}
-          allActivities={activities}
-          shoes={allShoes}
-          onClose={() => setSelectedActivity(null)}
-          onSelect={setSelectedActivity}
-        />
+        <Suspense fallback={<ModalFallback />}>
+          <RunDetails
+            activity={selectedActivity}
+            allActivities={activities}
+            shoes={allShoes}
+            onClose={() => setSelectedActivity(null)}
+            onSelect={setSelectedActivity}
+          />
+        </Suspense>
       )}
 
       <div className="min-h-screen">
         <div className="min-w-0">
-          <header className="sticky top-0 z-40 border-b border-white/5 bg-[#051723]/88 backdrop-blur-2xl">
+          <header className="sticky top-0 z-40 border-b border-white/5 bg-[color-mix(in_srgb,var(--rv-bg-deep)_88%,transparent)] backdrop-blur-2xl">
             <div className="mx-auto flex max-w-[1720px] flex-col gap-5 px-4 py-4 sm:px-6 lg:px-8">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-4">
@@ -436,17 +450,17 @@ function App() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-end gap-3">
+                <div className="flex w-full min-w-0 items-center gap-3 overflow-x-auto no-scrollbar sm:w-auto sm:flex-wrap sm:justify-end sm:overflow-visible">
                   <Link
                     to="/plan-route"
-                    className="rv-chip transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
+                    className="rv-chip shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
                   >
                     <MapGlyph className="h-4 w-4 text-[var(--rv-blue)]" />
                     Route Planner
                   </Link>
                   <Link
                     to="/form-analysis"
-                    className="rv-chip transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
+                    className="rv-chip shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
                   >
                     <LabGlyph className="h-4 w-4 text-[var(--rv-yellow)]" />
                     Form Lab
@@ -454,7 +468,7 @@ function App() {
                   <button
                     onClick={() => sync({ forceFull: true })}
                     disabled={syncing}
-                    className={`px-5 py-3 text-xs ${syncing
+                    className={`shrink-0 px-5 py-3 text-xs ${syncing
                       ? 'cursor-wait border border-white/10 bg-white/5 text-[var(--rv-text-faint)]'
                       : 'rv-button-secondary border-[var(--rv-blue)]/45 bg-[var(--rv-blue)]/18 text-[var(--rv-text)] hover:bg-[var(--rv-blue)]/24'
                       }`}
@@ -513,8 +527,8 @@ function App() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-3 rounded-full border border-white/[0.08] bg-white/[0.04] p-1">
+              <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3 overflow-x-auto rounded-full border border-white/[0.08] bg-white/[0.04] p-1 no-scrollbar">
                   {([
                     { mode: 'all', label: 'Live' },
                     { mode: 'year', label: 'Year' },
@@ -523,7 +537,7 @@ function App() {
                     <button
                       key={mode}
                       onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                      className={`rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.28em] transition sm:px-6 ${viewPeriod.mode === mode
+                      className={`shrink-0 rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.28em] transition sm:px-6 ${viewPeriod.mode === mode
                         ? 'bg-[var(--rv-blue)] text-white shadow-[0_10px_24px_rgba(0,147,214,0.3)]'
                         : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-text)]'
                         }`}
@@ -533,7 +547,7 @@ function App() {
                   ))}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
                   {viewPeriod.mode !== 'all' && (
                     <select
                       value={viewPeriod.year}
@@ -554,7 +568,7 @@ function App() {
                     </select>
                   )}
 
-                  <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
+                  <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
                     <span className={`h-2.5 w-2.5 rounded-full ${syncing ? 'bg-[var(--rv-yellow)] animate-pulse' : 'bg-[var(--rv-green)]'}`} />
                     <span className="ml-2">{syncing ? 'Sync in progress' : formatLastSync(lastSync)}</span>
                   </span>
@@ -587,7 +601,9 @@ function App() {
 
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
               <div className="space-y-6 xl:col-span-8">
-                <FitnessChart activities={activities} period={viewPeriod} />
+                <Suspense fallback={<PanelFallback title="Performance Lab" subtitle="Loading fitness metrics" heightClassName="h-72" />}>
+                  <FitnessChart activities={activities} period={viewPeriod} />
+                </Suspense>
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                   <section className="rv-panel px-5 py-5 sm:px-7 sm:py-6 lg:col-span-5">
                     <div className="mb-6 flex items-center justify-between gap-3">
@@ -630,13 +646,17 @@ function App() {
               </div>
 
               <div className="space-y-6 xl:col-span-4">
-                <RaceTimePredictions activities={activities} period={viewPeriod} />
-                <ShoeTracker
-                  activities={filteredActivities}
-                  shoes={allShoes}
-                  selectedShoeId={selectedShoeId}
-                  onSelectShoe={(id) => setSelectedShoeId(prev => prev === id ? null : id)}
-                />
+                <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
+                  <RaceTimePredictions activities={activities} period={viewPeriod} />
+                </Suspense>
+                <Suspense fallback={<PanelFallback title="Equipment Log" subtitle="Loading shoe usage" />}>
+                  <ShoeTracker
+                    activities={filteredActivities}
+                    shoes={allShoes}
+                    selectedShoeId={selectedShoeId}
+                    onSelectShoe={(id) => setSelectedShoeId(prev => prev === id ? null : id)}
+                  />
+                </Suspense>
               </div>
             </section>
 
@@ -727,6 +747,40 @@ function LabGlyph({ className = 'h-5 w-5 text-current' }: { className?: string }
 function formatLastSync(lastSync: Date | null) {
   if (!lastSync) return 'No sync yet';
   return `Last sync ${lastSync.toLocaleDateString()}`;
+}
+
+function PanelFallback({
+  title,
+  subtitle,
+  heightClassName = 'h-56',
+}: {
+  title: string;
+  subtitle: string;
+  heightClassName?: string;
+}) {
+  return (
+    <div className="rv-panel rv-panel-strong px-5 py-5 sm:px-7 sm:py-6">
+      <div className="mb-6">
+        <p className="rv-kicker mb-2">{title}</p>
+        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">{subtitle}</p>
+      </div>
+      <div className={`${heightClassName} animate-pulse rounded-[1.5rem] border border-white/6 bg-white/[0.03]`} />
+    </div>
+  );
+}
+
+function ModalFallback() {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[color-mix(in_srgb,var(--rv-bg)_92%,transparent)] backdrop-blur-xl p-4">
+      <div className="rv-panel rv-panel-strong flex w-full max-w-xl items-center justify-center gap-4 px-8 py-10">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[var(--rv-blue)]/30 border-t-[var(--rv-yellow)]" />
+        <div>
+          <p className="rv-kicker mb-2">Run Details</p>
+          <p className="text-sm text-[var(--rv-text-dim)]">Loading deeper analysis</p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default App;

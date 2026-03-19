@@ -169,8 +169,9 @@ export function CalendarHeatmap({
                                 {week.map((day, dayIdx) => {
                                     const isInteractive = isMonthView ? day?.inRange : day?.currentMonth;
                                     return (
-                                        <div
+                                        <button
                                             key={dayIdx}
+                                            type="button"
                                             onClick={() => isInteractive && onSelectDay?.(day!.date)}
                                             onMouseEnter={(e) => {
                                                 if (isInteractive) {
@@ -184,8 +185,10 @@ export function CalendarHeatmap({
                                                 }
                                             }}
                                             onMouseLeave={() => setHoveredDay(null)}
-                                            className={`w-3 h-3 rounded-[2px] transition-all duration-200 ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'bg-transparent'
+                                            className={`h-3 w-3 rounded-[2px] transition-all duration-200 focus-visible:scale-125 focus-visible:ring-2 focus-visible:ring-white/40 ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'bg-transparent'
                                                 } ${isInteractive ? 'hover:scale-125 cursor-pointer hover:ring-2 hover:ring-white/30' : ''}`}
+                                            disabled={!isInteractive}
+                                            aria-label={day ? `${format(parseISO(day.date), 'MMMM d, yyyy')}, ${day.distance.toFixed(2)} kilometers` : 'Empty day'}
                                         />
                                     );
                                 })}

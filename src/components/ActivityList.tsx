@@ -94,10 +94,12 @@ export function ActivityList({
                     runs.map((activity) => {
                         const dateParts = formatDate(activity.start_date_local);
                         return (
-                            <div
+                            <button
                                 key={activity.id}
+                                type="button"
                                 onClick={() => onSelect?.(activity)}
-                                className="group flex cursor-pointer flex-col gap-3 rounded-[1.7rem] border border-white/[0.06] bg-black/[0.15] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-white/5 sm:flex-row sm:items-center sm:gap-4"
+                                className="group flex w-full cursor-pointer flex-col gap-3 rounded-[1.7rem] border border-white/[0.06] bg-black/[0.15] p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-white/5 focus-visible:border-[var(--rv-blue)] focus-visible:bg-white/5 sm:flex-row sm:items-center sm:gap-4"
+                                aria-label={`Open run details for ${activity.name} on ${dateParts.month} ${dateParts.day}`}
                             >
                                 {/* Date */}
                                 <div className="w-full sm:w-16 flex items-center gap-2 sm:block sm:text-center">
@@ -169,7 +171,7 @@ export function ActivityList({
 
                                     <div className="font-black text-[var(--rv-text-faint)] transition-all transform group-hover:translate-x-1 group-hover:text-white">→</div>
                                 </div>
-                            </div>
+                            </button>
                         );
                     })
                 )}

@@ -19,7 +19,7 @@ function activitySortTimestamp(activity: Activity): number {
     return parseActivityLocalDate(activity.start_date_local).getTime();
 }
 
-export function useActivities() {
+export function useActivities(enabled = true) {
     const [state, setState] = useState<SyncState>({
         activities: [],
         loading: true,
@@ -50,6 +50,7 @@ export function useActivities() {
     }, []);
 
     const sync = useCallback(async (options: { forceFull?: boolean } = {}) => {
+        if (!enabled) return;
         if (state.syncing) return;
         setState((prev) => ({ ...prev, syncing: true, error: null }));
 
@@ -140,10 +141,22 @@ export function useActivities() {
                 error: err instanceof Error ? err.message : 'Sync failed',
             }));
         }
-    }, [state.syncing]); // Simplified dependency array to avoid loops
+    }, [enabled, state.syncing]); // Simplified dependency array to avoid loops
 
     // Initial load and sync
     useEffect(() => {
+        if (!enabled) {
+            hasInitialized.current = false;
+            setState({
+                activities: [],
+                loading: false,
+                syncing: false,
+                error: null,
+                lastSync: null,
+            });
+            return;
+        }
+
         if (hasInitialized.current) return;
         hasInitialized.current = true;
 
@@ -154,7 +167,7 @@ export function useActivities() {
             sync();
         };
         init();
-    }, [loadCached, sync]);
+    }, [enabled, loadCached, sync]);
 
     const getActivity = useCallback(async (id: number): Promise<Activity | null> => {
         // Check cache first
