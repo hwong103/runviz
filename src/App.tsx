@@ -1,5 +1,4 @@
 import { lazy, Suspense, useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
@@ -11,6 +10,7 @@ import type { Activity, Gear } from './types';
 import { isRun } from './types';
 import { gear as gearApi } from './services/api';
 import { parseActivityLocalDate } from './utils/activityDate';
+import { RefreshCw } from 'lucide-react';
 
 const FitnessChart = lazy(() =>
   import('./components/FitnessChart').then((module) => ({ default: module.FitnessChart }))
@@ -112,8 +112,6 @@ function App() {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const avatarRef = useRef<HTMLDivElement>(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [magicEmail, setMagicEmail] = useState('');
   const [magicSending, setMagicSending] = useState(false);
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
@@ -292,28 +290,6 @@ function App() {
 
   const athleteLabel = athlete ? `${athlete.firstname} ${athlete.lastname}`.trim() : 'Athlete';
 
-  useEffect(() => {
-    if (!isMenuOpen || !avatarRef.current) return;
-
-    const updateMenuPosition = () => {
-      if (!avatarRef.current) return;
-      const rect = avatarRef.current.getBoundingClientRect();
-      setMenuPos({
-        top: rect.bottom + 12,
-        right: window.innerWidth - rect.right,
-      });
-    };
-
-    updateMenuPosition();
-    window.addEventListener('resize', updateMenuPosition);
-    window.addEventListener('scroll', updateMenuPosition, true);
-
-    return () => {
-      window.removeEventListener('resize', updateMenuPosition);
-      window.removeEventListener('scroll', updateMenuPosition, true);
-    };
-  }, [isMenuOpen]);
-
   if (authLoading) {
     return (
       <div className="rv-grid-lines flex min-h-screen items-center justify-center px-6">
@@ -457,15 +433,19 @@ function App() {
 
       <div className="min-h-screen">
         <div className="min-w-0">
-          <header className="sticky top-0 z-40 border-b border-white/5 bg-[color-mix(in_srgb,var(--rv-bg-deep)_88%,transparent)] backdrop-blur-2xl">
-            <div className="mx-auto flex max-w-[1720px] flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3 sm:px-6 lg:px-8">
-              <div className="flex min-w-0 items-center gap-3">
-                <LabGlyph className="h-7 w-7 text-[var(--rv-blue)]" />
-                <BrandWordmark compact />
+          <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#070f1a]/90 backdrop-blur-2xl">
+            <div className="mx-auto flex h-[52px] max-w-[1720px] items-center gap-4 px-4 sm:px-6 lg:px-8">
+              <div className="flex shrink-0 items-center gap-2.5">
+                <LabGlyph className="h-6 w-6 text-[var(--rv-blue)]" />
+                <span className="text-xl font-bold tracking-[-0.06em] text-[var(--rv-text)]">
+                  RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
+                </span>
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 lg:justify-center">
-                <div className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] p-0.5">
+              <div className="h-5 w-px shrink-0 bg-white/[0.08]" />
+
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <div className="flex items-center gap-0.5 rounded-full border border-white/[0.07] bg-white/[0.03] p-0.5">
                   {([
                     { mode: 'all', label: 'Live' },
                     { mode: 'year', label: 'Year' },
@@ -474,9 +454,9 @@ function App() {
                     <button
                       key={mode}
                       onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                      className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] transition sm:px-4 ${viewPeriod.mode === mode
-                        ? 'bg-[var(--rv-blue)] text-white shadow-[0_6px_16px_rgba(0,147,214,0.28)]'
-                        : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-text)]'
+                      className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] transition-all ${viewPeriod.mode === mode
+                        ? 'bg-[var(--rv-blue)] text-white shadow-[0_4px_12px_rgba(74,122,255,0.35)]'
+                        : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-text-dim)]'
                         }`}
                     >
                       {label}
@@ -488,7 +468,7 @@ function App() {
                   <select
                     value={viewPeriod.year}
                     onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value, 10) }))}
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
+                    className="rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
                   >
                     {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
@@ -498,97 +478,92 @@ function App() {
                   <select
                     value={viewPeriod.month || 0}
                     onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value, 10) }))}
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
+                    className="rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
                   >
                     {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
                   </select>
                 )}
 
-                <span className="hidden items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)] lg:inline-flex">
-                  <span className={`h-2 w-2 rounded-full ${syncing ? 'animate-pulse bg-[var(--rv-yellow)]' : 'bg-[var(--rv-green)]'}`} />
-                  {syncing ? 'Sync in progress' : formatLastSync(lastSync)}
-                </span>
+                <div className="ml-1 hidden items-center gap-1.5 lg:flex">
+                  <span className={`h-1.5 w-1.5 rounded-full ${syncing ? 'animate-pulse bg-[var(--rv-yellow)]' : 'bg-[var(--rv-green)]'}`} />
+                  <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--rv-text-faint)]">
+                    {syncing ? 'Syncing' : formatLastSync(lastSync)}
+                  </span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex shrink-0 items-center gap-2">
                 <Link
                   to="/plan-route"
-                  className="rv-chip rv-chip-micro shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-[var(--rv-text-faint)] transition hover:bg-white/[0.05] hover:text-[var(--rv-text-dim)]"
                 >
-                  <MapGlyph className="h-4 w-4 text-[var(--rv-blue)]" />
-                  Route Planner
+                  <MapGlyph className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Routes</span>
                 </Link>
+
                 <Link
                   to="/form-analysis"
-                  className="rv-chip rv-chip-micro shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-[var(--rv-text-faint)] transition hover:bg-white/[0.05] hover:text-[var(--rv-text-dim)]"
                 >
-                  <LabGlyph className="h-4 w-4 text-[var(--rv-yellow)]" />
-                  Form Lab
+                  <LabGlyph className="h-3.5 w-3.5 text-[var(--rv-yellow)]" />
+                  <span className="hidden sm:inline">Form Lab</span>
                 </Link>
+
+                <div className="h-5 w-px bg-white/[0.08]" />
+
                 <button
                   onClick={() => sync({ forceFull: true })}
                   disabled={syncing}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] sm:px-4 ${syncing
-                    ? 'cursor-wait border border-white/10 bg-white/5 text-[var(--rv-text-faint)]'
-                    : 'rv-button-secondary border-[var(--rv-blue)]/45 bg-[var(--rv-blue)]/18 text-[var(--rv-text)] hover:bg-[var(--rv-blue)]/24'
-                    }`}
+                  title={syncing ? 'Syncing...' : 'Sync Data'}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.03] text-[var(--rv-text-faint)] transition hover:border-white/15 hover:text-[var(--rv-text-dim)] disabled:cursor-wait disabled:opacity-40"
                 >
-                  {syncing ? 'Syncing...' : 'Sync Data'}
+                  <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
                 </button>
 
-                <div ref={avatarRef} className="relative">
+                <div className="relative">
                   <button
                     onClick={() => setIsMenuOpen((open) => !open)}
-                    className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2 py-1.5 transition hover:border-white/20"
+                    className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-white/[0.10] bg-white/[0.05] transition hover:border-white/25"
                   >
                     {athlete?.profile ? (
-                      <img src={athlete.profile} className="h-7 w-7 rounded-full object-cover" alt="Profile" />
+                      <img src={athlete.profile} className="h-full w-full object-cover" alt="Profile" />
                     ) : (
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.08] text-[10px] font-bold uppercase tracking-[0.16em]">RV</div>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--rv-text-dim)]">
+                        {athlete?.firstname?.[0] ?? 'R'}
+                      </span>
                     )}
-                    <div className="hidden text-left sm:block">
-                      <div className="text-[13px] font-bold leading-none text-[var(--rv-text)]">{athleteLabel}</div>
-                    </div>
                   </button>
 
                   {isMenuOpen && (
-                    createPortal(
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
-                        <div
-                          className="rv-panel rv-panel-strong fixed z-50 w-72 overflow-hidden p-2"
-                          style={{ top: menuPos.top, right: menuPos.right }}
-                        >
-                          <div className="border-b border-white/5 px-4 py-4">
-                            <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
-                            <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
-                              RunViz account
-                            </div>
-                          </div>
-                          <div className="space-y-1 px-2 py-2">
-                            <button
-                              onClick={() => {
-                                sync({ forceFull: true });
-                                setIsMenuOpen(false);
-                              }}
-                              disabled={syncing}
-                              className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-white/5"
-                            >
-                              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Full Sync</span>
-                              <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-blue)]">{syncing ? 'Running' : 'Start'}</span>
-                            </button>
-                            <button
-                              onClick={logout}
-                              className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-red-500/10"
-                            >
-                              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Logout</span>
-                              <span className="text-[10px] uppercase tracking-[0.22em] text-[#ff7f64]">Exit</span>
-                            </button>
-                          </div>
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
+                      <div className="rv-panel rv-panel-strong absolute right-0 z-50 mt-2 w-64 overflow-hidden p-2">
+                        <div className="border-b border-white/5 px-4 py-3">
+                          <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
+                          <div className="mt-0.5 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">RunViz account</div>
                         </div>
-                      </>,
-                      document.body
-                    )
+                        <div className="space-y-0.5 px-2 py-2">
+                          <button
+                            onClick={() => {
+                              sync({ forceFull: true });
+                              setIsMenuOpen(false);
+                            }}
+                            disabled={syncing}
+                            className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-left transition hover:bg-white/5"
+                          >
+                            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Full Sync</span>
+                            <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-blue)]">{syncing ? 'Running' : 'Start'}</span>
+                          </button>
+                          <button
+                            onClick={logout}
+                            className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-left transition hover:bg-red-500/10"
+                          >
+                            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Logout</span>
+                            <span className="text-[10px] uppercase tracking-[0.22em] text-[#ff7f64]">Exit</span>
+                          </button>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -718,8 +693,18 @@ function LabGlyph({ className = 'h-5 w-5 text-current' }: { className?: string }
 }
 
 function formatLastSync(lastSync: Date | null) {
-  if (!lastSync) return 'No sync yet';
-  return `Last sync ${lastSync.toLocaleDateString()}`;
+  if (!lastSync) return 'Never synced';
+  const now = new Date();
+  const diffMs = now.getTime() - lastSync.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+
+  if (diffMins < 1) return 'Just synced';
+  if (diffMins < 60) return `${diffMins}m ago`;
+
+  const diffHrs = Math.floor(diffMins / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+
+  return `${Math.floor(diffHrs / 24)}d ago`;
 }
 
 function PanelFallback({
