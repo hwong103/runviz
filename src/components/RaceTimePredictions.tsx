@@ -1,4 +1,6 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import type { CSSProperties } from 'react';
 import type { Activity } from '../types';
 import { isRun } from '../types';
 import {
@@ -232,9 +234,31 @@ export function RaceTimePredictions({
     }, [activities, period, maxHR, restHR]);
 
     const [activeTooltip, setActiveTooltip] = useState<'ctl' | 'tsb' | 'readiness' | null>(null);
+    const tooltipAnchorRef = useRef<HTMLDivElement>(null);
+    const [tooltipStyle, setTooltipStyle] = useState<CSSProperties>({});
 
     // Close tooltip when clicking outside or pressing escape
     useEffect(() => {
+        let frame = 0;
+        if (activeTooltip && tooltipAnchorRef.current) {
+            frame = requestAnimationFrame(() => {
+                if (!tooltipAnchorRef.current) return;
+                const rect = tooltipAnchorRef.current.getBoundingClientRect();
+                const TOOLTIP_W = 256;
+                const left = Math.min(
+                    Math.max(8, rect.right - TOOLTIP_W),
+                    window.innerWidth - TOOLTIP_W - 8
+                );
+
+                setTooltipStyle({
+                    position: 'fixed',
+                    top: rect.bottom + 8,
+                    left,
+                    width: TOOLTIP_W,
+                });
+            });
+        }
+
         const handleClickOutside = () => setActiveTooltip(null);
         const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setActiveTooltip(null); };
 
@@ -246,6 +270,7 @@ export function RaceTimePredictions({
             }, 0);
         }
         return () => {
+            cancelAnimationFrame(frame);
             window.removeEventListener('click', handleClickOutside);
             window.removeEventListener('keydown', handleEsc);
         };
@@ -272,7 +297,7 @@ export function RaceTimePredictions({
                     <p className="rv-kicker mb-2">Race Predictions</p>
                     <h2 className="text-2xl font-bold tracking-tight text-[var(--rv-text)]">Projected race shape</h2>
                 </div>
-                <div className="relative z-10 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.22em] sm:ml-auto">
+                <div ref={tooltipAnchorRef} className="relative z-10 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.22em] sm:ml-auto">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -309,42 +334,6 @@ export function RaceTimePredictions({
                         READY {predictions.readinessScore}
                     </button>
 
-                    {/* Custom Popup Tooltip */}
-                    {activeTooltip && (
-                        <div className="rv-panel absolute right-0 top-full z-50 mt-2 w-64 p-3 animate-in fade-in zoom-in-95 duration-200">
-                            {activeTooltip === 'ctl' ? (
-                                <>
-                                    <div className="text-emerald-400 mb-1">Chronic Training Load (Fitness)</div>
-                                    <div className="font-medium normal-case leading-relaxed text-[var(--rv-text-dim)]">
-                                        Weighted average of your daily training load over the last 42 days. Higher values indicate higher fitness but higher fatigue.
-                                    </div>
-                                </>
-                            ) : activeTooltip === 'tsb' ? (
-                                <>
-                                    <div className={`mb-1 ${predictions.tsb > 0 ? 'text-emerald-400' : 'text-yellow-400'}`}>Training Stress Balance (Form)</div>
-                                    <div className="font-medium normal-case leading-relaxed text-[var(--rv-text-dim)]">
-                                        Difference between fitness (CTL) and fatigue (ATL).
-                                        <br />
-                                        <span className="text-emerald-500 block mt-1">+ Positive: Fresh & Ready</span>
-                                        <span className="text-red-400 block">- Negative: Fatigued & Building</span>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="text-emerald-400 mb-1">Race Readiness Score (0-100)</div>
-                                    <div className="font-medium normal-case leading-relaxed text-[var(--rv-text-dim)]">
-                                        Composite of fitness (CTL), freshness (TSB), quality sessions (28d), and long-run support (14d).
-                                        <span className="block mt-1 text-emerald-500">75+: Ready to race</span>
-                                        <span className="block text-yellow-400">55-74: Building fitness</span>
-                                        <span className="block text-gray-300">&lt;55: Base phase</span>
-                                        <span className="block mt-1 text-[10px] text-[var(--rv-text-faint)]">
-                                            Quality runs: {predictions.qualityRuns} | Longest recent: {predictions.longestRecentRunKm.toFixed(1)} km
-                                        </span>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -380,6 +369,45 @@ export function RaceTimePredictions({
             <div className="mt-4 text-center text-[9px] font-medium text-[var(--rv-text-faint)]">
                 Based on fitness, freshness, quality density, and long-run support
             </div>
+            {activeTooltip && createPortal(
+                <div
+                    className="rv-panel rv-panel-strong z-[9999] p-3 animate-in fade-in zoom-in-95 duration-200 pointer-events-none"
+                    style={tooltipStyle}
+                >
+                    {activeTooltip === 'ctl' ? (
+                        <>
+                            <div className="mb-1 text-emerald-400">Chronic Training Load (Fitness)</div>
+                            <div className="font-medium normal-case leading-relaxed text-[var(--rv-text-dim)]">
+                                Weighted average of your daily training load over the last 42 days. Higher values indicate higher fitness but higher fatigue.
+                            </div>
+                        </>
+                    ) : activeTooltip === 'tsb' ? (
+                        <>
+                            <div className={`mb-1 ${predictions.tsb > 0 ? 'text-emerald-400' : 'text-yellow-400'}`}>Training Stress Balance (Form)</div>
+                            <div className="font-medium normal-case leading-relaxed text-[var(--rv-text-dim)]">
+                                Difference between fitness (CTL) and fatigue (ATL).
+                                <br />
+                                <span className="mt-1 block text-emerald-500">+ Positive: Fresh & Ready</span>
+                                <span className="block text-red-400">- Negative: Fatigued & Building</span>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="mb-1 text-emerald-400">Race Readiness Score (0-100)</div>
+                            <div className="font-medium normal-case leading-relaxed text-[var(--rv-text-dim)]">
+                                Composite of fitness (CTL), freshness (TSB), quality sessions (28d), and long-run support (14d).
+                                <span className="mt-1 block text-emerald-500">75+: Ready to race</span>
+                                <span className="block text-yellow-400">55-74: Building fitness</span>
+                                <span className="block text-gray-300">&lt;55: Base phase</span>
+                                <span className="mt-1 block text-[10px] text-[var(--rv-text-faint)]">
+                                    Quality runs: {predictions.qualityRuns} | Longest recent: {predictions.longestRecentRunKm.toFixed(1)} km
+                                </span>
+                            </div>
+                        </>
+                    )}
+                </div>,
+                document.body
+            )}
         </div>
     );
 }

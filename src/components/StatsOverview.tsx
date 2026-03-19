@@ -135,115 +135,123 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
     };
 
     return (
-        <div className="relative z-20 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-            <StatCard
-                label="Runs"
-                value={stats.runCount.toString()}
-                unit=""
-                icon={Footprints}
-            />
-            <StatCard
-                label="Distance"
-                value={stats.totalDistance.toFixed(1)}
-                unit="km"
-                icon={Ruler}
-            />
-            <StatCard
-                label="Avg Duration"
-                value={stats.avgDurationMins > 0 ? stats.avgDurationMins.toFixed(0) : '--'}
-                unit="min"
-                icon={Clock3}
-                color="text-cyan-400"
-            />
-            <StatCard
-                label="Avg Pace"
-                value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'}
-                unit="/km"
-                icon={Gauge}
-            />
-            <StatCard
-                label="Longest"
-                value={stats.longestRun.toFixed(1)}
-                unit="km"
-                icon={Trophy}
-            />
-            <StatCard
-                label="Max Streak"
-                value={stats.longestStreak.toString()}
-                unit="days"
-                icon={Flame}
-                color="text-orange-400"
-            />
-            <StatCard
-                label="ACWR"
-                value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
-                unit=""
-                icon={Scale}
-                color={acwrColorClass(stats.acwr)}
-                helpMetric="acwr"
-                helpText="Acute:Chronic Workload Ratio (ATL/CTL), anchored to the selected period end date. 0.8-1.3 is generally balanced, >1.5 means a sharp load spike."
-                activeHelp={activeHelp}
-                onToggleHelp={setActiveHelp}
-            />
-            <StatCard
-                label="Ramp"
-                value={
-                    stats.weeklyRampPercent !== null
-                        ? `${stats.weeklyRampPercent >= 0 ? '+' : ''}${stats.weeklyRampPercent.toFixed(0)}`
-                        : `${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)}`
-                }
-                unit={stats.weeklyRampPercent !== null ? '%' : 'km/wk'}
-                icon={TrendingUp}
-                color={rampColorClass(stats.weeklyRampPercent)}
-                helpMetric="ramp"
-                helpText="Week-over-week distance change (7 days vs prior 7), anchored to the selected period end date. Displayed as % when prior-week distance exists; otherwise km/wk."
-                activeHelp={activeHelp}
-                onToggleHelp={setActiveHelp}
-            />
-            <StatCard
-                label="Consistency"
-                value={stats.consistencyScore.toString()}
-                unit="%"
-                icon={Target}
-                color={consistencyColorClass(stats.consistencyScore)}
-                helpMetric="consistency"
-                helpText="Score from recent weekly run frequency and stability, anchored to the selected period end date. 75+ strong routine, 50-74 building, below 50 inconsistent."
-                activeHelp={activeHelp}
-                onToggleHelp={setActiveHelp}
-            />
-            <StatCard
-                label="Long Run %"
-                value={stats.longRunRatio !== null ? stats.longRunRatio.toFixed(0) : '--'}
-                unit="%"
-                icon={PieChart}
-                color={longRunRatioColorClass(stats.longRunRatio)}
-                helpMetric="longRunRatio"
-                helpText="Longest run as a % of that anchored week's total distance. Around 20-35% is common; very high values may indicate imbalance."
-                activeHelp={activeHelp}
-                onToggleHelp={setActiveHelp}
-            />
-            <StatCard
-                label="Efficiency"
-                value={stats.efficiencyIndex !== null ? stats.efficiencyIndex.toFixed(2) : '--'}
-                unit="m/beat"
-                icon={HeartPulse}
-                color={efficiencyColorClass(stats.efficiencyIndex)}
-                helpMetric="efficiency"
-                helpText="Distance per heartbeat over trailing 28 days (anchored). Higher is better. Rough guide: <1.00 low, 1.00-1.19 moderate, >=1.20 strong. Example: 0.94 means ~0.94m per heartbeat and suggests room to improve aerobic efficiency."
-                activeHelp={activeHelp}
-                onToggleHelp={setActiveHelp}
-            />
-            <StatCard
-                label="GAP Trend"
-                value={formatSignedSeconds(stats.gapTrendSecPerKm)}
-                unit="s/km"
-                icon={Mountain}
-                color={gapTrendColorClass(stats.gapTrendSecPerKm)}
-                helpMetric="gapTrend"
-                helpText="Change in estimated GAP pace: latest 14 days vs prior 14 (anchored). Negative is improving (faster), positive is slowing."
-                activeHelp={activeHelp}
-                onToggleHelp={setActiveHelp}
-            />
+        <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+                <StatCard
+                    label="Runs"
+                    value={stats.runCount.toString()}
+                    unit=""
+                    icon={Footprints}
+                />
+                <StatCard
+                    label="Distance"
+                    value={stats.totalDistance.toFixed(1)}
+                    unit="km"
+                    icon={Ruler}
+                />
+                <StatCard
+                    label="Avg Duration"
+                    value={stats.avgDurationMins > 0 ? stats.avgDurationMins.toFixed(0) : '--'}
+                    unit="min"
+                    icon={Clock3}
+                    color="text-cyan-400"
+                />
+                <StatCard
+                    label="Avg Pace"
+                    value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'}
+                    unit="/km"
+                    icon={Gauge}
+                />
+                <StatCard
+                    label="Longest"
+                    value={stats.longestRun.toFixed(1)}
+                    unit="km"
+                    icon={Trophy}
+                />
+                <StatCard
+                    label="Max Streak"
+                    value={stats.longestStreak.toString()}
+                    unit="days"
+                    icon={Flame}
+                    color="text-orange-400"
+                />
+            </div>
+
+            <div>
+                <p className="rv-kicker mb-2 px-1">Training Health</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                    <StatCard
+                        label="ACWR"
+                        value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
+                        unit=""
+                        icon={Scale}
+                        color={acwrColorClass(stats.acwr)}
+                        helpMetric="acwr"
+                        helpText="Acute:Chronic Workload Ratio (ATL/CTL), anchored to the selected period end date. 0.8-1.3 is generally balanced, >1.5 means a sharp load spike."
+                        activeHelp={activeHelp}
+                        onToggleHelp={setActiveHelp}
+                    />
+                    <StatCard
+                        label="Ramp"
+                        value={
+                            stats.weeklyRampPercent !== null
+                                ? `${stats.weeklyRampPercent >= 0 ? '+' : ''}${stats.weeklyRampPercent.toFixed(0)}`
+                                : `${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)}`
+                        }
+                        unit={stats.weeklyRampPercent !== null ? '%' : 'km/wk'}
+                        icon={TrendingUp}
+                        color={rampColorClass(stats.weeklyRampPercent)}
+                        helpMetric="ramp"
+                        helpText="Week-over-week distance change (7 days vs prior 7), anchored to the selected period end date. Displayed as % when prior-week distance exists; otherwise km/wk."
+                        activeHelp={activeHelp}
+                        onToggleHelp={setActiveHelp}
+                    />
+                    <StatCard
+                        label="Consistency"
+                        value={stats.consistencyScore.toString()}
+                        unit="%"
+                        icon={Target}
+                        color={consistencyColorClass(stats.consistencyScore)}
+                        helpMetric="consistency"
+                        helpText="Score from recent weekly run frequency and stability, anchored to the selected period end date. 75+ strong routine, 50-74 building, below 50 inconsistent."
+                        activeHelp={activeHelp}
+                        onToggleHelp={setActiveHelp}
+                    />
+                    <StatCard
+                        label="Long Run %"
+                        value={stats.longRunRatio !== null ? stats.longRunRatio.toFixed(0) : '--'}
+                        unit="%"
+                        icon={PieChart}
+                        color={longRunRatioColorClass(stats.longRunRatio)}
+                        helpMetric="longRunRatio"
+                        helpText="Longest run as a % of that anchored week's total distance. Around 20-35% is common; very high values may indicate imbalance."
+                        activeHelp={activeHelp}
+                        onToggleHelp={setActiveHelp}
+                    />
+                    <StatCard
+                        label="Efficiency"
+                        value={stats.efficiencyIndex !== null ? stats.efficiencyIndex.toFixed(2) : '--'}
+                        unit="m/beat"
+                        icon={HeartPulse}
+                        color={efficiencyColorClass(stats.efficiencyIndex)}
+                        helpMetric="efficiency"
+                        helpText="Distance per heartbeat over trailing 28 days (anchored). Higher is better. Rough guide: <1.00 low, 1.00-1.19 moderate, >=1.20 strong. Example: 0.94 means ~0.94m per heartbeat and suggests room to improve aerobic efficiency."
+                        activeHelp={activeHelp}
+                        onToggleHelp={setActiveHelp}
+                    />
+                    <StatCard
+                        label="GAP Trend"
+                        value={formatSignedSeconds(stats.gapTrendSecPerKm)}
+                        unit="s/km"
+                        icon={Mountain}
+                        color={gapTrendColorClass(stats.gapTrendSecPerKm)}
+                        helpMetric="gapTrend"
+                        helpText="Change in estimated GAP pace: latest 14 days vs prior 14 (anchored). Negative is improving (faster), positive is slowing."
+                        activeHelp={activeHelp}
+                        onToggleHelp={setActiveHelp}
+                    />
+                </div>
+            </div>
         </div>
     );
 }
@@ -314,6 +322,7 @@ function StatCard({
     onToggleHelp,
 }: StatCardProps) {
     const showHelp = !!helpMetric && activeHelp === helpMetric;
+    const isCompact = !helpMetric;
     const cardRef = useRef<HTMLDivElement | null>(null);
     const [tooltipStyle, setTooltipStyle] = useState<CSSProperties>({});
 
@@ -340,12 +349,12 @@ function StatCard({
     return (
         <div
             ref={cardRef}
-            className="rv-panel relative overflow-hidden p-4 sm:p-5 transition-all duration-300 group hover:-translate-y-1 hover:border-white/20"
+            className={`rv-panel relative overflow-hidden transition-all duration-300 group hover:-translate-y-1 hover:border-white/20 ${isCompact ? 'p-3 sm:p-4' : 'p-4 sm:p-5'}`}
         >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
-            <div className="mb-3 flex items-center gap-2 pr-6">
-                <Icon className="h-[18px] w-[18px] text-[var(--rv-text-faint)] transition-transform duration-300 group-hover:scale-110 group-hover:text-[var(--rv-text-dim)]" />
-                <span className="text-[10px] text-[var(--rv-text-faint)] font-bold uppercase tracking-[0.28em]">{label}</span>
+            <div className={`mb-3 flex items-center gap-2 ${isCompact ? 'pr-3' : 'pr-6'}`}>
+                <Icon className={`${isCompact ? 'h-[16px] w-[16px]' : 'h-[18px] w-[18px]'} text-[var(--rv-text-faint)] transition-transform duration-300 group-hover:scale-110 group-hover:text-[var(--rv-text-dim)]`} />
+                <span className={`text-[10px] font-bold uppercase ${isCompact ? 'tracking-[0.24em]' : 'tracking-[0.28em]'} text-[var(--rv-text-faint)]`}>{label}</span>
             </div>
             {helpMetric && helpText && onToggleHelp && (
                 <>
@@ -375,7 +384,7 @@ function StatCard({
                 </>
             )}
             <div className="flex flex-wrap items-baseline gap-1.5">
-                <span className={`rv-data text-[1.8rem] sm:text-[2.15rem] ${color}`}>{value}</span>
+                <span className={`rv-data ${isCompact ? 'text-[1.5rem] sm:text-[1.85rem]' : 'text-[1.8rem] sm:text-[2.15rem]'} ${color}`}>{value}</span>
                 <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">{unit}</span>
             </div>
         </div>

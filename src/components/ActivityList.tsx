@@ -132,7 +132,7 @@ export function ActivityList({
                                 </div>
 
                                 {/* Shoe (Always Visible) */}
-                                <div className="hidden sm:flex flex-col items-end min-w-[120px] max-w-[180px] ml-4 shrink-0">
+                                <div className="hidden sm:flex flex-col items-end min-w-[150px] max-w-[220px] ml-4 shrink-0">
                                     {(() => {
                                         // Try to find shoe in the provided shoes array, or use the one on the activity if available
                                         const shoe = (activity.gear_id ? shoes.find(s => s.id === activity.gear_id) : null) || activity.gear;
@@ -140,7 +140,7 @@ export function ActivityList({
                                         return (
                                             <div className="group/shoe flex items-center gap-2 rounded-full border border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/10 px-3 py-1.5 transition-colors hover:bg-[var(--rv-blue)]/20">
                                                 <BrandLogo brandName={shoe.brand_name} />
-                                                <span className="max-w-[120px] truncate text-[10px] font-black uppercase tracking-[0.22em] text-[var(--rv-blue)]">
+                                                <span className="max-w-[160px] truncate text-[10px] font-black uppercase tracking-[0.22em] text-[var(--rv-blue)]">
                                                     {shoe.name}
                                                 </span>
                                             </div>

@@ -458,111 +458,24 @@ function App() {
       <div className="min-h-screen">
         <div className="min-w-0">
           <header className="sticky top-0 z-40 border-b border-white/5 bg-[color-mix(in_srgb,var(--rv-bg-deep)_88%,transparent)] backdrop-blur-2xl">
-            <div className="mx-auto flex max-w-[1720px] flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8">
-              <div className="flex flex-wrap items-center justify-between gap-3 lg:flex-nowrap">
-                <div className="flex min-w-0 items-center gap-4">
-                  <LabGlyph className="h-8 w-8 text-[var(--rv-blue)]" />
-                  <div>
-                    <BrandWordmark compact />
-                  </div>
-                </div>
-
-                <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto no-scrollbar sm:flex-wrap sm:overflow-visible">
-                  <Link
-                    to="/plan-route"
-                    className="rv-chip rv-chip-micro shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
-                  >
-                    <MapGlyph className="h-4 w-4 text-[var(--rv-blue)]" />
-                    Route Planner
-                  </Link>
-                  <Link
-                    to="/form-analysis"
-                    className="rv-chip rv-chip-micro shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
-                  >
-                    <LabGlyph className="h-4 w-4 text-[var(--rv-yellow)]" />
-                    Form Lab
-                  </Link>
-                  <button
-                    onClick={() => sync({ forceFull: true })}
-                    disabled={syncing}
-                    className={`shrink-0 rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] ${syncing
-                      ? 'cursor-wait border border-white/10 bg-white/5 text-[var(--rv-text-faint)]'
-                      : 'rv-button-secondary border-[var(--rv-blue)]/45 bg-[var(--rv-blue)]/18 text-[var(--rv-text)] hover:bg-[var(--rv-blue)]/24'
-                      }`}
-                  >
-                    {syncing ? 'Syncing...' : 'Sync Data'}
-                  </button>
-
-                  <div ref={avatarRef} className="relative">
-                    <button
-                      onClick={() => setIsMenuOpen((open) => !open)}
-                      className="flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 transition hover:border-white/20"
-                    >
-                      {athlete?.profile ? (
-                        <img src={athlete.profile} className="h-7 w-7 rounded-full object-cover" alt="Profile" />
-                      ) : (
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.08] text-[10px] font-bold uppercase tracking-[0.16em]">RV</div>
-                      )}
-                      <div className="hidden text-left sm:block">
-                        <div className="text-[13px] font-bold leading-none text-[var(--rv-text)]">{athleteLabel}</div>
-                      </div>
-                    </button>
-
-                    {isMenuOpen && (
-                      createPortal(
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
-                          <div
-                            className="rv-panel rv-panel-strong fixed z-50 w-72 overflow-hidden p-2"
-                            style={{ top: menuPos.top, right: menuPos.right }}
-                          >
-                            <div className="border-b border-white/5 px-4 py-4">
-                              <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
-                              <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
-                                RunViz account
-                              </div>
-                            </div>
-                            <div className="space-y-1 px-2 py-2">
-                              <button
-                                onClick={() => {
-                                  sync({ forceFull: true });
-                                  setIsMenuOpen(false);
-                                }}
-                                disabled={syncing}
-                                className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-white/5"
-                              >
-                                <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Full Sync</span>
-                                <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-blue)]">{syncing ? 'Running' : 'Start'}</span>
-                              </button>
-                              <button
-                                onClick={logout}
-                                className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-red-500/10"
-                              >
-                                <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Logout</span>
-                                <span className="text-[10px] uppercase tracking-[0.22em] text-[#ff7f64]">Exit</span>
-                              </button>
-                            </div>
-                          </div>
-                        </>,
-                        document.body
-                      )
-                    )}
-                  </div>
-                </div>
+            <div className="mx-auto flex max-w-[1720px] flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3 sm:px-6 lg:px-8">
+              <div className="flex min-w-0 items-center gap-3">
+                <LabGlyph className="h-7 w-7 text-[var(--rv-blue)]" />
+                <BrandWordmark compact />
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-full border border-white/[0.08] bg-white/[0.04] p-0.5 no-scrollbar">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 lg:justify-center">
+                <div className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] p-0.5">
                   {([
-                    { mode: 'all', label: 'All' },
+                    { mode: 'all', label: 'Live' },
                     { mode: 'year', label: 'Year' },
                     { mode: 'month', label: 'Month' },
                   ] as const).map(({ mode, label }) => (
                     <button
                       key={mode}
                       onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                      className={`shrink-0 rounded-full px-3 py-1.5 text-[8px] font-bold uppercase tracking-[0.22em] transition sm:px-4 ${viewPeriod.mode === mode
-                        ? 'bg-[var(--rv-blue)] text-white shadow-[0_10px_24px_rgba(0,147,214,0.3)]'
+                      className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] transition sm:px-4 ${viewPeriod.mode === mode
+                        ? 'bg-[var(--rv-blue)] text-white shadow-[0_6px_16px_rgba(0,147,214,0.28)]'
                         : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-text)]'
                         }`}
                     >
@@ -571,31 +484,112 @@ function App() {
                   ))}
                 </div>
 
-                <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
-                  {viewPeriod.mode !== 'all' && (
-                    <select
-                      value={viewPeriod.year}
-                      onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value, 10) }))}
-                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
-                    >
-                      {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                  )}
+                {viewPeriod.mode !== 'all' && (
+                  <select
+                    value={viewPeriod.year}
+                    onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value, 10) }))}
+                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
+                  >
+                    {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                )}
 
-                  {viewPeriod.mode === 'month' && (
-                    <select
-                      value={viewPeriod.month || 0}
-                      onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value, 10) }))}
-                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
-                    >
-                      {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
-                    </select>
-                  )}
+                {viewPeriod.mode === 'month' && (
+                  <select
+                    value={viewPeriod.month || 0}
+                    onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value, 10) }))}
+                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
+                  >
+                    {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
+                  </select>
+                )}
 
-                  <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
-                    <span className={`h-2.5 w-2.5 rounded-full ${syncing ? 'bg-[var(--rv-yellow)] animate-pulse' : 'bg-[var(--rv-green)]'}`} />
-                    <span className="ml-2">{syncing ? 'Sync in progress' : formatLastSync(lastSync)}</span>
-                  </span>
+                <span className="hidden items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)] lg:inline-flex">
+                  <span className={`h-2 w-2 rounded-full ${syncing ? 'animate-pulse bg-[var(--rv-yellow)]' : 'bg-[var(--rv-green)]'}`} />
+                  {syncing ? 'Sync in progress' : formatLastSync(lastSync)}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Link
+                  to="/plan-route"
+                  className="rv-chip rv-chip-micro shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
+                >
+                  <MapGlyph className="h-4 w-4 text-[var(--rv-blue)]" />
+                  Route Planner
+                </Link>
+                <Link
+                  to="/form-analysis"
+                  className="rv-chip rv-chip-micro shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
+                >
+                  <LabGlyph className="h-4 w-4 text-[var(--rv-yellow)]" />
+                  Form Lab
+                </Link>
+                <button
+                  onClick={() => sync({ forceFull: true })}
+                  disabled={syncing}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] sm:px-4 ${syncing
+                    ? 'cursor-wait border border-white/10 bg-white/5 text-[var(--rv-text-faint)]'
+                    : 'rv-button-secondary border-[var(--rv-blue)]/45 bg-[var(--rv-blue)]/18 text-[var(--rv-text)] hover:bg-[var(--rv-blue)]/24'
+                    }`}
+                >
+                  {syncing ? 'Syncing...' : 'Sync Data'}
+                </button>
+
+                <div ref={avatarRef} className="relative">
+                  <button
+                    onClick={() => setIsMenuOpen((open) => !open)}
+                    className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2 py-1.5 transition hover:border-white/20"
+                  >
+                    {athlete?.profile ? (
+                      <img src={athlete.profile} className="h-7 w-7 rounded-full object-cover" alt="Profile" />
+                    ) : (
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.08] text-[10px] font-bold uppercase tracking-[0.16em]">RV</div>
+                    )}
+                    <div className="hidden text-left sm:block">
+                      <div className="text-[13px] font-bold leading-none text-[var(--rv-text)]">{athleteLabel}</div>
+                    </div>
+                  </button>
+
+                  {isMenuOpen && (
+                    createPortal(
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
+                        <div
+                          className="rv-panel rv-panel-strong fixed z-50 w-72 overflow-hidden p-2"
+                          style={{ top: menuPos.top, right: menuPos.right }}
+                        >
+                          <div className="border-b border-white/5 px-4 py-4">
+                            <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
+                            <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
+                              RunViz account
+                            </div>
+                          </div>
+                          <div className="space-y-1 px-2 py-2">
+                            <button
+                              onClick={() => {
+                                sync({ forceFull: true });
+                                setIsMenuOpen(false);
+                              }}
+                              disabled={syncing}
+                              className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-white/5"
+                            >
+                              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Full Sync</span>
+                              <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-blue)]">{syncing ? 'Running' : 'Start'}</span>
+                            </button>
+                            <button
+                              onClick={logout}
+                              className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-red-500/10"
+                            >
+                              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Logout</span>
+                              <span className="text-[10px] uppercase tracking-[0.22em] text-[#ff7f64]">Exit</span>
+                            </button>
+                          </div>
+                        </div>
+                      </>,
+                      document.body
+                    )
+                  )}
                 </div>
               </div>
             </div>

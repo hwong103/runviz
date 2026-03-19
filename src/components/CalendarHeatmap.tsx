@@ -138,7 +138,7 @@ export function CalendarHeatmap({
         <div className="rounded-[1.6rem] border border-white/[0.06] bg-black/10 p-4 overflow-x-auto sm:p-5">
             <div className="min-w-[300px]">
                 {/* Month labels */}
-                <div className="relative ml-8 mb-2 flex h-4 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
+                <div className="relative mb-2 ml-8 flex h-5 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
                     {monthLabels.map((m, i) => (
                         <div
                             key={i}
@@ -150,22 +150,22 @@ export function CalendarHeatmap({
                     ))}
                 </div>
 
-                <div className="flex gap-0.5">
+                <div className={`flex ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}>
                     {/* Day labels */}
                     <div className="flex flex-col gap-0.5 pr-2 text-[9px] font-bold uppercase text-[var(--rv-text-faint)] select-none">
-                        <span className="h-3">S</span>
-                        <span className="h-3">M</span>
-                        <span className="h-3">T</span>
-                        <span className="h-3">W</span>
-                        <span className="h-3">T</span>
-                        <span className="h-3">F</span>
-                        <span className="h-3">S</span>
+                        <span className={isMonthView ? 'h-5' : 'h-3'}>S</span>
+                        <span className={isMonthView ? 'h-5' : 'h-3'}>M</span>
+                        <span className={isMonthView ? 'h-5' : 'h-3'}>T</span>
+                        <span className={isMonthView ? 'h-5' : 'h-3'}>W</span>
+                        <span className={isMonthView ? 'h-5' : 'h-3'}>T</span>
+                        <span className={isMonthView ? 'h-5' : 'h-3'}>F</span>
+                        <span className={isMonthView ? 'h-5' : 'h-3'}>S</span>
                     </div>
 
                     {/* Calendar grid */}
-                    <div className="flex gap-0.5">
+                    <div className={`flex ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}>
                         {weeks.map((week, weekIdx) => (
-                            <div key={weekIdx} className="flex flex-col gap-0.5">
+                            <div key={weekIdx} className={`flex flex-col ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}>
                                 {week.map((day, dayIdx) => {
                                     const isInteractive = isMonthView ? day?.inRange : day?.currentMonth;
                                     return (
@@ -190,8 +190,8 @@ export function CalendarHeatmap({
                                                 }
                                             }}
                                             onMouseLeave={() => setHoveredDay(null)}
-                                            className={`h-3 w-3 rounded-[2px] transition-all duration-200 focus-visible:scale-125 focus-visible:ring-2 focus-visible:ring-white/40 ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'bg-transparent'
-                                                } ${isInteractive ? 'hover:scale-125 cursor-pointer hover:ring-2 hover:ring-white/30' : ''}`}
+                                            className={`${isMonthView ? 'h-5 w-5 rounded-[3px]' : 'h-3 w-3 rounded-[2px]'} transition-all duration-200 focus-visible:scale-125 focus-visible:ring-2 focus-visible:ring-white/40 ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'bg-transparent'
+                                                } ${isInteractive ? 'cursor-pointer hover:scale-110 hover:ring-2 hover:ring-white/30' : ''}`}
                                             disabled={!isInteractive}
                                             aria-label={day ? `${format(parseISO(day.date), 'MMMM d, yyyy')}, ${day.distance.toFixed(2)} kilometers` : 'Empty day'}
                                         />
