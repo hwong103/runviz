@@ -350,19 +350,7 @@ function App() {
                 )}
               </div>
             </div>
-            <div className="mt-6 rounded-3xl border border-white/8 bg-white/[0.03] p-4">
-              <p className="rv-kicker mb-2">Legacy Strava login</p>
-              <p className="mb-3 text-xs leading-5 text-[var(--rv-text-dim)]">
-                Prefer the classic one-step flow? You can still connect Strava directly.
-              </p>
-              <button
-                onClick={connectStrava}
-                className="rv-button-secondary flex w-full items-center justify-center gap-3 px-6 py-3 text-xs uppercase tracking-[0.24em]"
-              >
-                Connect Strava
-              </button>
-            </div>
-            <p className="mt-4 text-xs uppercase tracking-[0.25em] text-[var(--rv-text-faint)]">Your existing metrics and history stay intact.</p>
+            <p className="mt-6 text-xs uppercase tracking-[0.25em] text-[var(--rv-text-faint)]">Connect Strava during setup after sign-in.</p>
           </div>
         </div>
       </div>

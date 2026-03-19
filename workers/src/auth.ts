@@ -24,7 +24,7 @@ export function createAuth(env: Env, baseURL: string) {
         expiresIn: 600,
         sendMagicLink: async ({ email, url }) => {
           await resend.emails.send({
-            from: "RunViz <noreply@mail.runviz.app>",
+            from: "RunViz <noreply@hwong103.work>",
             to: email,
             subject: "Your RunViz sign-in link",
             html: `
