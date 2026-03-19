@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
+import { SetupPage } from './components/SetupPage';
 import { StatsOverview } from './components/StatsOverview';
 import { CalendarHeatmap } from './components/CalendarHeatmap';
 import { ActivityList } from './components/ActivityList';
@@ -11,7 +12,7 @@ import { ShoeTracker } from './components/ShoeTracker';
 import { RaceTimePredictions } from './components/RaceTimePredictions';
 import type { Activity, Gear } from './types';
 import { isRun } from './types';
-import { auth as authApi, gear as gearApi } from './services/api';
+import { gear as gearApi } from './services/api';
 import { parseActivityLocalDate } from './utils/activityDate';
 
 interface ViewPeriod {
@@ -105,13 +106,6 @@ function App() {
   const [magicSending, setMagicSending] = useState(false);
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
   const [googleStatus, setGoogleStatus] = useState<string | null>(null);
-  const [stravaClientIdInput, setStravaClientIdInput] = useState('');
-  const [stravaClientSecretInput, setStravaClientSecretInput] = useState('');
-  const [stravaKeyConfigured, setStravaKeyConfigured] = useState(false);
-  const [stravaKeyUpdatedAt, setStravaKeyUpdatedAt] = useState<number | null>(null);
-  const [stravaSetupLoading, setStravaSetupLoading] = useState(false);
-  const [stravaSetupSaving, setStravaSetupSaving] = useState(false);
-  const [stravaSetupStatus, setStravaSetupStatus] = useState<string | null>(null);
 
   // Store additionally fetched gear (e.g. retired shoes not in athlete profile)
   const [additionalGear, setAdditionalGear] = useState<Map<string, Gear>>(new Map());
@@ -141,46 +135,6 @@ function App() {
       setMagicStatus('We could not complete sign-in. Please try again.');
     }
   }, [searchParams]);
-
-  useEffect(() => {
-    if (!needsStravaConnect) {
-      setStravaClientIdInput('');
-      setStravaClientSecretInput('');
-      setStravaKeyConfigured(false);
-      setStravaKeyUpdatedAt(null);
-      setStravaSetupStatus(null);
-      setStravaSetupLoading(false);
-      setStravaSetupSaving(false);
-      return;
-    }
-
-    let cancelled = false;
-    setStravaSetupLoading(true);
-    setStravaSetupStatus(null);
-
-    void authApi.getStravaKeyStatus()
-      .then((status) => {
-        if (cancelled) return;
-        setStravaKeyConfigured(status.configured);
-        setStravaClientIdInput(status.clientId ?? '');
-        setStravaClientSecretInput('');
-        setStravaKeyUpdatedAt(status.updatedAt ?? null);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        const message = error instanceof Error ? error.message : 'Unable to load your Strava setup.';
-        setStravaSetupStatus(message);
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setStravaSetupLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [needsStravaConnect]);
 
   // Consolidated list of all known shoes
   const allShoes = useMemo(() => {
@@ -442,112 +396,16 @@ function App() {
 
   if (needsStravaConnect) {
     return (
-      <div className="rv-grid-lines flex min-h-screen items-center justify-center px-4 py-10">
-        <div className="rv-shell-card flex w-full max-w-3xl flex-col gap-6 px-6 py-8 sm:px-10">
-          <div className="space-y-3">
-            <p className="rv-kicker">Almost there</p>
-            <BrandWordmark />
-            <h1 className="rv-metric text-4xl sm:text-5xl">Connect Strava to unlock your dashboard</h1>
-            <p className="max-w-2xl text-base leading-7 text-[var(--rv-text-dim)]">
-              {user?.name ? `${user.name}, ` : 'You'} are signed in to RunViz. Add your own Strava API app credentials, then link Strava so we can load your training history and analytics.
-            </p>
-          </div>
-          <div className="rounded-3xl border border-white/8 bg-white/[0.03] p-5 sm:p-6">
-            <div className="space-y-2">
-              <p className="rv-kicker">Your Strava app</p>
-              <p className="max-w-2xl text-sm leading-6 text-[var(--rv-text-dim)]">
-                RunViz no longer uses a shared Strava app. Create your own app in Strava settings, then paste the Client ID and Client Secret here for your account only.
-              </p>
-              <a
-                href="https://www.strava.com/settings/api"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex text-xs uppercase tracking-[0.24em] text-[var(--rv-blue)] transition hover:text-[var(--rv-text)]"
-              >
-                Open Strava API settings
-              </a>
-            </div>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
-                Client ID
-                <input
-                  value={stravaClientIdInput}
-                  onChange={(e) => setStravaClientIdInput(e.target.value)}
-                  placeholder="123456"
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm normal-case tracking-normal text-[var(--rv-text)] outline-none transition placeholder:text-[var(--rv-text-faint)] focus:border-[var(--rv-blue)]"
-                />
-              </label>
-              <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
-                Client Secret
-                <input
-                  type="password"
-                  value={stravaClientSecretInput}
-                  onChange={(e) => setStravaClientSecretInput(e.target.value)}
-                  placeholder={stravaKeyConfigured ? 'Saved. Enter a new value to rotate it.' : 'Paste your Strava Client Secret'}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm normal-case tracking-normal text-[var(--rv-text)] outline-none transition placeholder:text-[var(--rv-text-faint)] focus:border-[var(--rv-blue)]"
-                />
-              </label>
-            </div>
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <button
-                onClick={async () => {
-                  if (!stravaClientIdInput.trim() || !stravaClientSecretInput.trim()) {
-                    setStravaSetupStatus('Enter both your Strava Client ID and Client Secret.');
-                    return;
-                  }
-                  setStravaSetupSaving(true);
-                  setStravaSetupStatus(null);
-                  try {
-                    await authApi.saveStravaKey(stravaClientIdInput.trim(), stravaClientSecretInput.trim());
-                    const status = await authApi.getStravaKeyStatus();
-                    setStravaKeyConfigured(status.configured);
-                    setStravaKeyUpdatedAt(status.updatedAt ?? null);
-                    setStravaClientIdInput(status.clientId ?? stravaClientIdInput.trim());
-                    setStravaClientSecretInput('');
-                    setStravaSetupStatus('Strava app saved. You can connect your account now.');
-                  } catch (error) {
-                    console.error('Failed to save Strava app:', error);
-                    setStravaSetupStatus(error instanceof Error ? error.message : 'Unable to save your Strava app.');
-                  } finally {
-                    setStravaSetupSaving(false);
-                  }
-                }}
-                disabled={stravaSetupSaving || stravaSetupLoading}
-                className="rv-button-secondary px-6 py-3 text-xs uppercase tracking-[0.24em] disabled:cursor-wait"
-              >
-                {stravaSetupSaving ? 'Saving...' : 'Save Strava app'}
-              </button>
-              <div className="text-xs leading-5 text-[var(--rv-text-dim)]">
-                {stravaSetupLoading
-                  ? 'Loading your saved Strava app...'
-                  : stravaKeyConfigured
-                    ? `Saved for this account${stravaKeyUpdatedAt ? ` on ${new Date(stravaKeyUpdatedAt * 1000).toLocaleDateString()}` : ''}.`
-                    : 'No Strava app saved for this account yet.'}
-              </div>
-            </div>
-            {stravaSetupStatus && (
-              <p className="mt-3 text-xs leading-5 text-[var(--rv-text-dim)]">
-                {stravaSetupStatus}
-              </p>
-            )}
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <button
-              onClick={connectStrava}
-              disabled={!stravaKeyConfigured || stravaSetupLoading || stravaSetupSaving}
-              className="rv-button-primary px-8 py-4 text-sm"
-            >
-              Connect Strava
-            </button>
-            <button
-              onClick={logout}
-              className="rv-button-secondary px-8 py-4 text-sm"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </div>
+      <SetupPage
+        authLoading={authLoading}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        needsStravaConnect={needsStravaConnect}
+        login={login}
+        connectStrava={connectStrava}
+        sendMagicLink={sendMagicLink}
+        logout={logout}
+      />
     );
   }
 
