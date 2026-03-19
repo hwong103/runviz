@@ -1,7 +1,9 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { auth as authApi } from '../services/api';
+
+const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
 
 interface SetupPageProps {
   authLoading: boolean;
@@ -100,17 +102,17 @@ export function SetupPage({
     return (
       <div className="rv-grid-lines min-h-screen px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-[1600px] flex-col gap-6 lg:flex-row lg:items-stretch">
-          <section className="rv-shell-card flex-1 overflow-hidden px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
+          <section className="rv-shell-card rv-glow-orb flex-1 overflow-hidden px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
             <div className="max-w-3xl space-y-6">
-              <p className="rv-kicker">Connect your Strava account</p>
+              <p className="rv-kicker rv-reveal-subtle" style={reveal(0)}>Connect your Strava account</p>
               <BrandWordmark />
-              <h1 className="rv-metric max-w-2xl text-5xl sm:text-6xl lg:text-7xl">
+              <h1 className="rv-metric rv-reveal max-w-2xl text-5xl sm:text-6xl lg:text-7xl" style={reveal(80)}>
                 Sign in first, then we’ll walk you through Strava setup.
               </h1>
-              <p className="rv-body-copy max-w-2xl sm:text-lg">
+              <p className="rv-body-copy rv-reveal-subtle max-w-2xl sm:text-lg" style={reveal(160)}>
                 RunViz needs access to your Strava data. To set this up, you'll create a free Strava API application — this takes about 2 minutes.
               </p>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rv-reveal-subtle grid gap-3 sm:grid-cols-2" style={reveal(220)}>
                 <button
                   onClick={async () => {
                     try {
@@ -131,7 +133,7 @@ export function SetupPage({
                 </Link>
               </div>
 
-              <div className="rv-panel rv-panel-strong max-w-xl px-5 py-5 sm:px-6">
+              <div className="rv-panel rv-panel-strong rv-reveal-subtle rv-spotlight max-w-xl px-5 py-5 sm:px-6" style={reveal(300)}>
                 <label htmlFor="setup-magic-email" className="rv-mini-label mb-2 block">
                   Magic link
                 </label>
@@ -176,7 +178,7 @@ export function SetupPage({
             </div>
           </section>
 
-          <aside className="rv-panel rv-panel-strong flex w-full max-w-xl flex-col justify-between gap-6 px-6 py-8 sm:px-8 lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] lg:self-start">
+          <aside className="rv-panel rv-panel-strong rv-reveal rv-spotlight flex w-full max-w-xl flex-col justify-between gap-6 px-6 py-8 sm:px-8 lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] lg:self-start" style={reveal(180)}>
             <div className="space-y-4">
               <p className="rv-kicker">What you’ll do</p>
               <div className="space-y-3 text-sm leading-7 text-[var(--rv-text-dim)]">
@@ -200,15 +202,15 @@ export function SetupPage({
   return (
     <div className="rv-grid-lines min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-[1600px] gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
-        <section className="rv-shell-card overflow-hidden px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
+        <section className="rv-shell-card rv-glow-orb overflow-hidden px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
           <div className="max-w-4xl space-y-8">
             <div className="space-y-4">
-              <p className="rv-kicker">Connect your Strava account</p>
+              <p className="rv-kicker rv-reveal-subtle" style={reveal(0)}>Connect your Strava account</p>
               <BrandWordmark />
-              <p className="rv-body-copy max-w-3xl sm:text-lg">
+              <p className="rv-body-copy rv-reveal-subtle max-w-3xl sm:text-lg" style={reveal(90)}>
                 RunViz needs access to your Strava data. To set this up, you'll create a free Strava API application — this takes about 2 minutes.
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="rv-reveal-subtle flex flex-wrap gap-3" style={reveal(150)}>
                 <span className="rv-chip">Step-by-step guide</span>
                 <span className="rv-chip">Account-specific credentials</span>
                 <span className="rv-chip">Encrypted secret storage</span>
@@ -216,7 +218,7 @@ export function SetupPage({
             </div>
 
             <div className="grid gap-4">
-              <InstructionStep index="01" title="Open the Strava API settings page">
+              <InstructionStep index="01" title="Open the Strava API settings page" delay={180}>
                 <p>
                   Go to{' '}
                   <a
@@ -231,7 +233,7 @@ export function SetupPage({
                 </p>
               </InstructionStep>
 
-              <InstructionStep index="02" title="Create a new application">
+              <InstructionStep index="02" title="Create a new application" delay={250}>
                 <p>If you see a form rather than an existing app, fill it in like this:</p>
                 <div className="overflow-hidden rounded-[1.35rem] border border-white/8 bg-black/20">
                   <table className="w-full border-collapse text-left text-sm">
@@ -286,7 +288,7 @@ export function SetupPage({
                 </p>
               </InstructionStep>
 
-              <InstructionStep index="03" title="Copy your credentials">
+              <InstructionStep index="03" title="Copy your credentials" delay={320}>
                 <p>After creating your app, or if one already exists, you’ll land on the app detail page. Copy these two values:</p>
                 <ul className="space-y-3 text-sm leading-7 text-[var(--rv-text-dim)]">
                   <li><strong className="text-[var(--rv-text)]">Client ID</strong> — a short number, e.g. <code className="rounded-md bg-white/5 px-2 py-1 text-[var(--rv-text)]">12345</code></li>
@@ -297,14 +299,14 @@ export function SetupPage({
                 </div>
               </InstructionStep>
 
-              <InstructionStep index="04" title="Paste them below and click Save">
+              <InstructionStep index="04" title="Paste them below and click Save" delay={390}>
                 <p>RunViz will use these credentials to securely connect to Strava on your behalf.</p>
               </InstructionStep>
             </div>
           </div>
         </section>
 
-        <aside className="rv-panel rv-panel-accent flex flex-col gap-6 px-6 py-8 sm:px-8 lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] lg:self-start lg:overflow-auto">
+        <aside className="rv-panel rv-panel-accent rv-reveal rv-spotlight flex flex-col gap-6 px-6 py-8 sm:px-8 lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] lg:self-start lg:overflow-auto" style={reveal(200)}>
           <div className="space-y-2">
             <p className="rv-kicker">Your Strava app</p>
             <h2 className="rv-metric text-4xl sm:text-5xl">Save your credentials</h2>
@@ -453,14 +455,16 @@ export function SetupPage({
 function InstructionStep({
   index,
   title,
+  delay = 0,
   children,
 }: {
   index: string;
   title: string;
+  delay?: number;
   children: ReactNode;
 }) {
   return (
-    <article className="rv-panel overflow-hidden px-5 py-5 sm:px-6">
+    <article className="rv-panel rv-reveal-subtle rv-spotlight overflow-hidden px-5 py-5 sm:px-6" style={reveal(delay)}>
       <div className="flex items-start gap-4">
         <span className="rv-pill-label mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--rv-yellow)]/25 bg-[var(--rv-yellow)]/10 text-[var(--rv-yellow)]">
           {index}
@@ -476,7 +480,7 @@ function InstructionStep({
 
 function BrandWordmark({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="rv-reveal-subtle flex items-center gap-3" style={reveal(40)}>
       <span className={`${compact ? 'text-3xl' : 'text-5xl sm:text-6xl'} font-bold tracking-[-0.08em] text-[var(--rv-text)]`}>
         RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
       </span>

@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { Activity, Gear } from '../types';
 import { formatDuration } from '../analytics/heartRateZones';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -32,6 +33,7 @@ export function ActivityList({
     onClearShoeFilter,
     shoes = []
 }: ActivityListProps) {
+    const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
     const runs = activities
         .filter((a) => a.type === 'Run' || a.sport_type === 'Run')
         .slice(0, limit);
@@ -61,7 +63,7 @@ export function ActivityList({
     };
 
     return (
-        <div className="rv-panel px-5 py-5 sm:px-7 sm:py-6">
+        <div className="rv-panel rv-reveal-subtle px-5 py-5 sm:px-7 sm:py-6" style={reveal(120)}>
             <div className="mb-6 flex flex-wrap items-center gap-3">
                 <div>
                     <p className="rv-kicker mb-2">Activity Log</p>
@@ -92,14 +94,15 @@ export function ActivityList({
                         <p className="mx-auto max-w-[26ch] text-sm leading-6 text-[var(--rv-text-faint)]">Try adjusting your filters or sync your latest Strava data.</p>
                     </div>
                 ) : (
-                    runs.map((activity) => {
+                    runs.map((activity, index) => {
                         const dateParts = formatDate(activity.start_date_local);
                         return (
                             <button
                                 key={activity.id}
                                 type="button"
                                 onClick={() => onSelect?.(activity)}
-                                className="group flex w-full cursor-pointer flex-col gap-3 rounded-[1.7rem] border border-white/[0.06] bg-black/[0.15] p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-white/5 focus-visible:border-[var(--rv-blue)] focus-visible:bg-white/5 sm:flex-row sm:items-center sm:gap-4"
+                                style={reveal(160 + index * 40)}
+                                className="rv-reveal-subtle rv-spotlight group flex w-full cursor-pointer flex-col gap-3 rounded-[1.7rem] border border-white/[0.06] bg-black/[0.15] p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-white/5 focus-visible:border-[var(--rv-blue)] focus-visible:bg-white/5 sm:flex-row sm:items-center sm:gap-4"
                                 aria-label={`Open run details for ${activity.name} on ${dateParts.month} ${dateParts.day}`}
                             >
                                 {/* Date */}
@@ -138,7 +141,7 @@ export function ActivityList({
                                         const shoe = (activity.gear_id ? shoes.find(s => s.id === activity.gear_id) : null) || activity.gear;
                                         if (!shoe) return null;
                                         return (
-                                            <div className="group/shoe flex items-center gap-2 rounded-full border border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/10 px-3 py-1.5 transition-colors hover:bg-[var(--rv-blue)]/20">
+                                            <div className="group/shoe flex items-center gap-2 rounded-full border border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/10 px-3 py-1.5 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[var(--rv-blue)]/20">
                                                 <BrandLogo brandName={shoe.brand_name} />
                                                 <span className="max-w-[160px] truncate text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[var(--rv-blue)]">
                                                     {shoe.name}

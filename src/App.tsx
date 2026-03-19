@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
@@ -40,6 +41,7 @@ const MONTHS = [
 const GEAR_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 const GEAR_FAILURE_RETRY_MS = 1000 * 60 * 60 * 12; // 12 hours
 const MAX_GEAR_FETCH_PER_SESSION = 10;
+const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
 
 interface GearCachePayload {
   updatedAt: number;
@@ -362,21 +364,21 @@ function App() {
   if (!isAuthenticated) {
     return (
       <main className="rv-grid-lines flex min-h-screen items-center justify-center px-4 py-10">
-        <div className="rv-shell-card flex w-full max-w-5xl flex-col gap-8 overflow-hidden px-6 py-8 sm:px-10 lg:flex-row lg:items-end lg:px-12 lg:py-12">
+        <div className="rv-shell-card rv-glow-orb flex w-full max-w-5xl flex-col gap-8 overflow-hidden px-6 py-8 sm:px-10 lg:flex-row lg:items-end lg:px-12 lg:py-12">
           <div className="flex-1 space-y-5">
-            <p className="rv-kicker">For Ambitious Runners</p>
+            <p className="rv-kicker rv-reveal-subtle" style={reveal(0)}>For Ambitious Runners</p>
             <BrandWordmark />
-            <h1 className="rv-metric max-w-2xl text-5xl sm:text-6xl lg:text-7xl">
+            <h1 className="rv-metric rv-reveal max-w-2xl text-5xl sm:text-6xl lg:text-7xl" style={reveal(80)}>
               Clear training insights for runners getting more serious.
             </h1>
-            <p className="rv-body-copy max-w-xl sm:text-lg">
+            <p className="rv-body-copy rv-reveal-subtle max-w-xl sm:text-lg" style={reveal(160)}>
               Sign in with Google or magic link, then connect Strava to see your training load, plan routes, review running form, and keep your key metrics in one place.
             </p>
-            <p className="rv-mini-label">
+            <p className="rv-mini-label rv-reveal-subtle" style={reveal(220)}>
               Training load, route planning, and video-based form analysis.
             </p>
           </div>
-          <div className="rv-panel rv-panel-accent w-full max-w-md px-6 py-8 sm:px-8">
+          <div className="rv-panel rv-panel-accent rv-reveal rv-spotlight w-full max-w-md px-6 py-8 sm:px-8" style={reveal(140)}>
             <p className="rv-kicker mb-4">Sign In</p>
             <h2 className="rv-section-title mb-3">Open your RunViz workspace</h2>
             <p className="rv-body-copy-sm mb-6">
@@ -406,7 +408,7 @@ function App() {
                   {googleStatus}
                 </p>
               )}
-              <div className="rounded-3xl border border-white/8 bg-white/[0.04] p-4">
+              <div className="rv-reveal-subtle rounded-3xl border border-white/8 bg-white/[0.04] p-4" style={reveal(240)}>
                 <label htmlFor="magic-email" className="rv-mini-label mb-2 block">
                   Magic link
                 </label>
@@ -508,9 +510,9 @@ function App() {
                     <button
                       key={mode}
                       onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                      className={`rv-pill-label rounded-full px-2.5 py-1 transition-all ${viewPeriod.mode === mode
+                      className={`rv-pill-label rounded-full px-2.5 py-1 transition-all duration-200 ${viewPeriod.mode === mode
                         ? 'bg-[var(--rv-blue)] text-white shadow-[0_4px_12px_rgba(74,122,255,0.35)]'
-                        : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-text-dim)]'
+                        : 'text-[var(--rv-text-faint)] hover:-translate-y-0.5 hover:text-[var(--rv-text-dim)]'
                         }`}
                     >
                       {label}

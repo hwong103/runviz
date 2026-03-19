@@ -36,6 +36,7 @@ type HelpMetric = 'acwr' | 'ramp' | 'consistency' | 'longRunRatio' | 'efficiency
 
 export function StatsOverview({ activities, allActivities, period }: StatsOverviewProps) {
     const [activeHelp, setActiveHelp] = useState<HelpMetric | null>(null);
+    const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
 
     useEffect(() => {
         if (!activeHelp) return;
@@ -142,12 +143,14 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                     value={stats.runCount.toString()}
                     unit=""
                     icon={Footprints}
+                    style={reveal(40)}
                 />
                 <StatCard
                     label="Distance"
                     value={stats.totalDistance.toFixed(1)}
                     unit="km"
                     icon={Ruler}
+                    style={reveal(80)}
                 />
                 <StatCard
                     label="Avg Duration"
@@ -155,18 +158,21 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                     unit="min"
                     icon={Clock3}
                     color="text-cyan-400"
+                    style={reveal(120)}
                 />
                 <StatCard
                     label="Avg Pace"
                     value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'}
                     unit="/km"
                     icon={Gauge}
+                    style={reveal(160)}
                 />
                 <StatCard
                     label="Longest"
                     value={stats.longestRun.toFixed(1)}
                     unit="km"
                     icon={Trophy}
+                    style={reveal(200)}
                 />
                 <StatCard
                     label="Max Streak"
@@ -174,6 +180,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                     unit="days"
                     icon={Flame}
                     color="text-orange-400"
+                    style={reveal(240)}
                 />
             </div>
 
@@ -190,6 +197,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                         helpText="Acute:Chronic Workload Ratio (ATL/CTL), anchored to the selected period end date. 0.8-1.3 is generally balanced, >1.5 means a sharp load spike."
                         activeHelp={activeHelp}
                         onToggleHelp={setActiveHelp}
+                        style={reveal(120)}
                     />
                     <StatCard
                         label="Ramp"
@@ -205,6 +213,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                         helpText="Week-over-week distance change (7 days vs prior 7), anchored to the selected period end date. Displayed as % when prior-week distance exists; otherwise km/wk."
                         activeHelp={activeHelp}
                         onToggleHelp={setActiveHelp}
+                        style={reveal(160)}
                     />
                     <StatCard
                         label="Consistency"
@@ -216,6 +225,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                         helpText="Score from recent weekly run frequency and stability, anchored to the selected period end date. 75+ strong routine, 50-74 building, below 50 inconsistent."
                         activeHelp={activeHelp}
                         onToggleHelp={setActiveHelp}
+                        style={reveal(200)}
                     />
                     <StatCard
                         label="Long Run %"
@@ -227,6 +237,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                         helpText="Longest run as a % of that anchored week's total distance. Around 20-35% is common; very high values may indicate imbalance."
                         activeHelp={activeHelp}
                         onToggleHelp={setActiveHelp}
+                        style={reveal(240)}
                     />
                     <StatCard
                         label="Efficiency"
@@ -238,6 +249,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                         helpText="Distance per heartbeat over trailing 28 days (anchored). Higher is better. Rough guide: <1.00 low, 1.00-1.19 moderate, >=1.20 strong. Example: 0.94 means ~0.94m per heartbeat and suggests room to improve aerobic efficiency."
                         activeHelp={activeHelp}
                         onToggleHelp={setActiveHelp}
+                        style={reveal(280)}
                     />
                     <StatCard
                         label="GAP Trend"
@@ -249,6 +261,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                         helpText="Change in estimated GAP pace: latest 14 days vs prior 14 (anchored). Negative is improving (faster), positive is slowing."
                         activeHelp={activeHelp}
                         onToggleHelp={setActiveHelp}
+                        style={reveal(320)}
                     />
                 </div>
             </div>
@@ -304,6 +317,7 @@ interface StatCardProps {
     unit: string;
     icon: LucideIcon;
     color?: string;
+    style?: CSSProperties;
     helpMetric?: HelpMetric;
     helpText?: string;
     activeHelp?: HelpMetric | null;
@@ -316,6 +330,7 @@ function StatCard({
     unit,
     icon: Icon,
     color = "text-white",
+    style,
     helpMetric,
     helpText,
     activeHelp,
@@ -349,7 +364,8 @@ function StatCard({
     return (
         <div
             ref={cardRef}
-            className={`rv-panel relative overflow-hidden transition-all duration-300 group hover:-translate-y-1 hover:border-white/20 ${isCompact ? 'p-3 sm:p-4' : 'p-4 sm:p-5'}`}
+            style={style}
+            className={`rv-panel rv-reveal-subtle rv-spotlight relative overflow-hidden transition-all duration-300 group hover:-translate-y-1 hover:border-white/20 ${isCompact ? 'p-3 sm:p-4' : 'p-4 sm:p-5'}`}
         >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
             <div className={`mb-3 flex items-center gap-2 ${isCompact ? 'pr-3' : 'pr-6'}`}>
@@ -371,7 +387,7 @@ function StatCard({
                     </button>
                     {showHelp && createPortal(
                         <div
-                            className="rv-panel rv-panel-strong z-[9999] pointer-events-none p-3 shadow-[0_20px_44px_rgba(0,0,0,0.35)] animate-in fade-in zoom-in-95 duration-200"
+                            className="rv-panel rv-panel-strong z-[9999] pointer-events-none p-3 shadow-[0_20px_44px_rgba(0,0,0,0.35)]"
                             style={tooltipStyle}
                         >
                             <div className="mb-1 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[var(--rv-blue)]">{label}</div>
