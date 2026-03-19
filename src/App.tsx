@@ -114,6 +114,7 @@ function App() {
   const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const avatarRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
   const [magicEmail, setMagicEmail] = useState('');
   const [magicSending, setMagicSending] = useState(false);
@@ -175,13 +176,26 @@ function App() {
   useEffect(() => {
     if (!isMenuOpen) return;
 
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+
+      if (avatarRef.current?.contains(target) || menuRef.current?.contains(target)) {
+        return;
+      }
+
+      setIsMenuOpen(false);
+    };
+
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setIsMenuOpen(false);
     };
 
+    window.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('keydown', handleEsc);
 
     return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('keydown', handleEsc);
     };
   }, [isMenuOpen]);
@@ -568,8 +582,8 @@ function App() {
 
           {isMenuOpen && createPortal(
             <>
-              <div className="fixed inset-0 z-50" onClick={() => setIsMenuOpen(false)} />
               <div
+                ref={menuRef}
                 className="rv-panel rv-panel-strong fixed z-[60] w-72 overflow-hidden p-2 animate-in fade-in zoom-in-95 duration-150"
                 style={{ top: menuPos.top, right: menuPos.right }}
                 onClick={(event) => event.stopPropagation()}
