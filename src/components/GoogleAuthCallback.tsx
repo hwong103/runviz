@@ -32,7 +32,7 @@ export function GoogleAuthCallback() {
                 <div className="h-12 w-12 rounded-full border-4 border-[var(--rv-blue)]/40 border-t-[var(--rv-blue)] animate-spin" />
                 <div>
                     <p className="rv-kicker mb-2">System Sync</p>
-                    <p className="text-lg font-medium text-[var(--rv-text-dim)]">Completing Google sign-in...</p>
+                    <p className="rv-body-copy">Completing Google sign-in...</p>
                 </div>
             </div>
         </div>

@@ -107,7 +107,7 @@ export function SetupPage({
               <h1 className="rv-metric max-w-2xl text-5xl sm:text-6xl lg:text-7xl">
                 Sign in first, then we’ll walk you through Strava setup.
               </h1>
-              <p className="max-w-2xl text-base leading-7 text-[var(--rv-text-dim)] sm:text-lg">
+              <p className="rv-body-copy max-w-2xl sm:text-lg">
                 RunViz needs access to your Strava data. To set this up, you'll create a free Strava API application — this takes about 2 minutes.
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -119,20 +119,20 @@ export function SetupPage({
                       console.error('Google sign-in failed:', error);
                     }
                   }}
-                  className="rv-button-primary px-6 py-4 text-xs sm:px-8"
+                  className="rv-button-primary px-6 py-4 sm:px-8"
                 >
                   Continue with Google
                 </button>
                 <Link
                   to="/"
-                  className="rv-button-secondary inline-flex items-center justify-center px-6 py-4 text-xs sm:px-8"
+                  className="rv-button-secondary rv-pill-label inline-flex items-center justify-center px-6 py-4 sm:px-8"
                 >
                   Go back
                 </Link>
               </div>
 
               <div className="rv-panel rv-panel-strong max-w-xl px-5 py-5 sm:px-6">
-                <label htmlFor="setup-magic-email" className="mb-2 block text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--rv-text-faint)]">
+                <label htmlFor="setup-magic-email" className="rv-mini-label mb-2 block">
                   Magic link
                 </label>
                 <div className="flex flex-col gap-3">
@@ -162,13 +162,13 @@ export function SetupPage({
                       }
                     }}
                     disabled={magicSending}
-                    className="rv-button-secondary flex w-full items-center justify-center px-6 py-3 text-xs uppercase tracking-[0.24em] disabled:cursor-wait"
+                    className="rv-button-secondary rv-pill-label flex w-full items-center justify-center px-6 py-3 disabled:cursor-wait"
                   >
                     {magicSending ? 'Sending...' : 'Send magic link'}
                   </button>
                 </div>
                 {magicStatus && (
-                  <p className="mt-3 text-xs leading-5 text-[var(--rv-text-dim)]">
+                  <p className="rv-body-copy-sm mt-3">
                     {magicStatus}
                   </p>
                 )}
@@ -179,7 +179,7 @@ export function SetupPage({
           <aside className="rv-panel rv-panel-strong flex w-full max-w-xl flex-col justify-between gap-6 px-6 py-8 sm:px-8 lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] lg:self-start">
             <div className="space-y-4">
               <p className="rv-kicker">What you’ll do</p>
-              <div className="space-y-3 text-sm leading-6 text-[var(--rv-text-dim)]">
+              <div className="space-y-3 text-sm leading-7 text-[var(--rv-text-dim)]">
                 <p>Open the Strava API settings page.</p>
                 <p>Create a free app with your RunViz callback domain.</p>
                 <p>Copy the Client ID and Client Secret back into RunViz.</p>
@@ -187,7 +187,7 @@ export function SetupPage({
             </div>
             <Link
               to="/"
-              className="rv-button-secondary inline-flex items-center justify-center px-6 py-4 text-xs uppercase tracking-[0.24em]"
+              className="rv-button-secondary rv-pill-label inline-flex items-center justify-center px-6 py-4"
             >
               Back to home
             </Link>
@@ -205,7 +205,7 @@ export function SetupPage({
             <div className="space-y-4">
               <p className="rv-kicker">Connect your Strava account</p>
               <BrandWordmark />
-              <p className="max-w-3xl text-base leading-7 text-[var(--rv-text-dim)] sm:text-lg">
+              <p className="rv-body-copy max-w-3xl sm:text-lg">
                 RunViz needs access to your Strava data. To set this up, you'll create a free Strava API application — this takes about 2 minutes.
               </p>
               <div className="flex flex-wrap gap-3">
@@ -236,7 +236,7 @@ export function SetupPage({
                 <div className="overflow-hidden rounded-[1.35rem] border border-white/8 bg-black/20">
                   <table className="w-full border-collapse text-left text-sm">
                     <thead>
-                      <tr className="border-b border-white/8 text-[10px] uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
+                      <tr className="rv-mini-label border-b border-white/8 text-[var(--rv-text-faint)]">
                         <th className="px-4 py-3 font-semibold">Field</th>
                         <th className="px-4 py-3 font-semibold">Value</th>
                       </tr>
@@ -273,7 +273,7 @@ export function SetupPage({
                     </tbody>
                   </table>
                 </div>
-                <div className="rounded-[1.35rem] border border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/8 px-4 py-3 text-sm leading-6 text-[var(--rv-text-dim)]">
+                <div className="rounded-[1.35rem] border border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/8 px-4 py-3 text-sm leading-7 text-[var(--rv-text-dim)]">
                   <p>
                     <strong className="text-[var(--rv-text)]">Website</strong> must be a valid URL — use the RunViz URL above.
                   </p>
@@ -281,18 +281,18 @@ export function SetupPage({
                     <strong className="text-[var(--rv-text)]">Authorization Callback Domain</strong> is the domain only — no https://, no trailing slash.
                   </p>
                 </div>
-                <p className="text-sm leading-6 text-[var(--rv-text-dim)]">
+                <p className="rv-body-copy-sm">
                   Tick the "I agree" checkbox and click <strong className="text-[var(--rv-text)]">Create</strong>.
                 </p>
               </InstructionStep>
 
               <InstructionStep index="03" title="Copy your credentials">
                 <p>After creating your app, or if one already exists, you’ll land on the app detail page. Copy these two values:</p>
-                <ul className="space-y-3 text-sm leading-6 text-[var(--rv-text-dim)]">
+                <ul className="space-y-3 text-sm leading-7 text-[var(--rv-text-dim)]">
                   <li><strong className="text-[var(--rv-text)]">Client ID</strong> — a short number, e.g. <code className="rounded-md bg-white/5 px-2 py-1 text-[var(--rv-text)]">12345</code></li>
                   <li><strong className="text-[var(--rv-text)]">Client Secret</strong> — a long alphanumeric string. Click <em>show</em> next to it to reveal it, then copy it.</li>
                 </ul>
-                <div className="rounded-[1.35rem] border border-amber-400/15 bg-amber-400/8 px-4 py-3 text-sm leading-6 text-[var(--rv-text-dim)]">
+                <div className="rounded-[1.35rem] border border-amber-400/15 bg-amber-400/8 px-4 py-3 text-sm leading-7 text-[var(--rv-text-dim)]">
                   <strong className="text-[var(--rv-text)]">Do not</strong> copy the Access Token or Refresh Token — those are different fields and are not needed here.
                 </div>
               </InstructionStep>
@@ -308,7 +308,7 @@ export function SetupPage({
           <div className="space-y-2">
             <p className="rv-kicker">Your Strava app</p>
             <h2 className="rv-metric text-4xl sm:text-5xl">Save your credentials</h2>
-            <p className="text-sm leading-6 text-[var(--rv-text-dim)]">
+            <p className="rv-body-copy-sm">
               RunViz uses only your Client ID and Client Secret for this account. The setup stays tied to {accountLabel}.
             </p>
           </div>
@@ -316,7 +316,7 @@ export function SetupPage({
           {needsStravaConnect ? (
             <>
               <div className="space-y-4">
-                <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
+                <label className="rv-mini-label flex flex-col gap-2">
                   Client ID
                   <input
                     value={stravaClientIdInput}
@@ -325,7 +325,7 @@ export function SetupPage({
                     className="rv-field px-4 py-3 text-sm normal-case tracking-normal"
                   />
                 </label>
-                <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
+                <label className="rv-mini-label flex flex-col gap-2">
                   Client Secret
                   <input
                     type="password"
@@ -362,11 +362,11 @@ export function SetupPage({
                     }
                   }}
                   disabled={stravaSetupSaving || stravaSetupLoading}
-                  className="rv-button-secondary px-6 py-3 text-xs uppercase tracking-[0.24em] disabled:cursor-wait"
+                  className="rv-button-secondary rv-pill-label px-6 py-3 disabled:cursor-wait"
                 >
                   {stravaSetupSaving ? 'Saving...' : 'Save Strava app'}
                 </button>
-                <div className="text-xs leading-5 text-[var(--rv-text-dim)]">
+                <div className="rv-body-copy-sm">
                   {stravaSetupLoading
                     ? 'Loading your saved Strava app...'
                     : stravaKeyConfigured
@@ -376,7 +376,7 @@ export function SetupPage({
               </div>
 
               {stravaSetupStatus && (
-                <p className="text-sm leading-6 text-[var(--rv-text-dim)]">
+                <p className="rv-body-copy-sm">
                   {stravaSetupStatus}
                 </p>
               )}
@@ -385,32 +385,32 @@ export function SetupPage({
                 <button
                   onClick={connectStrava}
                   disabled={!stravaKeyConfigured || stravaSetupLoading || stravaSetupSaving}
-                  className="rv-button-primary px-6 py-4 text-sm disabled:cursor-not-allowed"
+                  className="rv-button-primary px-6 py-4 disabled:cursor-not-allowed"
                 >
                   Connect Strava
                 </button>
                 <button
                   onClick={logout}
-                  className="rv-button-secondary px-6 py-4 text-sm"
+                  className="rv-button-secondary rv-pill-label px-6 py-4"
                 >
                   Sign out
                 </button>
               </div>
             </>
           ) : (
-            <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-5 py-5 text-sm leading-6 text-[var(--rv-text-dim)]">
+            <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-5 py-5 text-sm leading-7 text-[var(--rv-text-dim)]">
               <p className="text-[var(--rv-text)]">Strava is already connected for this account.</p>
               <p className="mt-2">You can return to the dashboard or reconnect if you want to change accounts.</p>
               <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                 <Link
                   to="/"
-                  className="rv-button-primary inline-flex items-center justify-center px-6 py-4 text-sm"
+                  className="rv-button-primary inline-flex items-center justify-center px-6 py-4"
                 >
                   Go to dashboard
                 </Link>
                 <button
                   onClick={connectStrava}
-                  className="rv-button-secondary px-6 py-4 text-sm"
+                  className="rv-button-secondary rv-pill-label px-6 py-4"
                 >
                   Reconnect Strava
                 </button>
@@ -418,21 +418,21 @@ export function SetupPage({
             </div>
           )}
 
-          <div className="rounded-[1.5rem] border border-[var(--rv-green)]/20 bg-[var(--rv-green)]/8 px-5 py-5 text-sm leading-6 text-[var(--rv-text-dim)]">
+          <div className="rounded-[1.5rem] border border-[var(--rv-green)]/20 bg-[var(--rv-green)]/8 px-5 py-5 text-sm leading-7 text-[var(--rv-text-dim)]">
             <p className="text-[var(--rv-text)]">🔒 Your secret is safe.</p>
             <p className="mt-2">
               The Client Secret is encrypted before being stored. It is never visible to RunViz staff and is only used to fetch your Strava data.
             </p>
           </div>
 
-          <div className="space-y-3 text-xs uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
-            <p>Need help?</p>
-            <p>Keep the Strava app tab open while you copy the values back here.</p>
+          <div className="space-y-3">
+            <p className="rv-mini-label">Need help?</p>
+            <p className="rv-body-copy-sm">Keep the Strava app tab open while you copy the values back here.</p>
           </div>
         </aside>
       </div>
 
-      <div className="mt-6 mx-auto max-w-[1600px] px-1 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
+      <div className="rv-mini-label mt-6 mx-auto max-w-[1600px] px-1 text-[var(--rv-text-faint)]">
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/5 pt-4">
           <span>RunViz setup</span>
           <span>Secure Strava connection flow</span>
@@ -441,7 +441,7 @@ export function SetupPage({
 
       {!needsStravaConnect && (
         <div className="mt-4 mx-auto max-w-[1600px] px-1">
-          <div className="rounded-[1.5rem] border border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/8 px-5 py-4 text-sm leading-6 text-[var(--rv-text-dim)]">
+          <div className="rounded-[1.5rem] border border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/8 px-5 py-4 text-sm leading-7 text-[var(--rv-text-dim)]">
             Your Strava app is already saved for this account. If you just updated credentials, you can reconnect from the panel above.
           </div>
         </div>
@@ -462,11 +462,11 @@ function InstructionStep({
   return (
     <article className="rv-panel overflow-hidden px-5 py-5 sm:px-6">
       <div className="flex items-start gap-4">
-        <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--rv-yellow)]/25 bg-[var(--rv-yellow)]/10 text-[10px] font-extrabold tracking-[0.2em] text-[var(--rv-yellow)]">
+        <span className="rv-pill-label mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--rv-yellow)]/25 bg-[var(--rv-yellow)]/10 text-[var(--rv-yellow)]">
           {index}
         </span>
         <div className="min-w-0 space-y-3">
-          <h3 className="text-xl font-bold tracking-tight text-[var(--rv-text)]">{title}</h3>
+          <h3 className="rv-section-title text-[1.45rem]">{title}</h3>
           <div className="space-y-3 text-sm leading-7 text-[var(--rv-text-dim)]">{children}</div>
         </div>
       </div>
@@ -480,7 +480,7 @@ function BrandWordmark({ compact = false }: { compact?: boolean }) {
       <span className={`${compact ? 'text-3xl' : 'text-5xl sm:text-6xl'} font-bold tracking-[-0.08em] text-[var(--rv-text)]`}>
         RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
       </span>
-      <span className="rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--rv-yellow)]">
+      <span className="rv-pill-label rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/10 px-3 py-1 text-[var(--rv-yellow)]">
         {compact ? 'Running Lab' : 'Running Training Lab'}
       </span>
     </div>

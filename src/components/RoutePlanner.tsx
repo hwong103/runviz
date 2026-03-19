@@ -264,8 +264,8 @@ const RoutePlanner: React.FC = () => {
                                 ←
                             </span>
                             <span>
-                                <span className="block text-[10px] font-black uppercase tracking-[0.35em] text-white/40">Back to dashboard</span>
-                                <span className="block text-xs font-black uppercase tracking-[0.24em] text-[var(--rv-text)]">Route Planner</span>
+                                <span className="rv-mini-label block text-white/40">Back to dashboard</span>
+                                <span className="rv-mini-label block text-[var(--rv-text)]">Route Planner</span>
                             </span>
                         </button>
 
@@ -274,7 +274,7 @@ const RoutePlanner: React.FC = () => {
                             <h1 className="rv-metric text-[clamp(2.2rem,4vw,4.6rem)]">
                                 Plan a route for your next run
                             </h1>
-                            <p className="mt-2 text-[10px] font-black uppercase tracking-[0.34em] text-[var(--rv-text-faint)] sm:text-xs">
+                            <p className="rv-mini-label mt-2 sm:text-[0.78rem]">
                                 Choose a start point, set the distance, and export the route.
                             </p>
                         </div>
@@ -282,13 +282,13 @@ const RoutePlanner: React.FC = () => {
                         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                             <div className="rv-button-secondary px-4 py-3 text-left sm:text-right">
                                 <div className="rv-quiet-label">Start</div>
-                                <div className="max-w-[16rem] truncate text-xs font-black text-[var(--rv-text)]">
+                                <div className="max-w-[16rem] truncate text-sm font-semibold text-[var(--rv-text)]">
                                     {summarizeAddress(resolvedAddress)}
                                 </div>
                             </div>
                             <button
                                 onClick={useCurrentLocation}
-                                className="rv-stat-badge inline-flex h-12 w-full justify-center border-[var(--rv-blue)]/25 px-4 text-[10px] font-black uppercase tracking-[0.32em] hover:border-[var(--rv-blue)]/60 hover:bg-[var(--rv-blue)]/18 active:scale-[0.98] sm:w-auto"
+                                className="rv-stat-badge rv-pill-label inline-flex h-12 w-full justify-center border-[var(--rv-blue)]/25 px-4 hover:border-[var(--rv-blue)]/60 hover:bg-[var(--rv-blue)]/18 active:scale-[0.98] sm:w-auto"
                                 data-tone="blue"
                                 title="Use current location"
                             >
@@ -305,11 +305,11 @@ const RoutePlanner: React.FC = () => {
                             <div className="mb-5 flex items-center justify-between">
                                 <div>
                                     <div className="rv-kicker mb-2">Route Configuration</div>
-                                    <div className="rv-quiet-label text-[0.62rem]">
+                                    <div className="rv-quiet-label">
                                         Search for a start point and target distance
                                     </div>
                                 </div>
-                                <div className="rv-quiet-label text-[0.62rem]">{generatedRoutes.length} routes</div>
+                                <div className="rv-quiet-label">{generatedRoutes.length} routes</div>
                             </div>
 
                             <div className="space-y-4" ref={suggestionRef}>
@@ -356,10 +356,10 @@ const RoutePlanner: React.FC = () => {
                                                     onClick={() => selectSuggestion(suggestion)}
                                                     className="w-full border-b border-white/5 px-4 py-3 text-left transition-colors last:border-0 hover:bg-white/5"
                                                 >
-                                                    <div className="text-xs font-black uppercase tracking-[0.12em] text-[var(--rv-text)] line-clamp-1">
+                                                    <div className="text-sm font-semibold tracking-[-0.01em] text-[var(--rv-text)] line-clamp-1">
                                                         {suggestion.display_name.split(',')[0]}
                                                     </div>
-                                                    <div className="mt-1 text-[10px] font-medium text-[var(--rv-text-faint)] line-clamp-1">
+                                                    <div className="mt-1 text-[0.78rem] font-medium text-[var(--rv-text-faint)] line-clamp-1">
                                                         {suggestion.display_name.split(',').slice(1).join(',')}
                                                     </div>
                                                 </button>
@@ -368,7 +368,7 @@ const RoutePlanner: React.FC = () => {
                                     )}
 
                                     {resolvedAddress && !showSuggestions && (
-                                        <div className="rv-inline-note mt-3 px-4 py-3 text-[10px] font-black uppercase tracking-[0.32em]" data-tone="warn">
+                                        <div className="rv-inline-note rv-pill-label mt-3 px-4 py-3" data-tone="warn">
                                             {resolvedAddress}
                                         </div>
                                     )}
@@ -378,9 +378,9 @@ const RoutePlanner: React.FC = () => {
                                     <div className="mb-4 flex items-end justify-between gap-3">
                                         <div>
                                             <div className="rv-quiet-label">Target distance</div>
-                                            <div className="rv-metric mt-2 text-[clamp(1.85rem,3vw,2.8rem)] font-black not-italic">
+                                            <div className="rv-metric mt-2 text-[clamp(1.85rem,3vw,2.8rem)] not-italic">
                                                 {targetDistance.toFixed(1)}
-                                                <span className="ml-2 text-sm not-italic tracking-[0.28em] text-[var(--rv-yellow)]">KM</span>
+                                                <span className="rv-mini-label ml-2 not-italic text-[var(--rv-yellow)]">KM</span>
                                             </div>
                                         </div>
                                         <div className="inline-flex items-center gap-2 self-start">
@@ -409,14 +409,14 @@ const RoutePlanner: React.FC = () => {
                                             style={{ width: `${(targetDistance / 100) * 100}%` }}
                                         />
                                     </div>
-                                    <div className="mt-3 flex justify-between text-[9px] font-black uppercase tracking-[0.32em] text-[var(--rv-text-faint)]">
+                                    <div className="rv-mini-label mt-3 flex justify-between">
                                         <span>1 km</span>
                                         <span>100 km</span>
                                     </div>
                                 </div>
 
                                 {error && (
-                                    <div className="rv-inline-note rounded-[1.35rem] px-4 py-3 text-[10px] font-black uppercase tracking-[0.22em]" data-tone="danger">
+                                    <div className="rv-inline-note rv-pill-label rounded-[1.35rem] px-4 py-3" data-tone="danger">
                                         {error}
                                     </div>
                                 )}
@@ -443,7 +443,7 @@ const RoutePlanner: React.FC = () => {
                             {routeSummary.map((item) => (
                                 <div key={item.label} className="rv-subtle-card p-4">
                                     <div className="rv-quiet-label">{item.label}</div>
-                                    <div className="mt-3 text-sm font-black uppercase tracking-[0.08em] text-[var(--rv-text)]">{item.value}</div>
+                                    <div className="mt-3 text-base font-semibold tracking-[-0.02em] text-[var(--rv-text)]">{item.value}</div>
                                 </div>
                             ))}
                         </div>
@@ -453,11 +453,11 @@ const RoutePlanner: React.FC = () => {
                                 <div className="mb-4 flex items-center justify-between">
                                     <div>
                                         <div className="rv-kicker">Route Library</div>
-                                        <div className="mt-2 text-xs font-black uppercase tracking-[0.28em] text-[var(--rv-text-faint)]">
+                                        <div className="rv-mini-label mt-2">
                                             Select a route to preview on the map
                                         </div>
                                     </div>
-                                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--rv-text-faint)]">{selectedRoute ? 'Active' : 'None'}</div>
+                                    <div className="rv-mini-label">{selectedRoute ? 'Active' : 'None'}</div>
                                 </div>
 
                                 <div className="max-h-[34vh] space-y-2 overflow-y-auto pr-1 custom-scrollbar sm:max-h-[34rem]">
@@ -474,8 +474,8 @@ const RoutePlanner: React.FC = () => {
                                             >
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="min-w-0">
-                                                        <div className="truncate text-sm font-black uppercase tracking-[0.1em] text-[var(--rv-text)]">{route.name}</div>
-                                                        <div className="mt-2 flex flex-wrap gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-[var(--rv-text-faint)]">
+                                                        <div className="truncate text-base font-semibold tracking-[-0.02em] text-[var(--rv-text)]">{route.name}</div>
+                                                        <div className="rv-mini-label mt-2 flex flex-wrap gap-2">
                                                             <span>{formatDistance(route.distance / 1000)}</span>
                                                             <span>{formatTime(route.estimatedTime)}</span>
                                                             {route.elevationGain > 0 && <span>{Math.round(route.elevationGain)} m gain</span>}
@@ -494,7 +494,7 @@ const RoutePlanner: React.FC = () => {
                                     <div className="mt-4 rounded-[1.35rem] border border-white/10 bg-black/25 p-3">
                                         <button
                                             onClick={() => downloadGPX(selectedRoute)}
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--rv-yellow)]/20 bg-[var(--rv-yellow)] px-4 py-3 text-[10px] font-black uppercase tracking-[0.34em] text-[var(--rv-bg-elevated)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(217,179,106,0.2)] active:scale-[0.99]"
+                                            className="rv-pill-label inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--rv-yellow)]/20 bg-[var(--rv-yellow)] px-4 py-3 text-[var(--rv-bg-elevated)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(217,179,106,0.2)] active:scale-[0.99]"
                                         >
                                             <span>↓</span>
                                             Export GPX
@@ -532,7 +532,7 @@ const RoutePlanner: React.FC = () => {
                                     )}
                                 </MapContainer>
 
-                                <div className="pointer-events-none absolute left-1/2 top-4 z-[500] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-full border border-white/10 bg-[color-mix(in_srgb,var(--rv-bg-deep)_65%,transparent)] px-4 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.26em] text-[var(--rv-text-dim)] sm:left-5 sm:w-auto sm:max-w-none sm:-translate-x-0 sm:text-left sm:tracking-[0.34em]">
+                                <div className="rv-pill-label pointer-events-none absolute left-1/2 top-4 z-[500] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-full border border-white/10 bg-[color-mix(in_srgb,var(--rv-bg-deep)_65%,transparent)] px-4 py-2.5 text-center text-[var(--rv-text-dim)] sm:left-5 sm:w-auto sm:max-w-none sm:-translate-x-0 sm:text-left">
                                     Click anywhere to set the start point
                                 </div>
 
@@ -540,7 +540,7 @@ const RoutePlanner: React.FC = () => {
                                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-[color-mix(in_srgb,var(--rv-bg-deep)_25%,transparent)] backdrop-blur-[2px]">
                                         <div className="max-w-md rounded-[1.75rem] border border-white/10 bg-[color-mix(in_srgb,var(--rv-bg-deep)_85%,transparent)] px-6 py-5 text-center shadow-[0_20px_80px_rgba(0,0,0,0.4)]">
                                             <div className="rv-kicker">Route input needed</div>
-                                            <div className="mt-3 text-sm font-medium leading-relaxed text-[var(--rv-text-dim)]">
+                                            <div className="rv-body-copy-sm mt-3">
                                                 Search for a place or click the map to choose your starting point, then generate routes.
                                             </div>
                                         </div>
@@ -552,15 +552,15 @@ const RoutePlanner: React.FC = () => {
                         <div className="rv-panel p-4 sm:p-5">
                             <div className="rv-kicker mb-4">Map legend</div>
                             <div className="grid gap-3 sm:flex sm:flex-wrap">
-                                    <span className="rv-stat-badge w-full justify-start text-[10px] font-black uppercase tracking-[0.3em] sm:w-auto">
+                                    <span className="rv-stat-badge rv-pill-label w-full justify-start sm:w-auto">
                                         <span className="h-3 w-3 rounded-full bg-[var(--rv-green)] shadow-[0_0_18px_rgba(87,198,154,0.45)]" />
                                         Active Path
                                     </span>
-                                    <span className="rv-stat-badge w-full justify-start text-[10px] font-black uppercase tracking-[0.3em] sm:w-auto">
+                                    <span className="rv-stat-badge rv-pill-label w-full justify-start sm:w-auto">
                                         <span className="h-0 w-0 border-l-[7px] border-r-[7px] border-t-[12px] border-l-transparent border-r-transparent border-t-[var(--rv-yellow)]" />
                                         High Gradient Zone
                                     </span>
-                                    <span className="rv-stat-badge w-full justify-start text-[10px] font-black uppercase tracking-[0.3em] sm:w-auto">
+                                    <span className="rv-stat-badge rv-pill-label w-full justify-start sm:w-auto">
                                         <span className="h-3 w-3 rounded-full bg-[var(--rv-blue)]" />
                                         Start Marker
                                     </span>

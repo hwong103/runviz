@@ -6,6 +6,19 @@
 }
 
 :root {
+    --rv-font-body: "Sora", sans-serif;
+    --rv-font-display: "Instrument Serif", serif;
+    --rv-text-xs: 0.75rem;
+    --rv-text-sm: 0.875rem;
+    --rv-text-base: 1rem;
+    --rv-text-lg: 1.25rem;
+    --rv-text-display: clamp(2.9rem, 6vw, 4.75rem);
+    --rv-leading-tight: 1.1;
+    --rv-leading-snug: 1.25;
+    --rv-leading-body: 1.6;
+    --rv-tracking-label: 0.22em;
+    --rv-tracking-kicker: 0.3em;
+    --rv-tracking-tight: -0.04em;
     --rv-bg: #0a0f17;
     --rv-bg-elevated: #121925;
     --rv-bg-deep: #041723;
@@ -29,9 +42,12 @@ body {
         radial-gradient(circle at 85% 15%, rgba(217, 179, 106, 0.1), transparent 16%),
         linear-gradient(180deg, #111721 0%, #0a0f17 100%);
     color: var(--rv-text);
-    font-family: "Sora", sans-serif;
+    font-family: var(--rv-font-body);
+    font-kerning: normal;
+    line-height: var(--rv-leading-body);
     margin: 0;
     overscroll-behavior-y: none;
+    text-rendering: optimizeLegibility;
 }
 
 a {
@@ -127,9 +143,10 @@ textarea {
 
 .rv-quiet-label {
     color: var(--rv-text-faint);
-    font-size: 0.62rem;
-    font-weight: 800;
-    letter-spacing: 0.3em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: var(--rv-tracking-label);
+    line-height: 1.35;
     text-transform: uppercase;
 }
 
@@ -157,9 +174,10 @@ textarea {
     border: 1px solid rgba(217, 179, 106, 0.18);
     border-radius: 999px;
     color: #f7f4ed;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.3em;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: var(--rv-tracking-label);
+    line-height: 1.2;
     text-transform: uppercase;
     transition: transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
@@ -185,29 +203,30 @@ textarea {
 
 .rv-kicker {
     color: var(--rv-yellow);
-    font-size: 0.68rem;
+    font-size: 0.74rem;
     font-weight: 700;
-    letter-spacing: 0.42em;
+    letter-spacing: var(--rv-tracking-kicker);
+    line-height: 1.25;
     text-transform: uppercase;
 }
 
 .rv-metric {
     color: var(--rv-text);
-    font-family: "Instrument Serif", serif;
+    font-family: var(--rv-font-display);
     font-style: italic;
     font-weight: 400;
-    letter-spacing: -0.05em;
-    line-height: 0.9;
+    letter-spacing: -0.045em;
+    line-height: 0.94;
 }
 
 .rv-data {
     color: var(--rv-text);
-    font-family: "Sora", sans-serif;
+    font-family: var(--rv-font-body);
     font-style: normal;
     font-variant-numeric: tabular-nums;
     font-weight: 700;
-    letter-spacing: -0.045em;
-    line-height: 0.95;
+    letter-spacing: var(--rv-tracking-tight);
+    line-height: 1;
 }
 
 .rv-chip {
@@ -217,26 +236,66 @@ textarea {
     border-radius: 999px;
     color: var(--rv-text-dim);
     display: inline-flex;
-    font-size: 0.65rem;
-    font-weight: 600;
+    font-size: 0.72rem;
+    font-weight: 700;
     gap: 0.55rem;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.14em;
+    line-height: 1.2;
     padding: 0.6rem 0.9rem;
     text-transform: uppercase;
 }
 
 .rv-chip-compact {
-    font-size: 0.58rem;
+    font-size: 0.68rem;
     gap: 0.45rem;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.14em;
     padding: 0.48rem 0.78rem;
 }
 
 .rv-chip-micro {
-    font-size: 0.54rem;
+    font-size: 0.62rem;
     gap: 0.38rem;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.12em;
     padding: 0.42rem 0.72rem;
+}
+
+.rv-body-copy {
+    color: var(--rv-text-dim);
+    font-size: var(--rv-text-base);
+    font-weight: 400;
+    line-height: var(--rv-leading-body);
+}
+
+.rv-body-copy-sm {
+    color: var(--rv-text-dim);
+    font-size: var(--rv-text-sm);
+    font-weight: 400;
+    line-height: 1.55;
+}
+
+.rv-section-title {
+    color: var(--rv-text);
+    font-size: clamp(1.45rem, 2vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: var(--rv-leading-snug);
+}
+
+.rv-mini-label {
+    color: var(--rv-text-faint);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: var(--rv-tracking-label);
+    line-height: 1.3;
+    text-transform: uppercase;
+}
+
+.rv-pill-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    line-height: 1.2;
+    text-transform: uppercase;
 }
 
 .rv-grid-lines {

@@ -280,11 +280,11 @@ export function RaceTimePredictions({
         return (
             <div className="rv-panel px-5 py-5 sm:px-6 sm:py-6">
                 <p className="rv-kicker mb-2">Race Predictions</p>
-                <h2 className="text-2xl font-bold tracking-tight text-[var(--rv-text)]">Projection unavailable</h2>
+                <h2 className="rv-section-title text-[1.7rem]">Projection unavailable</h2>
                 <div className="py-8 text-center text-sm text-[var(--rv-text-dim)]">
                     <div className="text-3xl mb-2">📊</div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.24em]">Insufficient data</p>
-                    <p className="mt-1 text-xs opacity-70">Add more runs to see predictions</p>
+                    <p className="rv-mini-label text-[var(--rv-text)]">Insufficient data</p>
+                    <p className="mt-1 text-sm opacity-70">Add more runs to see predictions</p>
                 </div>
             </div>
         );
@@ -295,9 +295,9 @@ export function RaceTimePredictions({
             <div className="mb-6 flex flex-wrap items-start gap-3">
                 <div>
                     <p className="rv-kicker mb-2">Race Predictions</p>
-                    <h2 className="text-2xl font-bold tracking-tight text-[var(--rv-text)]">Projected race shape</h2>
+                    <h2 className="rv-section-title text-[1.7rem]">Projected race shape</h2>
                 </div>
-                <div ref={tooltipAnchorRef} className="relative z-10 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.22em] sm:ml-auto">
+                <div ref={tooltipAnchorRef} className="rv-pill-label relative z-10 flex items-center gap-2 sm:ml-auto">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -344,11 +344,11 @@ export function RaceTimePredictions({
                         className="rounded-[1.6rem] border border-white/[0.06] bg-black/[0.15] p-4"
                     >
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
+                            <span className="rv-mini-label">
                                 {pred.name}
                             </span>
                             {pred.delta !== null && (
-                                <span className={`text-[10px] font-black flex items-center gap-1 ${pred.isFaster ? 'text-emerald-400' : 'text-red-400'}`}>
+                                <span className={`rv-pill-label flex items-center gap-1 ${pred.isFaster ? 'text-emerald-400' : 'text-red-400'}`}>
                                     <span>{pred.isFaster ? '↓' : '↑'}</span>
                                     <span>{formatTime(Math.abs(pred.delta))}</span>
                                 </span>
@@ -358,7 +358,7 @@ export function RaceTimePredictions({
                             <span className="rv-metric text-4xl text-[var(--rv-text)]">
                                 {formatTime(pred.time)}
                             </span>
-                            <span className="text-sm font-bold text-[var(--rv-text-dim)]">
+                            <span className="text-sm font-semibold text-[var(--rv-text-dim)]">
                                 {formatPace(pred.pace)} /km
                             </span>
                         </div>
@@ -366,7 +366,7 @@ export function RaceTimePredictions({
                 ))}
             </div>
 
-            <div className="mt-4 text-center text-[9px] font-medium text-[var(--rv-text-faint)]">
+            <div className="mt-4 text-center text-sm font-medium text-[var(--rv-text-faint)]">
                 Based on fitness, freshness, quality density, and long-run support
             </div>
             {activeTooltip && createPortal(
@@ -376,15 +376,15 @@ export function RaceTimePredictions({
                 >
                     {activeTooltip === 'ctl' ? (
                         <>
-                            <div className="mb-1 text-emerald-400">Chronic Training Load (Fitness)</div>
-                            <div className="font-medium normal-case leading-relaxed text-[var(--rv-text-dim)]">
+                            <div className="mb-1 text-sm font-semibold text-emerald-400">Chronic Training Load (Fitness)</div>
+                            <div className="text-sm font-normal normal-case leading-6 text-[var(--rv-text-dim)]">
                                 Weighted average of your daily training load over the last 42 days. Higher values indicate higher fitness but higher fatigue.
                             </div>
                         </>
                     ) : activeTooltip === 'tsb' ? (
                         <>
-                            <div className={`mb-1 ${predictions.tsb > 0 ? 'text-emerald-400' : 'text-yellow-400'}`}>Training Stress Balance (Form)</div>
-                            <div className="font-medium normal-case leading-relaxed text-[var(--rv-text-dim)]">
+                            <div className={`mb-1 text-sm font-semibold ${predictions.tsb > 0 ? 'text-emerald-400' : 'text-yellow-400'}`}>Training Stress Balance (Form)</div>
+                            <div className="text-sm font-normal normal-case leading-6 text-[var(--rv-text-dim)]">
                                 Difference between fitness (CTL) and fatigue (ATL).
                                 <br />
                                 <span className="mt-1 block text-emerald-500">+ Positive: Fresh & Ready</span>
@@ -393,13 +393,13 @@ export function RaceTimePredictions({
                         </>
                     ) : (
                         <>
-                            <div className="mb-1 text-emerald-400">Race Readiness Score (0-100)</div>
-                            <div className="font-medium normal-case leading-relaxed text-[var(--rv-text-dim)]">
+                            <div className="mb-1 text-sm font-semibold text-emerald-400">Race Readiness Score (0-100)</div>
+                            <div className="text-sm font-normal normal-case leading-6 text-[var(--rv-text-dim)]">
                                 Composite of fitness (CTL), freshness (TSB), quality sessions (28d), and long-run support (14d).
                                 <span className="mt-1 block text-emerald-500">75+: Ready to race</span>
                                 <span className="block text-yellow-400">55-74: Building fitness</span>
                                 <span className="block text-gray-300">&lt;55: Base phase</span>
-                                <span className="mt-1 block text-[10px] text-[var(--rv-text-faint)]">
+                                <span className="mt-1 block text-[0.72rem] text-[var(--rv-text-faint)]">
                                     Quality runs: {predictions.qualityRuns} | Longest recent: {predictions.longestRecentRunKm.toFixed(1)} km
                                 </span>
                             </div>

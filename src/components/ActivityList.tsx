@@ -65,11 +65,11 @@ export function ActivityList({
             <div className="mb-6 flex flex-wrap items-center gap-3">
                 <div>
                     <p className="rv-kicker mb-2">Activity Log</p>
-                    <h2 className="text-2xl font-bold tracking-tight text-[var(--rv-text)]">Training log</h2>
+                    <h2 className="rv-section-title">Training log</h2>
                 </div>
                 {selectedShoeId && selectedShoeName && (
                     <div className="flex items-center gap-2 sm:ml-auto">
-                        <span className="flex items-center gap-2 rounded-full border border-[var(--rv-blue)]/30 bg-[var(--rv-blue)]/15 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.22em] text-[var(--rv-blue)]">
+                        <span className="flex items-center gap-2 rounded-full border border-[var(--rv-blue)]/30 bg-[var(--rv-blue)]/15 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-blue)]">
                             <Footprints className="h-3.5 w-3.5" />
                             <span>{selectedShoeName}</span>
                         </span>
@@ -88,8 +88,8 @@ export function ActivityList({
                 {runs.length === 0 ? (
                     <div className="space-y-3 py-12 text-center">
                         <Footprints className="mx-auto h-10 w-10 text-[var(--rv-text-faint)]" />
-                        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-dim)]">No activities found</p>
-                        <p className="mx-auto max-w-[200px] text-xs text-[var(--rv-text-faint)]">Try adjusting your filters or sync your latest Strava data.</p>
+                        <p className="rv-mini-label text-[var(--rv-text-dim)]">No activities found</p>
+                        <p className="mx-auto max-w-[26ch] text-sm leading-6 text-[var(--rv-text-faint)]">Try adjusting your filters or sync your latest Strava data.</p>
                     </div>
                 ) : (
                     runs.map((activity) => {
@@ -104,30 +104,30 @@ export function ActivityList({
                             >
                                 {/* Date */}
                                 <div className="w-full sm:w-16 flex items-center gap-2 sm:block sm:text-center">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">{dateParts.weekday}</div>
-                                    <div className="text-lg font-black text-white leading-none">{dateParts.day}</div>
-                                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">{dateParts.month}</div>
+                                    <div className="rv-mini-label">{dateParts.weekday}</div>
+                                    <div className="text-[1.35rem] font-bold leading-none text-white">{dateParts.day}</div>
+                                    <div className="rv-mini-label">{dateParts.month}</div>
                                 </div>
 
                                 {/* Activity info */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <h3 className="truncate font-bold text-white transition-colors group-hover:text-[var(--rv-blue)]">
+                                        <h3 className="truncate text-base font-semibold tracking-[-0.02em] text-white transition-colors group-hover:text-[var(--rv-blue)]">
                                             {activity.name}
                                         </h3>
                                         {activity.distance === maxDist && maxDist > 0 && (
-                                            <span className="shrink-0 rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/12 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.22em] text-[var(--rv-yellow)]">
+                                            <span className="shrink-0 rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/12 px-2 py-0.5 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-[var(--rv-yellow)]">
                                                 Longest
                                             </span>
                                         )}
                                     </div>
-                                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold text-[var(--rv-text-faint)]">
+                                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-[var(--rv-text-faint)]">
                                         <span className="text-[var(--rv-text-dim)]">{formatDistance(activity.distance)} km</span>
                                         <span>•</span>
                                         <span>{formatDuration(activity.moving_time)}</span>
                                         <span className="hidden sm:inline">•</span>
                                         <span className="hidden sm:inline">{formatPace(activity.average_speed)} /km</span>
-                                        <span className="ml-auto text-[10px] font-medium lowercase opacity-60 sm:ml-0">{dateParts.relative}</span>
+                                        <span className="ml-auto text-[0.72rem] font-medium lowercase tracking-[0.01em] opacity-70 sm:ml-0">{dateParts.relative}</span>
                                     </div>
                                 </div>
 
@@ -140,7 +140,7 @@ export function ActivityList({
                                         return (
                                             <div className="group/shoe flex items-center gap-2 rounded-full border border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/10 px-3 py-1.5 transition-colors hover:bg-[var(--rv-blue)]/20">
                                                 <BrandLogo brandName={shoe.brand_name} />
-                                                <span className="max-w-[160px] truncate text-[10px] font-black uppercase tracking-[0.22em] text-[var(--rv-blue)]">
+                                                <span className="max-w-[160px] truncate text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[var(--rv-blue)]">
                                                     {shoe.name}
                                                 </span>
                                             </div>
@@ -153,7 +153,7 @@ export function ActivityList({
                                     <div className="flex flex-col items-end gap-1">
                                         {activity.average_heartrate && (
                                             <div className="text-right hidden sm:block">
-                                                <div className="flex items-center justify-end gap-1 text-[10px] font-black text-red-400/80">
+                                                <div className="flex items-center justify-end gap-1 text-[0.72rem] font-semibold text-red-400/80">
                                                     <HeartPulse className="h-3.5 w-3.5" />
                                                     <span>{Math.round(activity.average_heartrate)}</span>
                                                 </div>
@@ -162,7 +162,7 @@ export function ActivityList({
 
                                         {activity.total_elevation_gain > 0 && (
                                             <div className="text-right hidden sm:block">
-                                                <div className="flex items-center justify-end gap-1 text-[10px] font-black text-[var(--rv-text-faint)]">
+                                                <div className="flex items-center justify-end gap-1 text-[0.72rem] font-semibold text-[var(--rv-text-faint)]">
                                                     <Mountain className="h-3.5 w-3.5" />
                                                     <span>{Math.round(activity.total_elevation_gain)}m</span>
                                                 </div>

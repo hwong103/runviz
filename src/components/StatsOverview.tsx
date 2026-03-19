@@ -354,7 +354,7 @@ function StatCard({
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
             <div className={`mb-3 flex items-center gap-2 ${isCompact ? 'pr-3' : 'pr-6'}`}>
                 <Icon className={`${isCompact ? 'h-[16px] w-[16px]' : 'h-[18px] w-[18px]'} text-[var(--rv-text-faint)] transition-transform duration-300 group-hover:scale-110 group-hover:text-[var(--rv-text-dim)]`} />
-                <span className={`text-[10px] font-bold uppercase ${isCompact ? 'tracking-[0.24em]' : 'tracking-[0.28em]'} text-[var(--rv-text-faint)]`}>{label}</span>
+                <span className={`rv-mini-label ${isCompact ? 'tracking-[0.2em]' : 'tracking-[0.24em]'}`}>{label}</span>
             </div>
             {helpMetric && helpText && onToggleHelp && (
                 <>
@@ -374,8 +374,8 @@ function StatCard({
                             className="rv-panel rv-panel-strong z-[9999] pointer-events-none p-3 shadow-[0_20px_44px_rgba(0,0,0,0.35)] animate-in fade-in zoom-in-95 duration-200"
                             style={tooltipStyle}
                         >
-                            <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-blue)]">{label}</div>
-                            <div className="text-[11px] leading-relaxed font-medium normal-case text-[var(--rv-text-dim)]">
+                            <div className="mb-1 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[var(--rv-blue)]">{label}</div>
+                            <div className="text-sm leading-6 font-normal normal-case text-[var(--rv-text-dim)]">
                                 {helpText}
                             </div>
                         </div>,
@@ -385,7 +385,7 @@ function StatCard({
             )}
             <div className="flex flex-wrap items-baseline gap-1.5">
                 <span className={`rv-data ${isCompact ? 'text-[1.5rem] sm:text-[1.85rem]' : 'text-[1.8rem] sm:text-[2.15rem]'} ${color}`}>{value}</span>
-                <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">{unit}</span>
+                <span className="rv-mini-label tracking-[0.18em]">{unit}</span>
             </div>
         </div>
     );

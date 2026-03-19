@@ -138,7 +138,7 @@ export function CalendarHeatmap({
         <div className="rounded-[1.6rem] border border-white/[0.06] bg-black/10 p-4 overflow-x-auto sm:p-5">
             <div className="min-w-[300px]">
                 {/* Month labels */}
-                <div className="relative mb-2 ml-8 flex h-5 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
+                <div className="relative mb-2 ml-8 flex h-5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-text-faint)]">
                     {monthLabels.map((m, i) => (
                         <div
                             key={i}
@@ -152,7 +152,7 @@ export function CalendarHeatmap({
 
                 <div className={`flex ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}>
                     {/* Day labels */}
-                    <div className="flex flex-col gap-0.5 pr-2 text-[9px] font-bold uppercase text-[var(--rv-text-faint)] select-none">
+                    <div className="flex flex-col gap-0.5 pr-2 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-[var(--rv-text-faint)] select-none">
                         <span className={isMonthView ? 'h-5' : 'h-3'}>S</span>
                         <span className={isMonthView ? 'h-5' : 'h-3'}>M</span>
                         <span className={isMonthView ? 'h-5' : 'h-3'}>T</span>
@@ -204,7 +204,7 @@ export function CalendarHeatmap({
 
                 {/* Legend */}
                 <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-6">
-                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
+                        <div className="flex items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-text-faint)]">
                         <span>Less</span>
                         <div className="w-3 h-3 rounded-[2px] bg-white/5" />
                         <div className="w-3 h-3 rounded-[2px] bg-emerald-900/60" />
@@ -214,7 +214,7 @@ export function CalendarHeatmap({
                         <span>More</span>
                     </div>
                     {onSelectDay && (
-                        <div className="text-[10px] italic text-[var(--rv-blue)]/80">
+                        <div className="text-[0.78rem] italic text-[var(--rv-blue)]/80">
                             Click a day to view run details
                         </div>
                     )}
@@ -227,10 +227,10 @@ export function CalendarHeatmap({
                     className="rv-panel fixed z-[200] pointer-events-none -translate-x-1/2 -translate-y-full px-3 py-2 animate-in fade-in zoom-in-95 duration-150"
                     style={{ left: hoveredDay.x, top: hoveredDay.y }}
                 >
-                    <div className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-blue)]">
+                    <div className="mb-0.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-blue)]">
                         {format(parseISO(hoveredDay.date), 'MMM d, yyyy')}
                     </div>
-                    <div className="text-xs font-bold text-white">
+                    <div className="text-sm font-semibold text-white">
                         {hoveredDay.distance.toFixed(2)} km
                     </div>
                 </div>

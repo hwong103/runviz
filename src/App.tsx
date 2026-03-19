@@ -369,17 +369,17 @@ function App() {
             <h1 className="rv-metric max-w-2xl text-5xl sm:text-6xl lg:text-7xl">
               Clear training insights for runners getting more serious.
             </h1>
-            <p className="max-w-xl text-base leading-7 text-[var(--rv-text-dim)] sm:text-lg">
+            <p className="rv-body-copy max-w-xl sm:text-lg">
               Sign in with Google or magic link, then connect Strava to see your training load, plan routes, review running form, and keep your key metrics in one place.
             </p>
-            <p className="text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
+            <p className="rv-mini-label">
               Training load, route planning, and video-based form analysis.
             </p>
           </div>
           <div className="rv-panel rv-panel-accent w-full max-w-md px-6 py-8 sm:px-8">
             <p className="rv-kicker mb-4">Sign In</p>
-            <h2 className="mb-3 text-3xl font-bold tracking-tight text-[var(--rv-text)]">Open your RunViz workspace</h2>
-            <p className="mb-6 text-sm leading-6 text-[var(--rv-text-dim)]">
+            <h2 className="rv-section-title mb-3">Open your RunViz workspace</h2>
+            <p className="rv-body-copy-sm mb-6">
               Use Google or a magic link for your RunViz account, then connect Strava to bring in training data.
             </p>
             <div className="space-y-3">
@@ -402,12 +402,12 @@ function App() {
                 Continue with Google
               </button>
               {googleStatus && (
-                <p className="text-xs leading-5 text-[var(--rv-text-dim)]">
+                <p className="rv-body-copy-sm">
                   {googleStatus}
                 </p>
               )}
               <div className="rounded-3xl border border-white/8 bg-white/[0.04] p-4">
-                <label htmlFor="magic-email" className="mb-2 block text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--rv-text-faint)]">
+                <label htmlFor="magic-email" className="rv-mini-label mb-2 block">
                   Magic link
                 </label>
                 <div className="flex flex-col gap-3">
@@ -437,19 +437,19 @@ function App() {
                       }
                     }}
                     disabled={magicSending}
-                    className="rv-button-secondary flex w-full items-center justify-center px-6 py-3 text-xs uppercase tracking-[0.24em] disabled:cursor-wait"
+                    className="rv-button-secondary rv-pill-label flex w-full items-center justify-center px-6 py-3 disabled:cursor-wait"
                   >
                     {magicSending ? 'Sending...' : 'Send magic link'}
                   </button>
                 </div>
                 {magicStatus && (
-                  <p className="mt-3 text-xs leading-5 text-[var(--rv-text-dim)]">
+                  <p className="rv-body-copy-sm mt-3">
                     {magicStatus}
                   </p>
                 )}
               </div>
             </div>
-            <p className="mt-6 text-xs uppercase tracking-[0.25em] text-[var(--rv-text-faint)]">Connect Strava during setup after sign-in.</p>
+            <p className="rv-mini-label mt-6">Connect Strava during setup after sign-in.</p>
           </div>
         </div>
       </main>
@@ -508,7 +508,7 @@ function App() {
                     <button
                       key={mode}
                       onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] transition-all ${viewPeriod.mode === mode
+                      className={`rv-pill-label rounded-full px-2.5 py-1 transition-all ${viewPeriod.mode === mode
                         ? 'bg-[var(--rv-blue)] text-white shadow-[0_4px_12px_rgba(74,122,255,0.35)]'
                         : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-text-dim)]'
                         }`}
@@ -522,7 +522,7 @@ function App() {
                   <select
                     value={viewPeriod.year}
                     onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value, 10) }))}
-                    className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
+                    className="rv-pill-label rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
                   >
                     {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
@@ -532,7 +532,7 @@ function App() {
                   <select
                     value={viewPeriod.month || 0}
                     onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value, 10) }))}
-                    className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
+                    className="rv-pill-label rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
                   >
                     {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
                   </select>
@@ -571,7 +571,7 @@ function App() {
                     {athlete?.profile ? (
                       <img src={athlete.profile} className="h-full w-full object-cover" alt="Profile" />
                     ) : (
-                      <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--rv-text-dim)]">
+                      <span className="rv-mini-label tracking-[0.1em] text-[var(--rv-text-dim)]">
                         {athlete?.firstname?.[0] ?? 'R'}
                       </span>
                     )}
@@ -593,13 +593,13 @@ function App() {
                     {athlete?.profile ? (
                       <img src={athlete.profile} className="h-8 w-8 rounded-full object-cover" alt="Profile" />
                     ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.08] text-xs font-bold uppercase">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.08] text-sm font-semibold uppercase">
                         {athlete?.firstname?.[0] ?? 'R'}
                       </div>
                     )}
                     <div>
-                      <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
-                      <div className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">RunViz account</div>
+                      <div className="text-sm font-semibold text-[var(--rv-text)]">{athleteLabel}</div>
+                      <div className="rv-mini-label">RunViz account</div>
                     </div>
                   </div>
                 </div>
@@ -611,7 +611,7 @@ function App() {
                     className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition hover:bg-white/5"
                   >
                     <MapGlyph className="h-4 w-4 text-[var(--rv-blue)]" />
-                    <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Route Planner</span>
+                    <span className="rv-mini-label text-[var(--rv-text)]">Route Planner</span>
                   </Link>
                   <Link
                     to="/form-analysis"
@@ -619,7 +619,7 @@ function App() {
                     className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition hover:bg-white/5"
                   >
                     <LabGlyph className="h-4 w-4 text-[var(--rv-yellow)]" />
-                    <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Form Lab</span>
+                    <span className="rv-mini-label text-[var(--rv-text)]">Form Lab</span>
                   </Link>
                 </div>
 
@@ -627,7 +627,7 @@ function App() {
                   <div className="flex items-center justify-between rounded-2xl px-4 py-2.5">
                     <div className="flex items-center gap-2">
                       <span className={`h-1.5 w-1.5 rounded-full ${syncing ? 'animate-pulse bg-[var(--rv-yellow)]' : 'bg-[var(--rv-green)]'}`} />
-                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
+                      <span className="rv-mini-label">
                         {syncing ? 'Sync in progress' : formatLastSync(lastSync)}
                       </span>
                     </div>
@@ -640,8 +640,8 @@ function App() {
                     disabled={syncing}
                     className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-left transition hover:bg-white/5 disabled:opacity-50"
                   >
-                    <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Full Sync</span>
-                    <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-blue)]">{syncing ? 'Running' : 'Start'}</span>
+                    <span className="rv-mini-label text-[var(--rv-text)]">Full Sync</span>
+                    <span className="rv-mini-label text-[var(--rv-blue)]">{syncing ? 'Running' : 'Start'}</span>
                   </button>
                 </div>
 
@@ -650,8 +650,8 @@ function App() {
                     onClick={logout}
                     className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-left transition hover:bg-red-500/10"
                   >
-                    <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Logout</span>
-                    <span className="text-[10px] uppercase tracking-[0.22em] text-[#ff7f64]">Exit</span>
+                    <span className="rv-mini-label text-[var(--rv-text)]">Logout</span>
+                    <span className="rv-mini-label text-[#ff7f64]">Exit</span>
                   </button>
                 </div>
               </div>
@@ -672,9 +672,9 @@ function App() {
                     <div className="mb-6 flex items-center justify-between gap-3">
                       <div>
                         <p className="rv-kicker mb-2">Training Calendar</p>
-                        <h2 className="text-xl font-bold tracking-tight text-[var(--rv-text)]">Runs by day</h2>
+                        <h2 className="rv-section-title text-[1.55rem]">Runs by day</h2>
                       </div>
-                      <span className="hidden text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)] sm:inline">Click a day to inspect a run</span>
+                      <span className="rv-mini-label hidden sm:inline">Click a day to inspect a run</span>
                     </div>
                     <CalendarHeatmap
                       activities={activities}
@@ -689,19 +689,19 @@ function App() {
                     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                       <div>
                         <p className="rv-kicker mb-2">Tools</p>
-                        <h2 className="text-xl font-bold tracking-tight text-[var(--rv-text)]">Planner and form lab</h2>
+                        <h2 className="rv-section-title text-[1.55rem]">Planner and form lab</h2>
                       </div>
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <Link to="/plan-route" className="rv-panel rv-panel-accent block px-5 py-5 transition hover:-translate-y-1">
                         <p className="rv-kicker mb-3">Route Planner</p>
-                        <h3 className="mb-3 text-2xl font-bold italic tracking-tight text-[var(--rv-text)]">Plan your next route</h3>
-                        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">Choose a starting point, set a distance target, and export a route as GPX.</p>
+                        <h3 className="mb-3 text-2xl font-semibold italic tracking-[-0.03em] text-[var(--rv-text)]">Plan your next route</h3>
+                        <p className="rv-body-copy-sm">Choose a starting point, set a distance target, and export a route as GPX.</p>
                       </Link>
                       <Link to="/form-analysis" className="rv-panel block px-5 py-5 transition hover:-translate-y-1 hover:border-[var(--rv-blue)]/40">
                         <p className="rv-kicker mb-3">Form Lab</p>
-                        <h3 className="mb-3 text-2xl font-bold italic tracking-tight text-[var(--rv-text)]">Review running form</h3>
-                        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">Upload a video, match it to a run, and save a form analysis you can revisit later.</p>
+                        <h3 className="mb-3 text-2xl font-semibold italic tracking-[-0.03em] text-[var(--rv-text)]">Review running form</h3>
+                        <p className="rv-body-copy-sm">Upload a video, match it to a run, and save a form analysis you can revisit later.</p>
                       </Link>
                     </div>
                   </section>
@@ -735,7 +735,7 @@ function App() {
           </main>
 
           <footer className="border-t border-white/5 px-4 py-8 sm:px-6 lg:px-8">
-            <div className="mx-auto flex max-w-[1720px] flex-col gap-4 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)] sm:flex-row sm:items-center sm:justify-between">
+            <div className="rv-mini-label mx-auto flex max-w-[1720px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <span>RunViz analytics v4.2</span>
               <span>Synced with the Strava API</span>
               <a href="https://github.com/hwong103/runviz" className="transition hover:text-[var(--rv-text)]">Project source</a>
@@ -753,7 +753,7 @@ function BrandWordmark({ compact = false }: { compact?: boolean }) {
       <span className={`${compact ? 'text-3xl' : 'text-5xl sm:text-6xl'} font-bold tracking-[-0.08em] text-[var(--rv-text)]`}>
         RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
       </span>
-      <span className="rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--rv-yellow)]">
+      <span className="rv-pill-label rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/10 px-3 py-1 text-[var(--rv-yellow)]">
         {compact ? 'Running Lab' : 'Running Training Lab'}
       </span>
     </div>
@@ -809,7 +809,7 @@ function PanelFallback({
     <div className="rv-panel rv-panel-strong px-5 py-5 sm:px-7 sm:py-6">
       <div className="mb-6">
         <p className="rv-kicker mb-2">{title}</p>
-        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">{subtitle}</p>
+        <p className="rv-body-copy-sm">{subtitle}</p>
       </div>
       <div className={`${heightClassName} animate-pulse rounded-[1.5rem] border border-white/6 bg-white/[0.03]`} />
     </div>
@@ -823,7 +823,7 @@ function ModalFallback() {
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-[var(--rv-blue)]/30 border-t-[var(--rv-yellow)]" />
         <div>
           <p className="rv-kicker mb-2">Run Details</p>
-          <p className="text-sm text-[var(--rv-text-dim)]">Loading deeper analysis</p>
+          <p className="rv-body-copy-sm">Loading deeper analysis</p>
         </div>
       </div>
     </div>
