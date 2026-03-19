@@ -73,7 +73,7 @@ export function useAuth() {
     }
 
     function login() {
-        void auth.signInGoogle();
+        return auth.signInGoogle();
     }
 
     function connectStrava() {

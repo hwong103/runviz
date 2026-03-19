@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
 import { StatsOverview } from './components/StatsOverview';
@@ -104,6 +104,7 @@ function App() {
   const [magicEmail, setMagicEmail] = useState('');
   const [magicSending, setMagicSending] = useState(false);
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
+  const [googleStatus, setGoogleStatus] = useState<string | null>(null);
   const [stravaClientIdInput, setStravaClientIdInput] = useState('');
   const [stravaClientSecretInput, setStravaClientSecretInput] = useState('');
   const [stravaKeyConfigured, setStravaKeyConfigured] = useState(false);
@@ -118,6 +119,28 @@ function App() {
   const inFlightGearIds = useRef<Set<string>>(new Set());
   const failedGearIds = useRef<Map<string, number>>(new Map());
   const gearFetchCount = useRef(0);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (!error) {
+      return;
+    }
+
+    if (error === 'ATTEMPTS_EXCEEDED') {
+      setMagicStatus('That magic link has already been used or has expired. Request a fresh one.');
+      return;
+    }
+
+    if (error === 'magic_link_failed') {
+      setMagicStatus('We could not verify that magic link. Request a fresh one and try again.');
+      return;
+    }
+
+    if (error === 'auth_failed') {
+      setMagicStatus('We could not complete sign-in. Please try again.');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!needsStravaConnect) {
@@ -348,7 +371,15 @@ function App() {
             </p>
             <div className="space-y-3">
               <button
-                onClick={login}
+                onClick={async () => {
+                  setGoogleStatus(null);
+                  try {
+                    await login();
+                  } catch (error) {
+                    console.error('Google sign-in failed:', error);
+                    setGoogleStatus('Google sign-in is unavailable right now. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to the Worker and redeploy.');
+                  }
+                }}
                 className="rv-button-primary flex w-full items-center justify-center gap-3 px-8 py-4 text-sm active:translate-y-0"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -357,6 +388,11 @@ function App() {
                 </svg>
                 Continue with Google
               </button>
+              {googleStatus && (
+                <p className="text-xs leading-5 text-[var(--rv-text-dim)]">
+                  {googleStatus}
+                </p>
+              )}
               <div className="rounded-3xl border border-white/8 bg-white/[0.04] p-4">
                 <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--rv-text-faint)]">
                   Magic link
