@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
@@ -316,7 +316,40 @@ function App() {
       )}
 
       <div className="min-h-screen">
-        <div className="min-w-0">
+        <aside className="fixed inset-y-0 left-0 z-50 hidden w-20 flex-col items-center border-r border-white/5 bg-[var(--rv-bg)]/90 py-8 backdrop-blur-xl lg:flex">
+          <div className="mb-10 text-[var(--rv-blue)]">
+            <LabGlyph className="h-9 w-9" />
+          </div>
+          <nav className="flex flex-1 flex-col gap-8">
+            <SidebarLink label="Dashboard" active>
+              <DashboardGlyph />
+            </SidebarLink>
+            <SidebarLink label="Form Analysis" to="/form-analysis">
+              <AnalyticsGlyph />
+            </SidebarLink>
+            <SidebarLink label="Route Planner" to="/plan-route">
+              <MapGlyph />
+            </SidebarLink>
+            <SidebarLink label="History">
+              <HistoryGlyph />
+            </SidebarLink>
+            <SidebarLink label="Settings">
+              <SettingsGlyph />
+            </SidebarLink>
+          </nav>
+          <button
+            onClick={() => setIsMenuOpen((open) => !open)}
+            className="mt-auto flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[var(--rv-blue)]/30 p-0.5"
+          >
+            {athlete?.profile ? (
+              <img src={athlete.profile} alt="Profile" className="h-full w-full rounded-full object-cover opacity-80" />
+            ) : (
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--rv-text)]">RV</span>
+            )}
+          </button>
+        </aside>
+
+        <div className="min-w-0 lg:ml-20">
           <header className="sticky top-0 z-40 border-b border-white/5 bg-[#051723]/88 backdrop-blur-2xl">
             <div className="mx-auto flex max-w-[1720px] flex-col gap-5 px-4 py-4 sm:px-6 lg:px-8">
               <div className="flex flex-wrap items-center justify-between gap-4">
@@ -565,7 +598,7 @@ function BrandWordmark({ compact = false }: { compact?: boolean }) {
         RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
       </span>
       <span className="rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--rv-yellow)]">
-        {compact ? 'Running Lab' : 'Running Training Lab'}
+        {compact ? 'Lab' : 'Performance Lab'}
       </span>
     </div>
   );
@@ -602,6 +635,75 @@ function MapGlyph({ className = 'h-5 w-5' }: { className?: string }) {
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
       <path d="M9 4.5 3.8 6.6A1 1 0 0 0 3 7.52v11.03a1 1 0 0 0 1.37.93L9 17.5l6 2 5.2-2.08a1 1 0 0 0 .8-.93V5.46a1 1 0 0 0-1.37-.93L15 6.5l-6-2Z" />
       <path d="M9 4.5v13M15 6.5v13" />
+    </svg>
+  );
+}
+
+function SidebarLink({
+  children,
+  label,
+  to = '/',
+  active = false,
+}: {
+  children: ReactNode;
+  label: string;
+  to?: string;
+  active?: boolean;
+}) {
+  return (
+    <Link
+      to={to}
+      className={`group flex h-14 w-14 items-center justify-center rounded-2xl transition ${active
+        ? 'text-[var(--rv-blue)]'
+        : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-blue)]'
+        }`}
+      aria-label={label}
+      title={label}
+    >
+      <span className="transition group-hover:scale-110">{children}</span>
+    </Link>
+  );
+}
+
+function DashboardGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.2" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="1.2" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.2" />
+      <rect x="13.5" y="13.5" width="7" height="7" rx="1.2" />
+    </svg>
+  );
+}
+
+function AnalyticsGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M5 19V9" />
+      <path d="M12 19V5" />
+      <path d="M19 19v-7" />
+      <rect x="3" y="9" width="4" height="10" rx="1" />
+      <rect x="10" y="5" width="4" height="14" rx="1" />
+      <rect x="17" y="12" width="4" height="7" rx="1" />
+    </svg>
+  );
+}
+
+function HistoryGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v5h5" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function SettingsGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 3.75 14 5l2.5-.25 1 2.3 2 1.55-.9 2.34.9 2.31-2 1.55-1 2.3L14 19l-2 1.25L10 19l-2.5.25-1-2.3-2-1.55.9-2.31-.9-2.34 2-1.55 1-2.3L10 5Z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }

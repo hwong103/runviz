@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useActivities } from '../hooks/useActivities';
 import { activities as activitiesApi } from '../services/api';
@@ -400,6 +400,18 @@ export default function FormAnalysisPage() {
 
     return (
         <div className="min-h-screen bg-[#0a0f17] text-[#f5efe3]">
+            <aside className="fixed inset-y-0 left-0 z-[60] hidden w-20 flex-col items-center border-r border-white/5 bg-[#041723] py-8 lg:flex">
+                <div className="mb-10 text-[#0093D6]">
+                    <LabNavGlyph className="h-9 w-9" />
+                </div>
+                <nav className="flex flex-1 flex-col gap-8">
+                    <LabNavLink title="Dashboard" href="/" icon={<LabDashboardIcon />} />
+                    <LabNavLink title="Form Analysis" href="/form-analysis" active icon={<LabAnalyticsIcon />} />
+                    <LabNavLink title="Route Planner" href="/plan-route" icon={<LabMapIcon />} />
+                    <LabNavLink title="History" href="#" icon={<LabHistoryIcon />} />
+                    <LabNavLink title="Settings" href="#" icon={<LabSettingsIcon />} />
+                </nav>
+            </aside>
             {/* Hidden file input */}
             <input
                 ref={fileInputRef}
@@ -409,7 +421,7 @@ export default function FormAnalysisPage() {
                 className="hidden"
             />
 
-            <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+            <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 lg:pl-28">
                 <header className="mb-6 grid grid-cols-1 gap-4 rounded-[2rem] border border-[#d9b36a]/14 bg-[#131a25]/96 px-5 py-5 shadow-2xl lg:grid-cols-[1fr_auto] lg:items-center lg:px-7">
                     <div className="flex items-center gap-4">
                         <button
@@ -825,6 +837,32 @@ export default function FormAnalysisPage() {
         </div>
     );
 }
+
+function LabNavLink({ href, title, active = false, icon }: { href: string; title: string; active?: boolean; icon: ReactNode }) {
+    return (
+        <a href={href} title={title} className={`flex h-14 w-14 items-center justify-center rounded-2xl transition ${active ? 'text-[#0093D6]' : 'text-white/40 hover:text-[#0093D6]'}`}>
+            {icon}
+        </a>
+    );
+}
+
+function LabNavGlyph({ className = 'h-5 w-5 text-current' }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M4 17.5 9.5 12l3.5 3.5L20 8.5" />
+            <path d="M4 6v12h16" />
+            <circle cx="9.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
+            <circle cx="13" cy="15.5" r="1.2" fill="currentColor" stroke="none" />
+            <circle cx="20" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+        </svg>
+    );
+}
+
+function LabDashboardIcon() { return <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.2" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.2" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.2" /></svg>; }
+function LabAnalyticsIcon() { return <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 19V9" /><path d="M12 19V5" /><path d="M19 19v-7" /><rect x="3" y="9" width="4" height="10" rx="1" /><rect x="10" y="5" width="4" height="14" rx="1" /><rect x="17" y="12" width="4" height="7" rx="1" /></svg>; }
+function LabMapIcon() { return <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 4.5 3.8 6.6A1 1 0 0 0 3 7.52v11.03a1 1 0 0 0 1.37.93L9 17.5l6 2 5.2-2.08a1 1 0 0 0 .8-.93V5.46a1 1 0 0 0-1.37-.93L15 6.5l-6-2Z" /><path d="M9 4.5v13M15 6.5v13" /></svg>; }
+function LabHistoryIcon() { return <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /><path d="M12 7v5l3 2" /></svg>; }
+function LabSettingsIcon() { return <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3.75 14 5l2.5-.25 1 2.3 2 1.55-.9 2.34.9 2.31-2 1.55-1 2.3L14 19l-2 1.25L10 19l-2.5.25-1-2.3-2-1.55.9-2.31-.9-2.34 2-1.55 1-2.3L10 5Z" /><circle cx="12" cy="12" r="3" /></svg>; }
 
 // --- Analysis Engine Helpers ---
 
