@@ -2,11 +2,11 @@
  * Logo.dev Integration Service
  * 
  * Fetches brand logos for shoe manufacturers using Logo.dev API.
- * Falls back to emojis if logos can't be loaded.
+ * Falls back to short brand marks if logos can't be loaded.
  */
 
 // Optional Logo.dev publishable key.
-// If absent, logo URLs are disabled and UI falls back to brand emoji.
+// If absent, logo URLs are disabled and UI falls back to brand marks.
 const LOGO_DEV_TOKEN = import.meta.env.VITE_LOGO_DEV_TOKEN;
 
 // Brand name to domain mapping
@@ -27,22 +27,22 @@ const BRAND_DOMAINS: Record<string, string> = {
     'under armour': 'underarmour.com',
 };
 
-// Fallback emojis for brands (used when logo fails to load)
-const BRAND_FALLBACK_EMOJIS: Record<string, string> = {
-    'hoka': '🦅',
-    'nike': '✔️',
-    'adidas': '👟',
-    'saucony': '🏃',
-    'brooks': '🧢',
-    'asics': '🌀',
+// Fallback brand marks (used when logo fails to load)
+const BRAND_FALLBACK_MARKS: Record<string, string> = {
+    'hoka': 'HK',
+    'nike': 'NK',
+    'adidas': 'AD',
+    'saucony': 'SC',
+    'brooks': 'BK',
+    'asics': 'AS',
     'new balance': 'NB',
-    'on': '⭕',
-    'mizuno': '🌊',
-    'altra': '🏔️',
-    'salomon': '⛰️',
-    'puma': '🐆',
-    'reebok': '💪',
-    'under armour': '🛡️',
+    'on': 'ON',
+    'mizuno': 'MZ',
+    'altra': 'AL',
+    'salomon': 'SL',
+    'puma': 'PM',
+    'reebok': 'RB',
+    'under armour': 'UA',
 };
 
 /**
@@ -95,15 +95,22 @@ export function getBrandLogoUrl(brandName?: string, size: number = 64, theme?: '
 }
 
 /**
- * Get fallback emoji for a brand
+ * Get fallback brand mark for a brand
  */
 export function getBrandFallbackEmoji(brandName?: string): string {
-    if (!brandName) return '👟';
+    if (!brandName) return 'RV';
 
     const brandKey = findBrandKey(brandName);
-    if (!brandKey) return '👟';
+    if (!brandKey) {
+        return brandName
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(part => part[0]?.toUpperCase() ?? '')
+            .join('') || 'RV';
+    }
 
-    return BRAND_FALLBACK_EMOJIS[brandKey] || '👟';
+    return BRAND_FALLBACK_MARKS[brandKey] || 'RV';
 }
 
 /**

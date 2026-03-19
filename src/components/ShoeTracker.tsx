@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { Footprints } from 'lucide-react';
 import type { Activity, Gear } from '../types';
 import { gear as gearApi } from '../services/api';
 import { getBrandLogoUrl, getBrandFallbackEmoji } from '../services/logoService';
@@ -22,7 +23,7 @@ function BrandLogo({ brandName, className }: { brandName?: string; className?: s
 
     if (!logoUrl || hasError) {
         return (
-            <span className={`${className} inline-flex items-center justify-center leading-none`}>
+            <span className={`${className} inline-flex items-center justify-center rounded-md bg-white/5 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--rv-text-faint)] leading-none`}>
                 {fallbackEmoji}
             </span>
         );
@@ -217,7 +218,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                     ))
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full py-10 text-center opacity-50">
-                        <span className="text-4xl mb-4 grayscale">👟</span>
+                        <Footprints className="mb-4 h-10 w-10 text-[var(--rv-text-faint)]" />
                         <p className="text-xs font-black uppercase tracking-widest italic text-[var(--rv-text-dim)]">No shoes used in this period</p>
                     </div>
                 )}

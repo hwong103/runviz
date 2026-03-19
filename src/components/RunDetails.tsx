@@ -30,7 +30,7 @@ function BrandLogo({ brandName, className }: { brandName?: string; className?: s
 
     if (!logoUrl || hasError) {
         return (
-            <span className={`${className} inline-flex items-center justify-center leading-none`}>
+            <span className={`${className} inline-flex items-center justify-center rounded-md bg-white/5 px-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--rv-text-faint)] leading-none`}>
                 {fallbackEmoji}
             </span>
         );

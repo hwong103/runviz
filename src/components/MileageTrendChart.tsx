@@ -14,6 +14,7 @@ import {
 } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 import { format, subDays, startOfDay, eachDayOfInterval, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
+import { TrendingUp } from 'lucide-react';
 import type { Activity } from '../types';
 import { parseActivityLocalDate } from '../utils/activityDate';
 
@@ -193,7 +194,8 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
     return (
         <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10 h-[400px]">
             <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2">
-                <span>📈</span> Mileage Trends ({period.mode === 'all' ? 'Overall' : period.mode === 'year' ? period.year : format(new Date(period.year, period.month!), 'MMMM yyyy')})
+                <TrendingUp className="h-[18px] w-[18px] text-emerald-400" />
+                Mileage Trends ({period.mode === 'all' ? 'Overall' : period.mode === 'year' ? period.year : format(new Date(period.year, period.month!), 'MMMM yyyy')})
             </h3>
             <div className="h-[300px]">
                 <Chart type="bar" data={data} options={options} />

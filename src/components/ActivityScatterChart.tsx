@@ -9,6 +9,7 @@ import {
     ScatterController,
 } from 'chart.js';
 import { Scatter } from 'react-chartjs-2';
+import { Footprints } from 'lucide-react';
 import type { Activity } from '../types';
 
 ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, ScatterController);
@@ -99,7 +100,8 @@ export function ActivityScatterChart({ activities }: ActivityScatterChartProps) 
     return (
         <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10 h-[400px]">
             <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2">
-                <span>🏃‍♂️</span> Pace vs. Distance
+                <Footprints className="h-[18px] w-[18px] text-emerald-400" />
+                Pace vs. Distance
             </h3>
             <div className="h-[300px]">
                 <Scatter data={data} options={options} />

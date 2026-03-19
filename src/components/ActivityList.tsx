@@ -1,6 +1,7 @@
 import type { Activity, Gear } from '../types';
 import { formatDuration } from '../analytics/heartRateZones';
 import { format, formatDistanceToNow } from 'date-fns';
+import { ChevronRight, Footprints, HeartPulse, Mountain, X } from 'lucide-react';
 import { getBrandLogoUrl } from '../services/logoService';
 import { parseActivityLocalDate } from '../utils/activityDate';
 
@@ -69,7 +70,7 @@ export function ActivityList({
                 {selectedShoeId && selectedShoeName && (
                     <div className="flex items-center gap-2 sm:ml-auto">
                         <span className="flex items-center gap-2 rounded-full border border-[var(--rv-blue)]/30 bg-[var(--rv-blue)]/15 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.22em] text-[var(--rv-blue)]">
-                            <span>👟</span>
+                            <Footprints className="h-3.5 w-3.5" />
                             <span>{selectedShoeName}</span>
                         </span>
                         <button
@@ -77,7 +78,7 @@ export function ActivityList({
                             className="rounded-full px-2 py-1 text-xs font-black text-[var(--rv-text-dim)] transition-colors hover:bg-white/10 hover:text-white"
                             title="Clear filter"
                         >
-                            ✕
+                            <X className="h-3.5 w-3.5" />
                         </button>
                     </div>
                 )}
@@ -86,7 +87,7 @@ export function ActivityList({
             <div className="space-y-3">
                 {runs.length === 0 ? (
                     <div className="space-y-3 py-12 text-center">
-                        <div className="text-4xl">🏜️</div>
+                        <Footprints className="mx-auto h-10 w-10 text-[var(--rv-text-faint)]" />
                         <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-dim)]">No activities found</p>
                         <p className="mx-auto max-w-[200px] text-xs text-[var(--rv-text-faint)]">Try adjusting your filters or sync your latest Strava data.</p>
                     </div>
@@ -153,7 +154,7 @@ export function ActivityList({
                                         {activity.average_heartrate && (
                                             <div className="text-right hidden sm:block">
                                                 <div className="flex items-center justify-end gap-1 text-[10px] font-black text-red-400/80">
-                                                    <span>❤️</span>
+                                                    <HeartPulse className="h-3.5 w-3.5" />
                                                     <span>{Math.round(activity.average_heartrate)}</span>
                                                 </div>
                                             </div>
@@ -162,14 +163,14 @@ export function ActivityList({
                                         {activity.total_elevation_gain > 0 && (
                                             <div className="text-right hidden sm:block">
                                                 <div className="flex items-center justify-end gap-1 text-[10px] font-black text-[var(--rv-text-faint)]">
-                                                    <span>⛰️</span>
+                                                    <Mountain className="h-3.5 w-3.5" />
                                                     <span>{Math.round(activity.total_elevation_gain)}m</span>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className="font-black text-[var(--rv-text-faint)] transition-all transform group-hover:translate-x-1 group-hover:text-white">→</div>
+                                    <ChevronRight className="h-4 w-4 text-[var(--rv-text-faint)] transition-all group-hover:translate-x-1 group-hover:text-white" />
                                 </div>
                             </button>
                         );

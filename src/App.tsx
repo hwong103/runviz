@@ -530,7 +530,7 @@ function App() {
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-center gap-2 overflow-x-auto rounded-full border border-white/[0.08] bg-white/[0.04] p-1 no-scrollbar">
                   {([
-                    { mode: 'all', label: 'Live' },
+                    { mode: 'all', label: 'All' },
                     { mode: 'year', label: 'Year' },
                     { mode: 'month', label: 'Month' },
                   ] as const).map(({ mode, label }) => (
@@ -578,27 +578,6 @@ function App() {
           </header>
 
           <main className="mx-auto flex max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6 sm:py-6">
-              <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-                <div className="max-w-3xl">
-                  <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-                    <p className="rv-kicker">Training Overview</p>
-                    <h1 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--rv-text)] sm:text-3xl">
-                      Current training at a glance.
-                    </h1>
-                  </div>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--rv-text-dim)]">
-                    Recent mileage, active gear, and your current view window without the oversized hero treatment.
-                  </p>
-                </div>
-                <div className="grid w-full gap-4 sm:grid-cols-3 xl:max-w-xl">
-                  <HeroStat label="Runs Shown" value={filteredActivities.filter(isRun).length.toString()} unit="SESSIONS" />
-                  <HeroStat label="Shoes Tracked" value={allShoes.length.toString()} unit="SHOES" accent="blue" />
-                  <HeroStat label="Time Range" value={viewPeriod.mode === 'all' ? 'LIVE' : viewPeriod.mode.toUpperCase()} unit="FILTER" accent="yellow" />
-                </div>
-              </div>
-            </section>
-
             <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} />
 
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
@@ -695,32 +674,6 @@ function BrandWordmark({ compact = false }: { compact?: boolean }) {
       <span className="rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--rv-yellow)]">
         {compact ? 'Running Lab' : 'Running Training Lab'}
       </span>
-    </div>
-  );
-}
-
-function HeroStat({
-  label,
-  value,
-  unit,
-  accent = 'green',
-}: {
-  label: string;
-  value: string;
-  unit: string;
-  accent?: 'green' | 'blue' | 'yellow';
-}) {
-  const accentClass = accent === 'yellow'
-    ? 'text-[var(--rv-yellow)]'
-    : accent === 'blue'
-      ? 'text-[var(--rv-blue)]'
-      : 'text-[var(--rv-green)]';
-
-  return (
-    <div className="rv-panel px-4 py-3.5 sm:px-5">
-      <div className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">{label}</div>
-      <div className={`rv-data mt-3 text-3xl sm:text-4xl ${accentClass}`}>{value}</div>
-      <div className="mt-2 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">{unit}</div>
     </div>
   );
 }

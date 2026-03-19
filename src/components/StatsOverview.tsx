@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
+import type { LucideIcon } from 'lucide-react';
+import { Clock3, Flame, Footprints, Gauge, HeartPulse, Mountain, PieChart, Ruler, Scale, Target, TrendingUp, Trophy } from 'lucide-react';
 import type { Activity } from '../types';
 import { isRun } from '../types';
 import {
@@ -136,45 +138,45 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                 label="Runs"
                 value={stats.runCount.toString()}
                 unit=""
-                icon="🏃"
+                icon={Footprints}
             />
             <StatCard
                 label="Distance"
                 value={stats.totalDistance.toFixed(1)}
                 unit="km"
-                icon="📏"
+                icon={Ruler}
             />
             <StatCard
                 label="Avg Duration"
                 value={stats.avgDurationMins > 0 ? stats.avgDurationMins.toFixed(0) : '--'}
                 unit="min"
-                icon="⏱️"
+                icon={Clock3}
                 color="text-cyan-400"
             />
             <StatCard
                 label="Avg Pace"
                 value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'}
                 unit="/km"
-                icon="⚡"
+                icon={Gauge}
             />
             <StatCard
                 label="Longest"
                 value={stats.longestRun.toFixed(1)}
                 unit="km"
-                icon="🏆"
+                icon={Trophy}
             />
             <StatCard
                 label="Max Streak"
                 value={stats.longestStreak.toString()}
                 unit="days"
-                icon="🔥"
+                icon={Flame}
                 color="text-orange-400"
             />
             <StatCard
                 label="ACWR"
                 value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
                 unit=""
-                icon="⚖️"
+                icon={Scale}
                 color={acwrColorClass(stats.acwr)}
                 helpMetric="acwr"
                 helpText="Acute:Chronic Workload Ratio (ATL/CTL), anchored to the selected period end date. 0.8-1.3 is generally balanced, >1.5 means a sharp load spike."
@@ -189,7 +191,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                         : `${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)}`
                 }
                 unit={stats.weeklyRampPercent !== null ? '%' : 'km/wk'}
-                icon="📈"
+                icon={TrendingUp}
                 color={rampColorClass(stats.weeklyRampPercent)}
                 helpMetric="ramp"
                 helpText="Week-over-week distance change (7 days vs prior 7), anchored to the selected period end date. Displayed as % when prior-week distance exists; otherwise km/wk."
@@ -200,7 +202,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                 label="Consistency"
                 value={stats.consistencyScore.toString()}
                 unit="%"
-                icon="🎯"
+                icon={Target}
                 color={consistencyColorClass(stats.consistencyScore)}
                 helpMetric="consistency"
                 helpText="Score from recent weekly run frequency and stability, anchored to the selected period end date. 75+ strong routine, 50-74 building, below 50 inconsistent."
@@ -211,7 +213,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                 label="Long Run %"
                 value={stats.longRunRatio !== null ? stats.longRunRatio.toFixed(0) : '--'}
                 unit="%"
-                icon="🧱"
+                icon={PieChart}
                 color={longRunRatioColorClass(stats.longRunRatio)}
                 helpMetric="longRunRatio"
                 helpText="Longest run as a % of that anchored week's total distance. Around 20-35% is common; very high values may indicate imbalance."
@@ -222,7 +224,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                 label="Efficiency"
                 value={stats.efficiencyIndex !== null ? stats.efficiencyIndex.toFixed(2) : '--'}
                 unit="m/beat"
-                icon="❤️"
+                icon={HeartPulse}
                 color={efficiencyColorClass(stats.efficiencyIndex)}
                 helpMetric="efficiency"
                 helpText="Distance per heartbeat over trailing 28 days (anchored). Higher is better. Rough guide: <1.00 low, 1.00-1.19 moderate, >=1.20 strong. Example: 0.94 means ~0.94m per heartbeat and suggests room to improve aerobic efficiency."
@@ -233,7 +235,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                 label="GAP Trend"
                 value={formatSignedSeconds(stats.gapTrendSecPerKm)}
                 unit="s/km"
-                icon="⛰️"
+                icon={Mountain}
                 color={gapTrendColorClass(stats.gapTrendSecPerKm)}
                 helpMetric="gapTrend"
                 helpText="Change in estimated GAP pace: latest 14 days vs prior 14 (anchored). Negative is improving (faster), positive is slowing."
@@ -290,7 +292,7 @@ interface StatCardProps {
     label: string;
     value: string;
     unit: string;
-    icon: string;
+    icon: LucideIcon;
     color?: string;
     helpMetric?: HelpMetric;
     helpText?: string;
@@ -302,7 +304,7 @@ function StatCard({
     label,
     value,
     unit,
-    icon,
+    icon: Icon,
     color = "text-white",
     helpMetric,
     helpText,
@@ -327,7 +329,7 @@ function StatCard({
         >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
             <div className="mb-3 flex items-center gap-2 pr-6">
-                <span className="text-xl opacity-80 group-hover:scale-110 transition-transform duration-300">{icon}</span>
+                <Icon className="h-[18px] w-[18px] text-[var(--rv-text-faint)] transition-transform duration-300 group-hover:scale-110 group-hover:text-[var(--rv-text-dim)]" />
                 <span className="text-[10px] text-[var(--rv-text-faint)] font-bold uppercase tracking-[0.28em]">{label}</span>
             </div>
             {helpMetric && helpText && onToggleHelp && (
