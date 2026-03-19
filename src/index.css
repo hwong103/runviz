@@ -82,6 +82,18 @@ textarea {
     position: relative;
 }
 
+.rv-panel.fixed {
+    position: fixed;
+}
+
+.rv-panel.absolute {
+    position: absolute;
+}
+
+.rv-panel.sticky {
+    position: sticky;
+}
+
 .rv-panel::after {
     border: 1px solid rgba(245, 239, 227, 0.04);
     border-radius: calc(1.5rem - 2px);
