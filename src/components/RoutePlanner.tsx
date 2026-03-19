@@ -269,7 +269,7 @@ const RoutePlanner: React.FC = () => {
             </div>
 
             <div className="relative mx-auto max-w-[1680px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-                <header className="mb-5 rounded-[2rem] border border-[#d9b36a]/15 bg-[#131a25]/92 shadow-[0_24px_120px_rgba(0,0,0,0.35)] backdrop-blur-md">
+                <header className="rv-shell-card mb-5">
                     <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
                         <button
                             onClick={() => navigate('/')}
@@ -295,15 +295,15 @@ const RoutePlanner: React.FC = () => {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                            <div className="rounded-full border border-white/10 bg-black/20 px-4 py-3 text-right">
-                                <div className="text-[9px] font-black uppercase tracking-[0.35em] text-white/35">Start</div>
+                            <div className="rv-button-secondary px-4 py-3 text-right">
+                                <div className="rv-quiet-label">Start</div>
                                 <div className="max-w-[16rem] truncate text-xs font-black text-[#f6f2f1]">
                                     {summarizeAddress(resolvedAddress)}
                                 </div>
                             </div>
                             <button
                                 onClick={useCurrentLocation}
-                                className="inline-flex h-12 items-center gap-2 rounded-full border border-[#4a7aff]/28 bg-[#4a7aff]/12 px-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#f5efe3] transition-all hover:border-[#4a7aff]/60 hover:bg-[#4a7aff]/18 active:scale-[0.98]"
+                                className="rv-button-secondary inline-flex h-12 items-center gap-2 border-[var(--rv-blue)]/25 bg-[var(--rv-blue)]/12 px-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#f5efe3] hover:border-[var(--rv-blue)]/60 hover:bg-[var(--rv-blue)]/18 active:scale-[0.98]"
                                 title="Use current location"
                             >
                                 <span className="text-base">◎</span>
@@ -315,20 +315,20 @@ const RoutePlanner: React.FC = () => {
 
                 <section className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5">
                     <aside className="lg:col-span-4 xl:col-span-3 space-y-4">
-                        <div className="rounded-[2rem] border border-[#d9b36a]/12 bg-[#131a25]/94 p-4 shadow-[0_18px_80px_rgba(0,0,0,0.22)] sm:p-5">
+                        <div className="rv-shell-card p-4 sm:p-5">
                             <div className="mb-5 flex items-center justify-between">
                                 <div>
                                     <div className="mb-2 text-[10px] font-black uppercase tracking-[0.45em] text-[#d9b36a]">Route Configuration</div>
-                                    <div className="text-xs font-black uppercase tracking-[0.28em] text-white/45">
+                                    <div className="rv-quiet-label text-[0.62rem]">
                                         Search for a start point and target distance
                                     </div>
                                 </div>
-                                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">{generatedRoutes.length} routes</div>
+                                <div className="rv-quiet-label text-[0.62rem]">{generatedRoutes.length} routes</div>
                             </div>
 
                             <div className="space-y-4" ref={suggestionRef}>
                                 <div className="relative">
-                                    <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.35em] text-white/35">
+                                    <label className="rv-quiet-label mb-2 block">
                                         Starting point
                                     </label>
                                     <div className="relative">
@@ -337,7 +337,7 @@ const RoutePlanner: React.FC = () => {
                                             placeholder="Search location..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full rounded-[1.35rem] border border-[#d9b36a]/12 bg-black/25 px-4 py-4 pr-24 text-sm text-[#f5efe3] outline-none transition-all placeholder:text-white/20 focus:border-[#4a7aff]/60 focus:bg-black/35"
+                                            className="rv-field w-full px-4 py-4 pr-24 text-sm"
                                         />
                                         <div className="absolute inset-y-0 right-3 flex items-center gap-2">
                                             <button
@@ -384,10 +384,10 @@ const RoutePlanner: React.FC = () => {
                                     )}
                                 </div>
 
-                                <div className="rounded-[1.5rem] border border-white/10 bg-black/20 p-4">
+                                <div className="rv-subtle-card p-4">
                                     <div className="mb-4 flex items-end justify-between gap-3">
                                         <div>
-                                            <div className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">Target distance</div>
+                                            <div className="rv-quiet-label">Target distance</div>
                                             <div className="mt-2 text-[clamp(1.85rem,3vw,2.8rem)] font-black italic leading-none tracking-[-0.05em] text-[#f6f2f1]">
                                                 {targetDistance.toFixed(1)}
                                                 <span className="ml-2 text-sm not-italic tracking-[0.28em] text-[#d9b36a]">KM</span>
@@ -430,9 +430,9 @@ const RoutePlanner: React.FC = () => {
                                 <button
                                     onClick={generateRoutes}
                                     disabled={loading || !startPoint}
-                                    className={`group inline-flex w-full items-center justify-center gap-3 rounded-full px-5 py-4 text-[11px] font-black uppercase tracking-[0.34em] transition-all ${loading || !startPoint
+                                    className={`group inline-flex w-full items-center justify-center gap-3 px-5 py-4 ${loading || !startPoint
                                         ? 'cursor-not-allowed border border-white/10 bg-white/5 text-white/25'
-                                        : 'border border-[#fff917]/20 bg-[#0093d6] text-[#f6f2f1] shadow-[0_18px_50px_rgba(0,147,214,0.35)] hover:-translate-y-0.5 hover:border-[#fff917]/40 hover:shadow-[0_24px_70px_rgba(0,147,214,0.45)]'
+                                        : 'rv-button-primary shadow-[0_18px_50px_rgba(74,122,255,0.35)] hover:border-[#d9b36a]/38 hover:shadow-[0_24px_70px_rgba(74,122,255,0.45)]'
                                         }`}
                                 >
                                     {loading ? (
@@ -447,15 +447,15 @@ const RoutePlanner: React.FC = () => {
 
                         <div className="grid grid-cols-3 gap-3">
                             {routeSummary.map((item) => (
-                                <div key={item.label} className="rounded-[1.35rem] border border-white/10 bg-white/[0.03] p-4">
-                                    <div className="text-[9px] font-black uppercase tracking-[0.34em] text-white/30">{item.label}</div>
+                                <div key={item.label} className="rv-subtle-card p-4">
+                                    <div className="rv-quiet-label">{item.label}</div>
                                     <div className="mt-3 text-sm font-black uppercase tracking-[0.08em] text-[#f6f2f1]">{item.value}</div>
                                 </div>
                             ))}
                         </div>
 
                         {generatedRoutes.length > 0 && (
-                            <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_18px_80px_rgba(0,0,0,0.18)] sm:p-5">
+                            <div className="rv-panel p-4 sm:p-5">
                                 <div className="mb-4 flex items-center justify-between">
                                     <div>
                                         <div className="text-[10px] font-black uppercase tracking-[0.42em] text-[#fff917]">Route Library</div>
@@ -512,7 +512,7 @@ const RoutePlanner: React.FC = () => {
                     </aside>
 
                     <section className="lg:col-span-8 xl:col-span-9 space-y-4">
-                        <div className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.03] p-2 shadow-[0_24px_120px_rgba(0,0,0,0.25)] sm:p-3">
+                                <div className="rv-panel overflow-hidden rounded-[2.5rem] p-2 shadow-[0_24px_120px_rgba(0,0,0,0.25)] sm:p-3">
                             <div className="relative h-[45svh] min-h-[330px] overflow-hidden rounded-[2rem] sm:h-[60vh] lg:h-[760px]">
                                 <MapContainer
                                     center={startPoint || [-33.8688, 151.2093]}
@@ -555,7 +555,7 @@ const RoutePlanner: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_18px_80px_rgba(0,0,0,0.18)] sm:p-5">
+                        <div className="rv-panel p-4 sm:p-5">
                             <div className="mb-4 text-[10px] font-black uppercase tracking-[0.42em] text-white/35">Map legend</div>
                             <div className="flex flex-wrap gap-3">
                                     <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-3 text-[10px] font-black uppercase tracking-[0.3em] text-white/75">

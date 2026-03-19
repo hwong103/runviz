@@ -266,7 +266,7 @@ function App() {
   if (!isAuthenticated) {
     return (
       <div className="rv-grid-lines flex min-h-screen items-center justify-center px-4 py-10">
-        <div className="rv-panel rv-panel-strong flex w-full max-w-5xl flex-col gap-8 overflow-hidden px-6 py-8 sm:px-10 lg:flex-row lg:items-end lg:px-12 lg:py-12">
+        <div className="rv-shell-card flex w-full max-w-5xl flex-col gap-8 overflow-hidden px-6 py-8 sm:px-10 lg:flex-row lg:items-end lg:px-12 lg:py-12">
           <div className="flex-1 space-y-5">
             <p className="rv-kicker">For Ambitious Runners</p>
             <BrandWordmark />
@@ -280,7 +280,7 @@ function App() {
               Training load, route planning, and video-based form analysis.
             </p>
           </div>
-          <div className="rv-panel w-full max-w-md border-[var(--rv-border-strong)]/70 px-6 py-8 sm:px-8">
+          <div className="rv-panel rv-panel-accent w-full max-w-md px-6 py-8 sm:px-8">
             <p className="rv-kicker mb-4">Connect Strava</p>
             <h2 className="mb-3 text-3xl font-bold tracking-tight text-[var(--rv-text)]">See your running data</h2>
             <p className="mb-8 text-sm leading-6 text-[var(--rv-text-dim)]">
@@ -288,7 +288,7 @@ function App() {
             </p>
             <button
               onClick={login}
-              className="flex w-full items-center justify-center gap-3 rounded-full bg-[var(--rv-blue)] px-8 py-4 text-sm font-bold uppercase tracking-[0.28em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#0aa8ef] active:translate-y-0"
+              className="rv-button-primary flex w-full items-center justify-center gap-3 px-8 py-4 text-sm active:translate-y-0"
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066l-2.084 4.116z" />
@@ -348,9 +348,9 @@ function App() {
                   <button
                     onClick={() => sync({ forceFull: true })}
                     disabled={syncing}
-                    className={`rounded-full px-5 py-3 text-xs font-bold uppercase tracking-[0.28em] transition ${syncing
+                    className={`px-5 py-3 text-xs ${syncing
                       ? 'cursor-wait border border-white/10 bg-white/5 text-[var(--rv-text-faint)]'
-                      : 'border border-[var(--rv-blue)]/45 bg-[var(--rv-blue)]/18 text-[var(--rv-text)] hover:-translate-y-0.5 hover:bg-[var(--rv-blue)]/24'
+                      : 'rv-button-secondary border-[var(--rv-blue)]/45 bg-[var(--rv-blue)]/18 text-[var(--rv-text)] hover:bg-[var(--rv-blue)]/24'
                       }`}
                   >
                     {syncing ? 'Syncing...' : 'Sync Data'}

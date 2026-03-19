@@ -410,7 +410,7 @@ export default function FormAnalysisPage() {
             />
 
             <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-                <header className="mb-6 grid grid-cols-1 gap-4 rounded-[2rem] border border-[#d9b36a]/14 bg-[#131a25]/96 px-5 py-5 shadow-2xl lg:grid-cols-[1fr_auto] lg:items-center lg:px-7">
+                <header className="rv-shell-card mb-6 grid grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[1fr_auto] lg:items-center lg:px-7">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={handleBack}
@@ -441,7 +441,7 @@ export default function FormAnalysisPage() {
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
                     <div className="space-y-6 lg:col-span-4">
-                        <section className="rounded-[2.2rem] border border-[#d9b36a]/12 bg-[#131a25]/94 p-6 shadow-2xl">
+                        <section className="rv-shell-card p-6">
                             <SectionLabel index="01" title="Video Source" subtitle="Upload a clip to analyze" />
 
                             {!selectedVideo ? (
@@ -471,7 +471,7 @@ export default function FormAnalysisPage() {
                                 </div>
                             ) : (
                                 <div className="mt-5 space-y-5">
-                                    <div className="rounded-[1.6rem] border border-white/10 bg-black/20 p-5">
+                                    <div className="rv-subtle-card p-5">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
                                                 <div className="truncate text-sm font-black text-white">{selectedVideo.filename}</div>
@@ -492,9 +492,9 @@ export default function FormAnalysisPage() {
                                         </div>
                                     </div>
 
-                                    <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-5">
+                                    <div className="rv-subtle-card p-5">
                                         <div className="flex items-center justify-between gap-3">
-                                            <label className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Clip Length</label>
+                                            <label className="rv-quiet-label">Clip Length</label>
                                         <span className="rounded-full border border-[#d9b36a]/20 bg-[#d9b36a]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.32em] text-[#ecd3a7]">
                                             {clipRange[1] - clipRange[0]}s selected
                                         </span>
@@ -519,8 +519,8 @@ export default function FormAnalysisPage() {
                                         </div>
                                     </div>
 
-                                    <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-5">
-                                        <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Match to a Run</div>
+                                    <div className="rv-subtle-card p-5">
+                                        <div className="rv-quiet-label">Match to a Run</div>
                                         <div className="mt-4">
                                             {activeActivity ? (
                                                 <div className="flex items-center gap-4 rounded-[1.3rem] border border-emerald-500/20 bg-emerald-500/10 p-4">
@@ -541,7 +541,7 @@ export default function FormAnalysisPage() {
                                             ) : (
                                                 <select
                                                     onChange={(e) => setSelectedActivityManual(activities.find(a => a.id === parseInt(e.target.value)) || null)}
-                                                    className="w-full rounded-[1.1rem] border border-white/10 bg-black/25 p-4 text-[10px] font-black uppercase tracking-[0.24em] text-slate-300 outline-none transition-colors focus:border-[#4a7aff]/50"
+                                                    className="rv-field w-full p-4 text-[10px] font-black uppercase tracking-[0.24em] text-slate-300"
                                                 >
                                                     <option value="">Choose a run manually (optional)...</option>
                                                     {activities.filter(isRun).slice(0, 20).map(a => (
@@ -557,7 +557,7 @@ export default function FormAnalysisPage() {
                             )}
                         </section>
 
-                        <section className="rounded-[2.2rem] border border-[#d9b36a]/12 bg-[#131a25]/94 p-6 shadow-2xl">
+                        <section className="rv-shell-card p-6">
                             <SectionLabel index="02" title="Past Analyses" subtitle="Open a saved form review" />
                             <div className="mt-5 max-h-[430px] space-y-3 overflow-y-auto pr-2">
                                 {sessions.length === 0 ? (
@@ -583,7 +583,7 @@ export default function FormAnalysisPage() {
 
                     <div className="space-y-6 lg:col-span-8">
                         {!currentAnalysis ? (
-                            <section className="relative overflow-hidden rounded-[2.6rem] border border-[#d9b36a]/12 bg-[#131a25]/96 p-6 shadow-2xl sm:p-8">
+                            <section className="rv-shell-card relative overflow-hidden rounded-[2.6rem] p-6 sm:p-8">
                                 <div className="relative z-10">
                                     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                                         <SectionLabel
@@ -630,12 +630,12 @@ export default function FormAnalysisPage() {
                                             </div>
 
                                             <div className="space-y-4">
-                                                <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-5">
-                                                    <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Analysis Controls</div>
+                                                <div className="rv-subtle-card p-5">
+                                                    <div className="rv-quiet-label">Analysis Controls</div>
                                                     <button
                                                         onClick={runAnalysis}
                                                         disabled={isAnalyzing}
-                                                        className="mt-5 inline-flex w-full items-center justify-center gap-3 rounded-full border border-[#d9b36a]/30 bg-[#d9b36a] px-6 py-4 text-[11px] font-black uppercase tracking-[0.34em] text-[#121925] shadow-[0_18px_40px_rgba(217,179,106,0.22)] transition-all hover:translate-y-[-1px] hover:bg-[#e6c489] disabled:cursor-not-allowed disabled:opacity-60"
+                                                        className="rv-button-primary mt-5 inline-flex w-full items-center justify-center gap-3 border-[#d9b36a]/30 bg-[#d9b36a] px-6 py-4 text-[#121925] shadow-[0_18px_40px_rgba(217,179,106,0.22)] hover:bg-[#e6c489] disabled:cursor-not-allowed disabled:opacity-60"
                                                     >
                                                         <span className="text-lg">↗</span>
                                                         {isAnalyzing ? 'Analyzing' : 'Start analysis'}
@@ -646,8 +646,8 @@ export default function FormAnalysisPage() {
                                                     </div>
                                                 </div>
 
-                                                <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-5">
-                                                    <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Matched Run</div>
+                                                <div className="rv-subtle-card p-5">
+                                                    <div className="rv-quiet-label">Matched Run</div>
                                                     {activeActivity ? (
                                                         <div className="mt-4 rounded-[1.4rem] border border-emerald-500/20 bg-emerald-500/10 p-4">
                                                             <div className="text-sm font-black text-white">{activeActivity.name}</div>
