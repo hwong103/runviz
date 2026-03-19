@@ -5,23 +5,9 @@ export function StravaAuthStart() {
     const location = useLocation();
 
     useEffect(() => {
-        let cancelled = false;
-
-        void fetch(`${window.location.origin}${location.pathname}${location.search}`, {
-            credentials: 'include',
-        })
-            .then((response) => {
-                if (cancelled) return;
-                window.location.replace(response.url || '/');
-            })
-            .catch(() => {
-                if (cancelled) return;
-                window.location.replace('/?error=strava_auth_failed');
-            });
-
-        return () => {
-            cancelled = true;
-        };
+        // This route is only a SPA fallback. Reloading the same URL as a
+        // top-level navigation lets the browser follow the Worker 302 to Strava.
+        window.location.replace(`${window.location.origin}${location.pathname}${location.search}`);
     }, [location.pathname, location.search]);
 
     return (
