@@ -11,6 +11,8 @@ export interface Env {
     STRAVA_CLIENT_ID: string;
     STRAVA_CLIENT_SECRET: string;
     FRONTEND_URL: string;
+    FRONTEND_PREVIEW_HOST?: string;
+    ADDITIONAL_FRONTEND_URLS?: string;
     ORS_API_KEY: string;
     GOOGLE_CLIENT_ID: string;
     GOOGLE_CLIENT_SECRET: string;
@@ -27,21 +29,50 @@ interface TokenData {
     scopes?: string;
 }
 
-// CORS headers for frontend
-export function corsHeaders(origin: string): HeadersInit {
-    const allowedOrigins = [
-        'https://hwong103.github.io',
-        'http://localhost:5173',
-        'http://127.0.0.1:5173'
-    ];
+function getConfiguredOrigins(env: Env): string[] {
+    const configured = [env.FRONTEND_URL, env.ADDITIONAL_FRONTEND_URLS]
+        .flatMap((value) => value ? value.split(',') : [])
+        .map((value) => value.trim())
+        .filter(Boolean);
 
-    const isAllowed = allowedOrigins.includes(origin) || origin.endsWith('.hwong103.github.io');
+    return [
+        ...configured,
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+    ];
+}
+
+function isAllowedOrigin(origin: string, env: Env): boolean {
+    if (!origin) return false;
+
+    const allowedOrigins = getConfiguredOrigins(env);
+    if (allowedOrigins.includes(origin)) {
+        return true;
+    }
+
+    if (!env.FRONTEND_PREVIEW_HOST) {
+        return false;
+    }
+
+    try {
+        const hostname = new URL(origin).hostname;
+        return hostname === env.FRONTEND_PREVIEW_HOST || hostname.endsWith(`.${env.FRONTEND_PREVIEW_HOST}`);
+    } catch {
+        return false;
+    }
+}
+
+// CORS headers for frontend
+export function corsHeaders(origin: string, env: Env): HeadersInit {
+    const fallbackOrigin = env.FRONTEND_URL || 'http://localhost:5173';
+    const allowedOrigin = isAllowedOrigin(origin, env) ? origin : fallbackOrigin;
 
     return {
-        'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0],
+        'Access-Control-Allow-Origin': allowedOrigin,
         'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Credentials': 'true',
+        'Vary': 'Origin',
     };
 }
 
@@ -72,7 +103,7 @@ export default {
 
         // Handle CORS preflight
         if (request.method === 'OPTIONS') {
-            return new Response(null, { headers: corsHeaders(origin) });
+            return new Response(null, { headers: corsHeaders(origin, env) });
         }
 
         try {
@@ -94,7 +125,7 @@ export default {
             }
 
             if (url.pathname === '/auth/logout') {
-                return handleLogout(origin);
+                return handleLogout(origin, env);
             }
 
             // Google OAuth endpoints
@@ -138,14 +169,14 @@ export default {
                 return await handleApiRequest(request, url, env, origin);
             }
 
-            return new Response(`Not Found: ${url.pathname}`, { status: 404, headers: corsHeaders(origin) });
+            return new Response(`Not Found: ${url.pathname}`, { status: 404, headers: corsHeaders(origin, env) });
         } catch (error) {
             console.error('Worker error:', error);
             return new Response(
                 JSON.stringify({ error: 'Internal server error' }),
                 {
                     status: 500,
-                    headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+                    headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
                 }
             );
         }
@@ -155,12 +186,13 @@ export default {
 // Start OAuth flow
 function handleAuthStart(url: URL, env: Env): Response {
     const redirectUri = url.searchParams.get('redirect_uri') || `${env.FRONTEND_URL}/callback`;
+    const scope = url.searchParams.get('scope') || 'read,activity:read_all,activity:write';
 
     const authUrl = new URL(STRAVA_AUTH_URL);
     authUrl.searchParams.set('client_id', env.STRAVA_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('response_type', 'code');
-    authUrl.searchParams.set('scope', 'read,activity:read_all,activity:write');
+    authUrl.searchParams.set('scope', scope);
     authUrl.searchParams.set('state', generateSessionId().slice(0, 16));
 
     return Response.redirect(authUrl.toString(), 302);
@@ -174,7 +206,7 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
     if (!code) {
         return new Response(
             JSON.stringify({ error: 'Missing authorization code' }),
-            { status: 400, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            { status: 400, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
 
@@ -195,7 +227,7 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
         console.error('Token exchange failed:', error);
         return new Response(
             JSON.stringify({ error: 'Token exchange failed' }),
-            { status: 400, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            { status: 400, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
 
@@ -233,7 +265,7 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
         }),
         {
             headers: {
-                ...corsHeaders(origin),
+                ...corsHeaders(origin, env),
                 'Content-Type': 'application/json',
                 'Set-Cookie': `runviz_session=${sessionId}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=2592000`,
             },
@@ -248,7 +280,7 @@ async function handleSession(request: Request, env: Env, origin: string): Promis
     if (!sessionId) {
         return new Response(
             JSON.stringify({ authenticated: false }),
-            { headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
 
@@ -256,7 +288,7 @@ async function handleSession(request: Request, env: Env, origin: string): Promis
     if (!stored) {
         return new Response(
             JSON.stringify({ authenticated: false }),
-            { headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
 
@@ -271,17 +303,17 @@ async function handleSession(request: Request, env: Env, origin: string): Promis
                 profile: tokenData.athleteProfile,
             },
         }),
-        { headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
     );
 }
 
 // Logout
-function handleLogout(origin: string): Response {
+function handleLogout(origin: string, env: Env): Response {
     return new Response(
         JSON.stringify({ success: true }),
         {
             headers: {
-                ...corsHeaders(origin),
+                ...corsHeaders(origin, env),
                 'Content-Type': 'application/json',
                 'Set-Cookie': 'runviz_session=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0',
             },
@@ -301,7 +333,7 @@ async function handleApiRequest(
     if (!sessionId) {
         return new Response(
             JSON.stringify({ error: 'Unauthorized' }),
-            { status: 401, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
 
@@ -309,7 +341,7 @@ async function handleApiRequest(
     if (!stored) {
         return new Response(
             JSON.stringify({ error: 'Session expired' }),
-            { status: 401, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
 
@@ -331,7 +363,7 @@ async function handleApiRequest(
         if (!refreshResponse.ok) {
             return new Response(
                 JSON.stringify({ error: 'Token refresh failed' }),
-                { status: 401, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+                { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
             );
         }
 
@@ -377,13 +409,13 @@ async function handleApiRequest(
                 hasMore: activities.length === perPage,
                 error: !Array.isArray(data) ? data : undefined
             }),
-            { headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
 
     return new Response(JSON.stringify(data), {
         status: stravaResponse.status,
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
     });
 }
 
@@ -396,13 +428,13 @@ async function handleSearchGeocoding(url: URL, env: Env, origin: string): Promis
 
     const response = await fetch(nominatimUrl, {
         headers: {
-            'User-Agent': 'RunViz/1.0 (https://hwong103.github.io/runviz)'
+            'User-Agent': `RunViz/1.0 (${env.FRONTEND_URL})`
         }
     });
 
     const data = await response.json();
     return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' }
     });
 }
 
@@ -415,13 +447,13 @@ async function handleReverseGeocoding(url: URL, env: Env, origin: string): Promi
 
     const response = await fetch(nominatimUrl, {
         headers: {
-            'User-Agent': 'RunViz/1.0 (https://hwong103.github.io/runviz)'
+            'User-Agent': `RunViz/1.0 (${env.FRONTEND_URL})`
         }
     });
 
     const data = await response.json();
     return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' }
     });
 }
 
@@ -432,14 +464,14 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
 async function handleStravaScopes(request: Request, env: Env, origin: string): Promise<Response> {
     const sessionId = getSessionId(request);
-    if (!sessionId) return new Response(JSON.stringify({ scopes: '' }), { headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } });
+    if (!sessionId) return new Response(JSON.stringify({ scopes: '' }), { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } });
 
     const stored = await env.TOKENS.get(`session:${sessionId}`);
-    if (!stored) return new Response(JSON.stringify({ scopes: '' }), { headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } });
+    if (!stored) return new Response(JSON.stringify({ scopes: '' }), { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } });
 
     const tokenData = JSON.parse(stored) as TokenData;
     return new Response(JSON.stringify({ scopes: tokenData.scopes || '' }), {
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' }
     });
 }
 
@@ -498,20 +530,20 @@ async function handleGoogleAuthCallback(request: Request, env: Env, origin: stri
 
 async function handleGoogleSession(request: Request, env: Env, origin: string): Promise<Response> {
     const sessionId = getSessionId(request);
-    if (!sessionId) return new Response(JSON.stringify({ connected: false }), { headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } });
+    if (!sessionId) return new Response(JSON.stringify({ connected: false }), { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } });
 
     const stored = await env.TOKENS.get(`google:${sessionId}`);
     return new Response(JSON.stringify({ connected: !!stored }), {
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' }
     });
 }
 
 async function handleGoogleToken(request: Request, env: Env, origin: string): Promise<Response> {
     const sessionId = getSessionId(request);
-    if (!sessionId) return new Response('Unauthorized', { status: 401, headers: corsHeaders(origin) });
+    if (!sessionId) return new Response('Unauthorized', { status: 401, headers: corsHeaders(origin, env) });
 
     const stored = await env.TOKENS.get(`google:${sessionId}`);
-    if (!stored) return new Response('Not connected', { status: 404, headers: corsHeaders(origin) });
+    if (!stored) return new Response('Not connected', { status: 404, headers: corsHeaders(origin, env) });
 
     let tokenData = JSON.parse(stored);
 
@@ -540,21 +572,21 @@ async function handleGoogleToken(request: Request, env: Env, origin: string): Pr
                 expirationTtl: 60 * 60 * 24 * 30,
             });
         } else {
-            return new Response('Token refresh failed', { status: 401, headers: corsHeaders(origin) });
+            return new Response('Token refresh failed', { status: 401, headers: corsHeaders(origin, env) });
         }
     }
 
     return new Response(JSON.stringify({ accessToken: tokenData.accessToken }), {
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' }
     });
 }
 
 async function handleStravaActivityUpdate(request: Request, env: Env, origin: string): Promise<Response> {
     const sessionId = getSessionId(request);
-    if (!sessionId) return new Response('Unauthorized', { status: 401, headers: corsHeaders(origin) });
+    if (!sessionId) return new Response('Unauthorized', { status: 401, headers: corsHeaders(origin, env) });
 
     const stored = await env.TOKENS.get(`session:${sessionId}`);
-    if (!stored) return new Response('Session expired', { status: 401, headers: corsHeaders(origin) });
+    if (!stored) return new Response('Session expired', { status: 401, headers: corsHeaders(origin, env) });
 
     const tokenData = JSON.parse(stored) as TokenData;
 
@@ -562,13 +594,13 @@ async function handleStravaActivityUpdate(request: Request, env: Env, origin: st
     if (!tokenData.scopes?.includes('activity:write')) {
         return new Response(JSON.stringify({ error: 'Missing activity:write scope' }), {
             status: 403,
-            headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' }
         });
     }
 
     const url = new URL(request.url);
     const activityId = url.pathname.split('/').pop();
-    if (!activityId) return new Response('Missing activity ID', { status: 400, headers: corsHeaders(origin) });
+    if (!activityId) return new Response('Missing activity ID', { status: 400, headers: corsHeaders(origin, env) });
 
     const body = await request.json() as { description: string };
 
@@ -585,6 +617,6 @@ async function handleStravaActivityUpdate(request: Request, env: Env, origin: st
     const data = await stravaResponse.json();
     return new Response(JSON.stringify(data), {
         status: stravaResponse.status,
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
     });
 }

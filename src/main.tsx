@@ -7,10 +7,13 @@ import { Callback } from './components/Callback.tsx'
 
 const RoutePlanner = lazy(() => import('./components/RoutePlanner.tsx'))
 const FormAnalysis = lazy(() => import('./components/FormAnalysis.tsx'))
+const routerBase = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL.slice(0, -1) || '/'
+  : import.meta.env.BASE_URL
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter basename="/runviz">
+    <BrowserRouter basename={routerBase}>
       <Suspense fallback={<div className="min-h-screen bg-[#0a0c10]" />}>
         <Routes>
           <Route path="/" element={<App />} />

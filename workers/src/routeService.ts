@@ -18,7 +18,7 @@ export async function handleRouteGeneration(
     if (!sessionId) {
         return new Response(
             JSON.stringify({ error: 'Unauthorized' }),
-            { status: 401, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
 
@@ -26,7 +26,7 @@ export async function handleRouteGeneration(
     if (!stored) {
         return new Response(
             JSON.stringify({ error: 'Session expired' }),
-            { status: 401, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
 
@@ -37,7 +37,7 @@ export async function handleRouteGeneration(
         if (!startLat || !startLng || !targetDistanceMeters) {
             return new Response(
                 JSON.stringify({ error: 'Missing required parameters' }),
-                { status: 400, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+                { status: 400, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
             );
         }
 
@@ -97,23 +97,25 @@ export async function handleRouteGeneration(
 
         if (routes.length === 0) {
             // Find the first error message to help debug
-            const firstError = results.find((r: any) => r.error)?.error?.message || 'No routes could be generated for this location. Try a different distance or start point.';
+            const firstError =
+                (results.find((r) => (r as any).error) as any)?.error?.message ||
+                'No routes could be generated for this location. Try a different distance or start point.';
             return new Response(
                 JSON.stringify({ error: firstError }),
-                { status: 422, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+                { status: 422, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
             );
         }
 
         return new Response(
             JSON.stringify(routes),
-            { headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
 
     } catch (error) {
         console.error('Route generation error:', error);
         return new Response(
             JSON.stringify({ error: 'Failed to generate routes' }),
-            { status: 500, headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' } }
+            { status: 500, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
 }

@@ -1,6 +1,6 @@
 # RunViz 🏃‍♂️
 
-A beautiful, mobile-friendly running stats dashboard that visualizes your Strava data with elite analytics.
+A beautiful, mobile-friendly running stats dashboard that visualizes your Strava data with elite analytics on a Cloudflare stack.
 
 ![RunViz Dashboard](public/screenshots/dashboard-stats.jpg)
 
@@ -50,7 +50,7 @@ cd runviz
 
 1. Go to [Strava API Settings](https://www.strava.com/settings/api)
 2. Create a new application
-3. Set **Authorization Callback Domain** to `your-worker.workers.dev`
+3. Set **Authorization Callback Domain** to your frontend host, for example `runviz-stats.pages.dev`
 4. Note your **Client ID** and **Client Secret**
 
 ### 3. Deploy Cloudflare Workers Backend
@@ -73,6 +73,13 @@ wrangler kv:namespace create TOKENS
 wrangler secret put STRAVA_CLIENT_ID
 wrangler secret put STRAVA_CLIENT_SECRET
 wrangler secret put ORS_API_KEY
+wrangler secret put GOOGLE_CLIENT_ID
+wrangler secret put GOOGLE_CLIENT_SECRET
+wrangler secret put GOOGLE_REDIRECT_URI
+
+# Update worker vars in wrangler.toml
+# FRONTEND_URL=https://your-pages-domain.pages.dev
+# FRONTEND_PREVIEW_HOST=your-pages-domain.pages.dev
 
 # Deploy
 npm install
@@ -85,9 +92,11 @@ Create `.env` in the root directory:
 
 ```env
 VITE_API_URL=https://runviz-api.YOUR_SUBDOMAIN.workers.dev
+# Optional if serving from a subpath instead of /
+# VITE_BASE_PATH=/
 ```
 
-### 5. Deploy Frontend to GitHub Pages
+### 5. Deploy Frontend to Cloudflare Pages
 
 ```bash
 # Back to root
@@ -96,18 +105,18 @@ cd ..
 # Install deps and build
 npm install
 npm run build
-
-# Push to GitHub - Actions will deploy automatically
-git add .
-git commit -m "Configure for deployment"
-git push
 ```
 
-### 6. Enable GitHub Pages
+Then in Cloudflare:
 
-1. Go to your repo → Settings → Pages
-2. Set source to "GitHub Actions"
-3. Visit `https://YOUR_USERNAME.github.io/runviz`
+1. Go to Workers & Pages and create or open your Pages project.
+2. Connect the GitHub repo.
+3. Set the build command to `npm run build`.
+4. Set the build output directory to `dist`.
+5. Add `VITE_API_URL` as a Pages environment variable if you do not want to rely on `.env.production`.
+6. Deploy and visit `https://YOUR_PROJECT.pages.dev`.
+
+Because this app uses React Router, Cloudflare Pages also needs SPA fallback routing. That is already included via [`public/_redirects`](./public/_redirects).
 
 ## 🛠️ Development
 
@@ -120,6 +129,19 @@ npm run dev
 cd workers
 npm install
 npm run dev
+```
+
+Useful Cloudflare-specific commands:
+
+```bash
+# Preview the built frontend in a Pages-like local environment
+npm run preview:pages
+
+# Deploy only the Worker from the repo root
+npm run deploy:worker
+
+# Use live Cloudflare bindings during Worker development
+cd workers && npm run dev:remote
 ```
 
 ## 📁 Project Structure
@@ -146,6 +168,7 @@ runviz/
 | Variable | Description |
 |----------|-------------|
 | `VITE_API_URL` | Your Cloudflare Workers URL |
+| `VITE_BASE_PATH` | Optional public base path. Leave unset for Cloudflare Pages root deployments |
 | `VITE_LOGO_DEV_TOKEN` | Optional Logo.dev publishable token for shoe logos |
 
 ### Cloudflare Secrets
@@ -155,6 +178,17 @@ runviz/
 | `STRAVA_CLIENT_ID` | From Strava API settings |
 | `STRAVA_CLIENT_SECRET` | From Strava API settings |
 | `ORS_API_KEY` | From [OpenRouteService](https://openrouteservice.org/dev/#/signup) |
+| `GOOGLE_CLIENT_ID` | Optional Google OAuth client for Drive-powered form workflows |
+| `GOOGLE_CLIENT_SECRET` | Optional Google OAuth client secret |
+| `GOOGLE_REDIRECT_URI` | Redirect URI for the Worker Google callback |
+
+### Cloudflare Worker Vars
+
+| Var | Description |
+|-----|-------------|
+| `FRONTEND_URL` | Exact production Pages origin allowed for CORS and OAuth fallback redirects |
+| `FRONTEND_PREVIEW_HOST` | Preview host suffix for branch deploys, for example `runviz-stats.pages.dev` |
+| `ADDITIONAL_FRONTEND_URLS` | Optional comma-separated list of extra allowed frontend origins |
 
 ### 🗺️ Map API Setup
 
