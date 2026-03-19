@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
+import { SetupPage } from './components/SetupPage';
 import { StatsOverview } from './components/StatsOverview';
 import { CalendarHeatmap } from './components/CalendarHeatmap';
 import { ActivityList } from './components/ActivityList';
@@ -80,7 +81,17 @@ function saveGearCache(athleteId: number, gearMap: Map<string, Gear>, failedMap:
 }
 
 function App() {
-  const { isAuthenticated, athlete, loading: authLoading, login, logout } = useAuth();
+  const {
+    isAuthenticated,
+    athlete,
+    user,
+    needsStravaConnect,
+    loading: authLoading,
+    login,
+    connectStrava,
+    sendMagicLink,
+    logout,
+  } = useAuth();
   const { activities, syncing, sync, lastSync } = useActivities();
   const [viewPeriod, setViewPeriod] = useState<ViewPeriod>({
     mode: 'month',
@@ -91,6 +102,10 @@ function App() {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [magicEmail, setMagicEmail] = useState('');
+  const [magicSending, setMagicSending] = useState(false);
+  const [magicStatus, setMagicStatus] = useState<string | null>(null);
+  const [googleStatus, setGoogleStatus] = useState<string | null>(null);
 
   // Store additionally fetched gear (e.g. retired shoes not in athlete profile)
   const [additionalGear, setAdditionalGear] = useState<Map<string, Gear>>(new Map());
@@ -98,6 +113,28 @@ function App() {
   const inFlightGearIds = useRef<Set<string>>(new Set());
   const failedGearIds = useRef<Map<string, number>>(new Map());
   const gearFetchCount = useRef(0);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (!error) {
+      return;
+    }
+
+    if (error === 'ATTEMPTS_EXCEEDED') {
+      setMagicStatus('That magic link has already been used or has expired. Request a fresh one.');
+      return;
+    }
+
+    if (error === 'magic_link_failed') {
+      setMagicStatus('We could not verify that magic link. Request a fresh one and try again.');
+      return;
+    }
+
+    if (error === 'auth_failed') {
+      setMagicStatus('We could not complete sign-in. Please try again.');
+    }
+  }, [searchParams]);
 
   // Consolidated list of all known shoes
   const allShoes = useMemo(() => {
@@ -274,32 +311,101 @@ function App() {
               Clear training insights for runners getting more serious.
             </h1>
             <p className="max-w-xl text-base leading-7 text-[var(--rv-text-dim)] sm:text-lg">
-              Connect Strava to see your training load, plan routes, review running form, and keep your key metrics in one place.
+              Sign in with Google or magic link, then connect Strava to see your training load, plan routes, review running form, and keep your key metrics in one place.
             </p>
             <p className="text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
               Training load, route planning, and video-based form analysis.
             </p>
           </div>
           <div className="rv-panel rv-panel-accent w-full max-w-md px-6 py-8 sm:px-8">
-            <p className="rv-kicker mb-4">Connect Strava</p>
-            <h2 className="mb-3 text-3xl font-bold tracking-tight text-[var(--rv-text)]">See your running data</h2>
-            <p className="mb-8 text-sm leading-6 text-[var(--rv-text-dim)]">
-              Sign in once to load your activities, open the route planner, and use the form lab.
+            <p className="rv-kicker mb-4">Sign In</p>
+            <h2 className="mb-3 text-3xl font-bold tracking-tight text-[var(--rv-text)]">Open your RunViz workspace</h2>
+            <p className="mb-6 text-sm leading-6 text-[var(--rv-text-dim)]">
+              Use Google or a magic link for your RunViz account, then connect Strava to bring in training data.
             </p>
-            <button
-              onClick={login}
-              className="rv-button-primary flex w-full items-center justify-center gap-3 px-8 py-4 text-sm active:translate-y-0"
-            >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066l-2.084 4.116z" />
-                <path d="M15.387 0L0 24h6.128l3.054-6.172h3.065L15.387 24l9.109-18.172h6.063L15.387 0z" opacity="0.6" />
-              </svg>
-              Connect Strava
-            </button>
-            <p className="mt-4 text-xs uppercase tracking-[0.25em] text-[var(--rv-text-faint)]">Your existing metrics and history stay intact.</p>
+            <div className="space-y-3">
+              <button
+                onClick={async () => {
+                  setGoogleStatus(null);
+                  try {
+                    await login();
+                  } catch (error) {
+                    console.error('Google sign-in failed:', error);
+                    setGoogleStatus('Google sign-in is unavailable right now. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to the Worker and redeploy.');
+                  }
+                }}
+                className="rv-button-primary flex w-full items-center justify-center gap-3 px-8 py-4 text-sm active:translate-y-0"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066l-2.084 4.116z" />
+                  <path d="M15.387 0L0 24h6.128l3.054-6.172h3.065L15.387 24l9.109-18.172h6.063L15.387 0z" opacity="0.6" />
+                </svg>
+                Continue with Google
+              </button>
+              {googleStatus && (
+                <p className="text-xs leading-5 text-[var(--rv-text-dim)]">
+                  {googleStatus}
+                </p>
+              )}
+              <div className="rounded-3xl border border-white/8 bg-white/[0.04] p-4">
+                <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--rv-text-faint)]">
+                  Magic link
+                </label>
+                <div className="flex flex-col gap-3">
+                  <input
+                    type="email"
+                    value={magicEmail}
+                    onChange={(e) => setMagicEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-[var(--rv-text)] outline-none transition placeholder:text-[var(--rv-text-faint)] focus:border-[var(--rv-blue)]"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!magicEmail.trim()) return;
+                      setMagicSending(true);
+                      setMagicStatus(null);
+                      try {
+                        await sendMagicLink(magicEmail.trim());
+                        setMagicStatus('Check your email for a sign-in link.');
+                      } catch (error) {
+                        console.error('Magic link failed:', error);
+                        setMagicStatus('Unable to send the magic link right now.');
+                      } finally {
+                        setMagicSending(false);
+                      }
+                    }}
+                    disabled={magicSending}
+                    className="rv-button-secondary flex w-full items-center justify-center px-6 py-3 text-xs uppercase tracking-[0.24em] disabled:cursor-wait"
+                  >
+                    {magicSending ? 'Sending...' : 'Send magic link'}
+                  </button>
+                </div>
+                {magicStatus && (
+                  <p className="mt-3 text-xs leading-5 text-[var(--rv-text-dim)]">
+                    {magicStatus}
+                  </p>
+                )}
+              </div>
+            </div>
+            <p className="mt-6 text-xs uppercase tracking-[0.25em] text-[var(--rv-text-faint)]">Connect Strava during setup after sign-in.</p>
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (needsStravaConnect) {
+    return (
+      <SetupPage
+        authLoading={authLoading}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        needsStravaConnect={needsStravaConnect}
+        login={login}
+        connectStrava={connectStrava}
+        sendMagicLink={sendMagicLink}
+        logout={logout}
+      />
     );
   }
 

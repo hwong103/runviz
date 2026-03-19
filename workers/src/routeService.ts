@@ -1,7 +1,9 @@
 // Route generation handler for Cloudflare Workers
 // Integrates with OpenRouteService for distance-based route generation
 
-import { Env, corsHeaders, getSessionId } from './index';
+import { createAuth } from './auth';
+import { Env, corsHeaders } from './index';
+import { resolveStravaAccess } from './session';
 
 interface RouteRequest {
     startLat: number;
@@ -12,20 +14,13 @@ interface RouteRequest {
 export async function handleRouteGeneration(
     request: Request,
     env: Env,
-    origin: string
+    origin: string,
+    auth: ReturnType<typeof createAuth>
 ): Promise<Response> {
-    const sessionId = getSessionId(request);
-    if (!sessionId) {
+    const access = await resolveStravaAccess(request, env, auth);
+    if (!access) {
         return new Response(
             JSON.stringify({ error: 'Unauthorized' }),
-            { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
-        );
-    }
-
-    const stored = await env.TOKENS.get(`session:${sessionId}`);
-    if (!stored) {
-        return new Response(
-            JSON.stringify({ error: 'Session expired' }),
             { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }

@@ -1,6 +1,15 @@
 // API service for communicating with Cloudflare Workers backend
 
+import { createAuthClient } from 'better-auth/react';
+import { magicLinkClient } from 'better-auth/client/plugins';
+
 const API_URL = import.meta.env.VITE_API_URL || '';
+const AUTH_BASE_URL = API_URL || window.location.origin;
+const authClient = createAuthClient({
+    baseURL: AUTH_BASE_URL,
+    basePath: '/api/auth',
+    plugins: [magicLinkClient()],
+});
 
 class ApiError extends Error {
     status: number;
@@ -31,28 +40,64 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
 
 // Auth endpoints
 export const auth = {
-    getLoginUrl(): string {
-        const callbackUrl = `${window.location.origin}${import.meta.env.BASE_URL}callback`;
-        return `${API_URL}/auth/strava?redirect_uri=${encodeURIComponent(callbackUrl)}`;
+    async signInGoogle(callbackURL = `${window.location.origin}${import.meta.env.BASE_URL}`): Promise<void> {
+        await authClient.signIn.social({
+            provider: 'google',
+            callbackURL,
+        });
     },
 
-    async handleCallback(code: string): Promise<{ athlete: { id: number; firstname: string; lastname: string; profile: string } }> {
+    async sendMagicLink(email: string, callbackURL = `${window.location.origin}${import.meta.env.BASE_URL}`): Promise<void> {
+        await authClient.signIn.magicLink({
+            email,
+            callbackURL,
+        });
+    },
+
+    getStravaLoginUrl(mode: 'link' = 'link', scope = 'read,activity:read_all,activity:write'): string {
+        const callbackUrl = `${window.location.origin}${import.meta.env.BASE_URL}callback`;
+        return `${API_URL}/auth/strava?redirect_uri=${encodeURIComponent(callbackUrl)}&mode=${mode}&scope=${encodeURIComponent(scope)}`;
+    },
+
+    async handleCallback(code: string, state?: string): Promise<{ athlete: { id: number; firstname: string; lastname: string; profile: string } }> {
         return fetchApi('/auth/callback', {
             method: 'POST',
-            body: JSON.stringify({ code }),
+            body: JSON.stringify({ code, state }),
         });
     },
 
     async logout(): Promise<void> {
-        return fetchApi('/auth/logout', { method: 'POST' });
+        try {
+            await authClient.signOut();
+        } catch {
+            // Ignore Better Auth sign-out errors and still clear the legacy session.
+        }
+        await fetchApi('/api/logout', { method: 'POST' });
     },
 
-    async getSession(): Promise<{ authenticated: boolean; athlete?: { id: number; firstname: string; lastname: string; profile: string } }> {
-        return fetchApi('/auth/session');
+    async getSession(): Promise<{
+        authenticated: boolean;
+        needsStravaConnect?: boolean;
+        source?: 'legacy' | 'better-auth';
+        user?: { id: string; email?: string; name?: string; image?: string | null };
+        athlete?: { id: number; firstname: string; lastname: string; profile: string };
+    }> {
+        return fetchApi('/api/session');
     },
 
     async getStravaScopes(): Promise<{ scopes: string }> {
         return fetchApi('/auth/strava/scopes');
+    },
+
+    async getStravaKeyStatus(): Promise<{ configured: boolean; clientId: string | null; updatedAt: number | null }> {
+        return fetchApi('/setup/strava-key');
+    },
+
+    async saveStravaKey(clientId: string, clientSecret: string): Promise<{ ok: boolean }> {
+        return fetchApi('/setup/strava-key', {
+            method: 'POST',
+            body: JSON.stringify({ clientId, clientSecret }),
+        });
     },
 };
 
