@@ -220,6 +220,13 @@ textarea {
     padding: 0.48rem 0.78rem;
 }
 
+.rv-chip-micro {
+    font-size: 0.54rem;
+    gap: 0.38rem;
+    letter-spacing: 0.14em;
+    padding: 0.42rem 0.72rem;
+}
+
 .rv-grid-lines {
     background-image:
         linear-gradient(rgba(217, 179, 106, 0.025) 1px, transparent 1px),

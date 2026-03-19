@@ -127,7 +127,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
     }, [activities, shoes, fetchedGear]);
 
     return (
-        <div className="rv-panel px-6 py-6 sm:px-7 h-full flex flex-col">
+        <div className="rv-panel flex flex-col px-6 py-6 sm:px-7">
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <p className="rv-kicker mb-2">Equipment Log</p>
@@ -145,7 +145,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                             key={shoe.id}
                             type="button"
                             onClick={() => onSelectShoe?.(shoe.id)}
-                            className={`group rounded-[1.7rem] border p-5 text-left transition-all focus-visible:border-[var(--rv-blue)] ${selectedShoeId === shoe.id
+                            className={`group block w-full rounded-[1.7rem] border p-5 text-left transition-all focus-visible:border-[var(--rv-blue)] ${selectedShoeId === shoe.id
                                 ? 'bg-[var(--rv-blue)]/10 border-[var(--rv-blue)] ring-1 ring-[var(--rv-blue)]/40'
                                 : 'bg-black/20 border-white/[0.06] hover:border-white/[0.15]'
                                 }`}

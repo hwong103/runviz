@@ -325,7 +325,7 @@ function StatCard({
     return (
         <div
             ref={cardRef}
-            className={`rv-panel relative overflow-hidden p-4 sm:p-5 transition-all duration-300 group hover:-translate-y-1 hover:border-white/20 ${showHelp ? 'z-30' : 'z-0'}`}
+            className={`rv-panel relative p-4 sm:p-5 transition-all duration-300 group hover:-translate-y-1 hover:border-white/20 ${showHelp ? 'z-30 overflow-visible' : 'z-0 overflow-hidden'}`}
         >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
             <div className="mb-3 flex items-center gap-2 pr-6">
@@ -346,7 +346,7 @@ function StatCard({
                         ?
                     </button>
                     {showHelp && (
-                        <div className={`rv-panel absolute top-10 z-50 w-64 max-w-[calc(100vw-1rem)] p-3 animate-in fade-in zoom-in-95 duration-200 ${tooltipAlign === 'left' ? 'left-2 right-auto' : 'right-2 left-auto'}`}>
+                        <div className={`rv-panel rv-panel-strong absolute top-10 z-50 w-64 max-w-[calc(100vw-1rem)] p-3 shadow-[0_20px_44px_rgba(0,0,0,0.35)] animate-in fade-in zoom-in-95 duration-200 ${tooltipAlign === 'left' ? 'left-2 right-auto' : 'right-2 left-auto'}`}>
                             <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-blue)]">{label}</div>
                             <div className="text-[11px] leading-relaxed font-medium normal-case text-[var(--rv-text-dim)]">
                                 {helpText}
