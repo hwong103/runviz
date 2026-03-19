@@ -116,9 +116,7 @@ Then in Cloudflare:
 5. Add `VITE_API_URL` as a Pages environment variable if you do not want to rely on `.env.production`.
 6. Deploy and visit `https://YOUR_PROJECT.pages.dev`.
 
-Because this app uses React Router, Cloudflare Pages also needs SPA fallback routing. That is already included via [`public/_redirects`](./public/_redirects).
-
-If your Cloudflare project is using a Worker-style deploy command such as `npx wrangler versions upload` from the repo root, this repo now also includes a root [`wrangler.jsonc`](./wrangler.jsonc) that uploads the built `dist/` directory as static assets with SPA fallback enabled.
+Because this app uses React Router, SPA fallback needs to be configured in the deployment target. For the current Cloudflare setup in this repo, that is handled by the root [`wrangler.jsonc`](./wrangler.jsonc) via `assets.not_found_handling = "single-page-application"`.
 
 ## 🛠️ Development
 
