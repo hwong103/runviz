@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -6,29 +6,29 @@
 }
 
 :root {
-    --rv-bg: #041723;
-    --rv-bg-elevated: #0a2030;
-    --rv-bg-panel: rgba(12, 30, 44, 0.78);
-    --rv-bg-panel-strong: rgba(15, 35, 51, 0.92);
-    --rv-border: rgba(246, 242, 241, 0.09);
-    --rv-border-strong: rgba(0, 147, 214, 0.38);
-    --rv-text: #f6f2f1;
-    --rv-text-dim: rgba(246, 242, 241, 0.6);
-    --rv-text-faint: rgba(246, 242, 241, 0.36);
-    --rv-blue: #0093d6;
-    --rv-yellow: #fff917;
-    --rv-green: #13c38b;
-    --rv-orange: #ff8e2b;
-    --rv-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+    --rv-bg: #0a0f17;
+    --rv-bg-elevated: #121925;
+    --rv-bg-panel: rgba(17, 22, 31, 0.84);
+    --rv-bg-panel-strong: rgba(20, 25, 36, 0.96);
+    --rv-border: rgba(217, 179, 106, 0.16);
+    --rv-border-strong: rgba(74, 122, 255, 0.44);
+    --rv-text: #f5efe3;
+    --rv-text-dim: rgba(245, 239, 227, 0.72);
+    --rv-text-faint: rgba(245, 239, 227, 0.42);
+    --rv-blue: #4a7aff;
+    --rv-yellow: #d9b36a;
+    --rv-green: #57c69a;
+    --rv-orange: #d77a43;
+    --rv-shadow: 0 32px 120px rgba(0, 0, 0, 0.34);
 }
 
 body {
     background:
-        radial-gradient(circle at top left, rgba(0, 147, 214, 0.12), transparent 24%),
-        radial-gradient(circle at bottom right, rgba(255, 249, 23, 0.08), transparent 18%),
-        linear-gradient(180deg, #061824 0%, #041723 100%);
+        radial-gradient(circle at top left, rgba(74, 122, 255, 0.12), transparent 22%),
+        radial-gradient(circle at 85% 15%, rgba(217, 179, 106, 0.14), transparent 16%),
+        linear-gradient(180deg, #111721 0%, #0a0f17 100%);
     color: var(--rv-text);
-    font-family: "Space Grotesk", sans-serif;
+    font-family: "Sora", sans-serif;
     margin: 0;
     overscroll-behavior-y: none;
 }
@@ -62,11 +62,23 @@ textarea {
 }
 
 .rv-panel {
-    background: var(--rv-bg-panel);
-    backdrop-filter: blur(16px);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+        var(--rv-bg-panel);
+    backdrop-filter: blur(8px);
     border: 1px solid var(--rv-border);
     border-radius: 1.75rem;
     box-shadow: var(--rv-shadow);
+    position: relative;
+}
+
+.rv-panel::after {
+    border: 1px solid rgba(245, 239, 227, 0.04);
+    border-radius: calc(1.75rem - 2px);
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
 }
 
 .rv-panel-strong {
@@ -76,47 +88,48 @@ textarea {
 .rv-panel-accent {
     border-color: var(--rv-border-strong);
     box-shadow:
-        inset 0 0 0 1px rgba(0, 147, 214, 0.12),
+        inset 0 0 0 1px rgba(74, 122, 255, 0.12),
         var(--rv-shadow);
 }
 
 .rv-kicker {
-    color: var(--rv-blue);
+    color: var(--rv-yellow);
     font-size: 0.68rem;
     font-weight: 700;
-    letter-spacing: 0.38em;
+    letter-spacing: 0.42em;
     text-transform: uppercase;
 }
 
 .rv-metric {
     color: var(--rv-text);
+    font-family: "Instrument Serif", serif;
     font-style: italic;
-    font-weight: 700;
-    letter-spacing: -0.06em;
-    line-height: 0.92;
+    font-weight: 400;
+    letter-spacing: -0.05em;
+    line-height: 0.9;
 }
 
 .rv-chip {
     align-items: center;
-    background: rgba(246, 242, 241, 0.05);
-    border: 1px solid rgba(246, 242, 241, 0.1);
+    background: rgba(217, 179, 106, 0.07);
+    border: 1px solid rgba(217, 179, 106, 0.18);
     border-radius: 999px;
     color: var(--rv-text-dim);
     display: inline-flex;
     font-size: 0.65rem;
-    font-weight: 700;
+    font-weight: 600;
     gap: 0.55rem;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.24em;
     padding: 0.65rem 0.95rem;
     text-transform: uppercase;
 }
 
 .rv-grid-lines {
     background-image:
-        linear-gradient(rgba(246, 242, 241, 0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(246, 242, 241, 0.035) 1px, transparent 1px);
+        linear-gradient(rgba(217, 179, 106, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(217, 179, 106, 0.045) 1px, transparent 1px);
     background-position: center;
-    background-size: 54px 54px;
+    background-size: 72px 72px;
 }
 
 .custom-scrollbar {

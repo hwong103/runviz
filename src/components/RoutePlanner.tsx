@@ -262,39 +262,39 @@ const RoutePlanner: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen overflow-hidden bg-[#041723] text-[#f6f2f1] relative">
+        <div className="min-h-screen overflow-hidden bg-[#0a0f17] text-[#f5efe3] relative">
             <div className="pointer-events-none absolute inset-0">
-                <div className="absolute -top-24 right-[-6rem] h-72 w-72 rounded-full bg-[#0093d6]/10 blur-3xl" />
-                <div className="absolute bottom-[-8rem] left-[-6rem] h-80 w-80 rounded-full bg-[#fff917]/8 blur-3xl" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,249,23,0.08),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(0,147,214,0.1),transparent_28%)]" />
+                <div className="absolute -top-24 right-[-6rem] h-72 w-72 rounded-full bg-[#4a7aff]/10 blur-3xl" />
+                <div className="absolute bottom-[-8rem] left-[-6rem] h-80 w-80 rounded-full bg-[#d9b36a]/10 blur-3xl" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(217,179,106,0.10),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(74,122,255,0.08),transparent_28%)]" />
             </div>
 
             <div className="relative mx-auto max-w-[1680px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-                <header className="mb-5 rounded-[2rem] border border-white/10 bg-white/5 shadow-[0_24px_120px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                <header className="mb-5 rounded-[2rem] border border-[#d9b36a]/15 bg-[#131a25]/92 shadow-[0_24px_120px_rgba(0,0,0,0.35)] backdrop-blur-md">
                     <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
                         <button
                             onClick={() => navigate('/')}
-                            className="group inline-flex items-center gap-3 self-start rounded-full border border-white/10 bg-black/20 px-4 py-3 text-left transition-all hover:border-white/20 hover:bg-white/5"
+                            className="group inline-flex items-center gap-3 self-start rounded-full border border-[#d9b36a]/15 bg-black/20 px-4 py-3 text-left transition-all hover:border-[#d9b36a]/35 hover:bg-white/5"
                         >
-                            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#0093d6]/15 text-[#f6f2f1] transition-transform group-hover:-translate-x-0.5">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d9b36a]/15 bg-[#d9b36a]/10 text-[#f5efe3] transition-transform group-hover:-translate-x-0.5">
                                 ←
                             </span>
                             <span>
                                 <span className="block text-[10px] font-black uppercase tracking-[0.35em] text-white/40">Back to dashboard</span>
-                                <span className="block text-xs font-black uppercase tracking-[0.24em] text-[#f6f2f1]">Route Planner</span>
+                                <span className="block text-xs font-black uppercase tracking-[0.24em] text-[#f5efe3]">Route Planner</span>
                             </span>
                         </button>
 
                         <div className="min-w-0 text-left sm:text-center">
-                            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#0093d6]/30 bg-[#0093d6]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.4em] text-[#0093d6]">
-                                <span className="h-2 w-2 rounded-full bg-[#0093d6]" />
-                                Performance Lab
+                            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#d9b36a]/25 bg-[#d9b36a]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.4em] text-[#d9b36a]">
+                                <span className="h-2 w-2 rounded-full bg-[#d9b36a]" />
+                                Private Route Atelier
                             </div>
-                            <h1 className="font-sans text-[clamp(2rem,4vw,4.35rem)] font-black italic leading-none tracking-[-0.05em] text-[#f6f2f1]">
-                                Route Planner
+                            <h1 className="font-['Instrument_Serif'] text-[clamp(2.2rem,4vw,4.6rem)] italic leading-none tracking-[-0.05em] text-[#f5efe3]">
+                                Plan a route that feels intentional
                             </h1>
-                            <p className="mt-2 text-[10px] font-black uppercase tracking-[0.34em] text-white/35 sm:text-xs">
-                                Pick a start point, set the effort, and generate a route fit for the session.
+                            <p className="mt-2 text-[10px] font-black uppercase tracking-[0.34em] text-[#f5efe3]/35 sm:text-xs">
+                                Choose a start point, shape the effort, and leave with something worth running.
                             </p>
                         </div>
 
@@ -307,7 +307,7 @@ const RoutePlanner: React.FC = () => {
                             </div>
                             <button
                                 onClick={useCurrentLocation}
-                                className="inline-flex h-12 items-center gap-2 rounded-full border border-[#0093d6]/30 bg-[#0093d6]/12 px-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#f6f2f1] transition-all hover:border-[#0093d6]/60 hover:bg-[#0093d6]/20 active:scale-[0.98]"
+                                className="inline-flex h-12 items-center gap-2 rounded-full border border-[#4a7aff]/28 bg-[#4a7aff]/12 px-4 text-[10px] font-black uppercase tracking-[0.32em] text-[#f5efe3] transition-all hover:border-[#4a7aff]/60 hover:bg-[#4a7aff]/18 active:scale-[0.98]"
                                 title="Use current location"
                             >
                                 <span className="text-base">◎</span>
@@ -319,11 +319,11 @@ const RoutePlanner: React.FC = () => {
 
                 <section className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5">
                     <aside className="lg:col-span-4 xl:col-span-3 space-y-4">
-                        <div className="rounded-[2rem] border border-white/10 bg-white/5 p-4 shadow-[0_18px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:p-5">
+                        <div className="rounded-[2rem] border border-[#d9b36a]/12 bg-[#131a25]/90 p-4 shadow-[0_18px_80px_rgba(0,0,0,0.28)] backdrop-blur-md sm:p-5">
                             <div className="mb-5 flex items-center justify-between">
                                 <div>
-                                    <div className="mb-2 inline-flex items-center gap-2 text-[#0093d6]">
-                                        <span className="h-2 w-2 rounded-full bg-[#0093d6]" />
+                                    <div className="mb-2 inline-flex items-center gap-2 text-[#d9b36a]">
+                                        <span className="h-2 w-2 rounded-full bg-[#d9b36a]" />
                                         <span className="text-[10px] font-black uppercase tracking-[0.45em]">Route Configuration</span>
                                     </div>
                                     <div className="text-xs font-black uppercase tracking-[0.28em] text-white/45">
@@ -346,20 +346,20 @@ const RoutePlanner: React.FC = () => {
                                             placeholder="Search location..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full rounded-[1.35rem] border border-white/10 bg-black/25 px-4 py-4 pr-24 text-sm text-[#f6f2f1] outline-none transition-all placeholder:text-white/20 focus:border-[#0093d6]/60 focus:bg-black/35"
+                                            className="w-full rounded-[1.35rem] border border-[#d9b36a]/12 bg-black/25 px-4 py-4 pr-24 text-sm text-[#f5efe3] outline-none transition-all placeholder:text-white/20 focus:border-[#4a7aff]/60 focus:bg-black/35"
                                         />
                                         <div className="absolute inset-y-0 right-3 flex items-center gap-2">
                                             <button
                                                 type="button"
                                                 onClick={useCurrentLocation}
-                                                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-base text-white/60 transition-all hover:border-[#fff917]/40 hover:text-[#fff917] active:scale-95"
+                                                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-base text-white/60 transition-all hover:border-[#d9b36a]/40 hover:text-[#d9b36a] active:scale-95"
                                                 title="Use current location"
                                             >
                                                 ◎
                                             </button>
                                             <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/25 text-white/30">
                                                 {searching ? (
-                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-[#0093d6]" />
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-[#4a7aff]" />
                                                 ) : (
                                                     <span className="text-base">⌕</span>
                                                 )}
@@ -387,7 +387,7 @@ const RoutePlanner: React.FC = () => {
                                     )}
 
                                     {resolvedAddress && !showSuggestions && (
-                                        <div className="mt-3 rounded-2xl border border-[#0093d6]/20 bg-[#0093d6]/8 px-4 py-3 text-[10px] font-black uppercase tracking-[0.32em] text-[#0093d6]">
+                                        <div className="mt-3 rounded-2xl border border-[#d9b36a]/20 bg-[#d9b36a]/8 px-4 py-3 text-[10px] font-black uppercase tracking-[0.32em] text-[#d9b36a]">
                                             {resolvedAddress}
                                         </div>
                                     )}
@@ -399,7 +399,7 @@ const RoutePlanner: React.FC = () => {
                                             <div className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">Target distance</div>
                                             <div className="mt-2 text-[clamp(1.85rem,3vw,2.8rem)] font-black italic leading-none tracking-[-0.05em] text-[#f6f2f1]">
                                                 {targetDistance.toFixed(1)}
-                                                <span className="ml-2 text-sm not-italic tracking-[0.28em] text-[#0093d6]">KM</span>
+                                                <span className="ml-2 text-sm not-italic tracking-[0.28em] text-[#d9b36a]">KM</span>
                                             </div>
                                         </div>
                                         <div className="inline-flex items-center gap-2">
@@ -609,15 +609,15 @@ const RoutePlanner: React.FC = () => {
                                     <div>
                                         <div className="inline-flex items-center gap-2 text-[#0093d6]">
                                             <span className="h-2 w-2 rounded-full bg-[#0093d6]" />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.42em]">Generate note</span>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.42em]">Session note</span>
                                         </div>
                                         <div className="mt-2 text-xs font-black uppercase tracking-[0.28em] text-white/35">
-                                            Search, pick, generate, and export without leaving the page
+                                            Search, shape, and export from one composed planning flow
                                         </div>
                                     </div>
                                 </div>
                                 <div className="rounded-[1.35rem] border border-white/10 bg-black/20 px-4 py-4 text-sm leading-relaxed text-white/70">
-                                    The full planner flow stays intact: autocomplete, reverse geocoding, map click selection, route generation, route switching, and GPX download all remain wired up.
+                                    Start from a familiar point, tune the distance to the day, and leave with a route that feels considered rather than improvised.
                                 </div>
                             </div>
                         </div>

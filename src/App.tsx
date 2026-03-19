@@ -268,13 +268,13 @@ function App() {
       <div className="rv-grid-lines flex min-h-screen items-center justify-center px-4 py-10">
         <div className="rv-panel rv-panel-strong flex w-full max-w-5xl flex-col gap-10 overflow-hidden px-6 py-8 sm:px-10 lg:flex-row lg:items-end lg:px-12 lg:py-12">
           <div className="flex-1 space-y-6">
-            <p className="rv-kicker">Session Intelligence</p>
+            <p className="rv-kicker">For Ambitious Runners</p>
             <BrandWordmark />
             <h1 className="rv-metric max-w-2xl text-5xl sm:text-6xl lg:text-7xl">
-              Elite training analytics for runners who care about the details.
+              Train with the polish of a private coach, not the clutter of a dashboard.
             </h1>
             <p className="max-w-xl text-base leading-7 text-[var(--rv-text-dim)] sm:text-lg">
-              Bring in your Strava history, monitor training load, explore routes, and inspect form without losing the raw metrics that matter.
+              RunViz turns your Strava history into a premium training companion for hobby runners chasing sharper sessions, smarter progression, and a better feel for their own performance.
             </p>
             <div className="flex flex-wrap gap-3 text-left">
               <span className="rv-chip">Training load intelligence</span>
@@ -284,9 +284,9 @@ function App() {
           </div>
           <div className="rv-panel w-full max-w-md border-[var(--rv-border-strong)]/70 px-6 py-8 sm:px-8">
             <p className="rv-kicker mb-4">Connect Strava</p>
-            <h2 className="mb-3 text-3xl font-bold tracking-tight text-[var(--rv-text)]">Open the performance lab</h2>
+            <h2 className="mb-3 text-3xl font-bold tracking-tight text-[var(--rv-text)]">Step into your training atelier</h2>
             <p className="mb-8 text-sm leading-6 text-[var(--rv-text-dim)]">
-              Authenticate once to unlock your history, benchmark your training blocks, and keep the full dashboard in sync.
+              Authenticate once to unlock route planning, form review, and a calmer, more premium view of the numbers that shape your training.
             </p>
             <button
               onClick={login}
@@ -497,17 +497,17 @@ function App() {
           </header>
 
           <main className="mx-auto flex max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            <section className="rv-panel rv-panel-strong rv-grid-lines relative overflow-hidden px-6 py-7 sm:px-8 lg:px-10 lg:py-10">
-              <div className="absolute -right-24 top-0 h-56 w-56 rounded-full bg-[var(--rv-blue)]/12 blur-[100px]" />
-              <div className="absolute bottom-0 left-0 h-44 w-44 rounded-full bg-[var(--rv-yellow)]/8 blur-[90px]" />
-              <div className="relative flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
-                <div className="max-w-4xl">
-                  <p className="rv-kicker mb-4">Session Intelligence</p>
-                  <h1 className="rv-metric text-5xl sm:text-6xl xl:text-7xl">
-                    Morning run data, route planning, and form review in one cockpit.
+            <section className="rv-panel rv-panel-strong rv-grid-lines relative overflow-hidden px-6 py-8 sm:px-8 lg:px-12 lg:py-12">
+              <div className="absolute -right-16 top-[-4rem] h-56 w-56 rounded-full bg-[var(--rv-blue)]/10 blur-[110px]" />
+              <div className="absolute bottom-[-3rem] left-[-2rem] h-40 w-40 rounded-full bg-[var(--rv-yellow)]/12 blur-[90px]" />
+              <div className="relative flex flex-col gap-10 xl:flex-row xl:items-end xl:justify-between">
+                <div className="max-w-4xl border-l border-[var(--rv-yellow)]/35 pl-6 sm:pl-8">
+                  <p className="rv-kicker mb-4">Private Training View</p>
+                  <h1 className="rv-metric text-6xl sm:text-7xl xl:text-[5.8rem]">
+                    The quietest way to take your running more seriously.
                   </h1>
                   <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--rv-text-dim)] sm:text-base">
-                    The numbers stay untouched. This refresh simply reorganizes the existing metrics, sync controls, and analysis tools into a sharper performance-lab interface.
+                    Built for ambitious hobby runners who want depth without noise: route planning, load tracking, shoe rotation, and form analysis arranged with more confidence and less dashboard clutter.
                   </p>
                 </div>
                 <div className="grid w-full gap-4 sm:grid-cols-3 xl:max-w-xl">
@@ -527,7 +527,7 @@ function App() {
                   <section className="rv-panel px-5 py-5 sm:px-7 sm:py-6 lg:col-span-5">
                     <div className="mb-6 flex items-center justify-between gap-3">
                       <div>
-                        <p className="rv-kicker mb-2">Activity Frequency</p>
+                        <p className="rv-kicker mb-2">Training Rhythm</p>
                         <h2 className="text-xl font-bold tracking-tight text-[var(--rv-text)]">Temporal consistency</h2>
                       </div>
                       <span className="rv-chip hidden sm:inline-flex">Click any day to inspect the run</span>
@@ -544,7 +544,7 @@ function App() {
                   <section className="rv-panel px-5 py-5 sm:px-7 sm:py-6 lg:col-span-7">
                     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                       <div>
-                        <p className="rv-kicker mb-2">System Modules</p>
+                        <p className="rv-kicker mb-2">Signature Tools</p>
                         <h2 className="text-xl font-bold tracking-tight text-[var(--rv-text)]">Planner and lab workflows</h2>
                       </div>
                       <span className="text-xs uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">Keep existing behavior, sharper shell</span>
@@ -552,13 +552,13 @@ function App() {
                     <div className="grid gap-4 md:grid-cols-2">
                       <Link to="/plan-route" className="rv-panel rv-panel-accent block px-5 py-5 transition hover:-translate-y-1">
                         <p className="rv-kicker mb-3">Route Planner</p>
-                        <h3 className="mb-3 text-2xl font-bold italic tracking-tight text-[var(--rv-text)]">Generate routes and export GPX</h3>
-                        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">Search a start point, use map clicks, generate candidates, and keep the export flow intact.</p>
+                        <h3 className="mb-3 text-2xl font-bold italic tracking-tight text-[var(--rv-text)]">Design a session-worthy route</h3>
+                        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">Search a start point, tune the distance, and leave with a route that feels planned rather than improvised.</p>
                       </Link>
                       <Link to="/form-analysis" className="rv-panel block px-5 py-5 transition hover:-translate-y-1 hover:border-[var(--rv-blue)]/40">
                         <p className="rv-kicker mb-3">Form Lab</p>
-                        <h3 className="mb-3 text-2xl font-bold italic tracking-tight text-[var(--rv-text)]">Analyze run mechanics locally</h3>
-                        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">Upload a clip, match it to a run, process cadence and posture metrics, and write back to Strava when needed.</p>
+                        <h3 className="mb-3 text-2xl font-bold italic tracking-tight text-[var(--rv-text)]">Review mechanics with more care</h3>
+                        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">Upload a clip, pair it to a run, and turn raw pose analysis into a more thoughtful post-session review.</p>
                       </Link>
                     </div>
                   </section>
@@ -606,8 +606,8 @@ function BrandWordmark({ compact = false }: { compact?: boolean }) {
       <span className={`${compact ? 'text-3xl' : 'text-5xl sm:text-6xl'} font-bold tracking-[-0.08em] text-[var(--rv-text)]`}>
         RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
       </span>
-      <span className="rounded-full border border-[var(--rv-blue)]/35 bg-[var(--rv-blue)]/12 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--rv-blue)]">
-        {compact ? 'Planner' : 'Performance Lab'}
+      <span className="rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--rv-yellow)]">
+        {compact ? 'Atelier' : 'Private Training Atelier'}
       </span>
     </div>
   );
@@ -633,7 +633,7 @@ function HeroStat({
   return (
     <div className="rv-panel px-4 py-4 sm:px-5">
       <div className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">{label}</div>
-      <div className={`rv-metric mt-4 text-4xl ${accentClass}`}>{value}</div>
+      <div className={`rv-metric mt-4 text-5xl ${accentClass}`}>{value}</div>
       <div className="mt-2 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">{unit}</div>
     </div>
   );

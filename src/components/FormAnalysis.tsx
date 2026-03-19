@@ -399,7 +399,7 @@ export default function FormAnalysisPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#041723] text-[#F6F2F1]">
+        <div className="min-h-screen bg-[#0a0f17] text-[#f5efe3]">
             {/* Hidden file input */}
             <input
                 ref={fileInputRef}
@@ -410,21 +410,21 @@ export default function FormAnalysisPage() {
             />
 
             <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-                <header className="mb-6 grid grid-cols-1 gap-4 rounded-[2rem] border border-white/10 bg-white/[0.04] px-5 py-5 shadow-2xl backdrop-blur-xl lg:grid-cols-[1fr_auto] lg:items-center lg:px-7">
+                <header className="mb-6 grid grid-cols-1 gap-4 rounded-[2rem] border border-[#d9b36a]/14 bg-[#131a25]/92 px-5 py-5 shadow-2xl backdrop-blur-md lg:grid-cols-[1fr_auto] lg:items-center lg:px-7">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={handleBack}
-                            className="group flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] transition-all hover:border-[#0093D6]/40 hover:bg-[#0093D6]/10"
+                            className="group flex h-12 w-12 items-center justify-center rounded-2xl border border-[#d9b36a]/12 bg-white/[0.04] transition-all hover:border-[#d9b36a]/35 hover:bg-[#d9b36a]/10"
                         >
                             <span className="inline-block text-xl transition-transform group-hover:-translate-x-0.5">←</span>
                         </button>
                         <div>
                             <div className="flex flex-wrap items-center gap-3">
-                                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black italic tracking-tighter text-white">
-                                    FORM ANALYSIS LAB
+                                <h1 className="font-['Instrument_Serif'] text-4xl sm:text-5xl lg:text-6xl italic tracking-tight text-white">
+                                    Form review, with a steadier eye
                                 </h1>
-                                <span className="rounded-full border border-[#0093D6]/20 bg-[#0093D6]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.34em] text-sky-300">
-                                    Session Intelligence
+                                <span className="rounded-full border border-[#d9b36a]/20 bg-[#d9b36a]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.34em] text-[#d9b36a]">
+                                    Private Training Atelier
                                 </span>
                             </div>
                             <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -432,18 +432,18 @@ export default function FormAnalysisPage() {
                                     On-device pose sensing
                                 </span>
                                 <div className="h-1 w-1 rounded-full bg-slate-600" />
-                                <span className="text-[9px] font-black uppercase tracking-[0.34em] text-yellow-200">
-                                    Beta v1.0
+                                <span className="text-[9px] font-black uppercase tracking-[0.34em] text-[#d9b36a]">
+                                    Review Suite
                                 </span>
                             </div>
                         </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-                        <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.34em] text-emerald-300">
+                        <div className="rounded-full border border-[#4a7aff]/20 bg-[#4a7aff]/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.34em] text-[#cfd9ff]">
                             100% On-device
                         </div>
-                        <div className="rounded-full border border-yellow-400/20 bg-yellow-400/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.34em] text-yellow-200">
+                        <div className="rounded-full border border-[#d9b36a]/20 bg-[#d9b36a]/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.34em] text-[#ecd3a7]">
                             Cached history enabled
                         </div>
                     </div>
@@ -451,8 +451,8 @@ export default function FormAnalysisPage() {
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
                     <div className="space-y-6 lg:col-span-4">
-                        <section className="rounded-[2.2rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-xl">
-                            <SectionLabel index="01" title="Video Source" subtitle="Drop a clip or select from device storage" />
+                        <section className="rounded-[2.2rem] border border-[#d9b36a]/12 bg-[#131a25]/90 p-6 shadow-2xl backdrop-blur-md">
+                            <SectionLabel index="01" title="Video Source" subtitle="Choose a clip worth reviewing" />
 
                             {!selectedVideo ? (
                                 <div
@@ -462,15 +462,15 @@ export default function FormAnalysisPage() {
                                     onClick={() => fileInputRef.current?.click()}
                                     className={`mt-5 flex cursor-pointer flex-col items-center justify-center rounded-[1.8rem] border-2 border-dashed px-6 py-12 text-center transition-all ${
                                         isDragging
-                                            ? 'border-[#FFF917]/70 bg-[#FFF917]/8 shadow-[0_0_0_1px_rgba(255,249,23,0.12)]'
-                                            : 'border-white/10 bg-black/15 hover:border-[#0093D6]/45 hover:bg-[#0093D6]/8'
+                                            ? 'border-[#d9b36a]/70 bg-[#d9b36a]/8 shadow-[0_0_0_1px_rgba(217,179,106,0.12)]'
+                                            : 'border-white/10 bg-black/15 hover:border-[#4a7aff]/45 hover:bg-[#4a7aff]/8'
                                     }`}
                                 >
                                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-3xl">
                                         {isDragging ? '↓' : '▣'}
                                     </div>
-                                    <div className="text-lg font-black italic tracking-tighter text-white">
-                                        {isDragging ? 'Drop video here' : 'Upload video'}
+                                    <div className="font-['Instrument_Serif'] text-2xl italic tracking-tight text-white">
+                                        {isDragging ? 'Drop video here' : 'Bring in a clip'}
                                     </div>
                                     <div className="mt-3 max-w-sm text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
                                         Drag and drop or click to browse. MP4, MOV, WebM, AVI, MKV.
@@ -505,9 +505,9 @@ export default function FormAnalysisPage() {
                                     <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-5">
                                         <div className="flex items-center justify-between gap-3">
                                             <label className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Clip Region</label>
-                                            <span className="rounded-full border border-[#FFF917]/20 bg-[#FFF917]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.32em] text-yellow-200">
-                                                {clipRange[1] - clipRange[0]}s selected
-                                            </span>
+                                        <span className="rounded-full border border-[#d9b36a]/20 bg-[#d9b36a]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.32em] text-[#ecd3a7]">
+                                            {clipRange[1] - clipRange[0]}s selected
+                                        </span>
                                         </div>
                                         <div className="mt-5 space-y-4">
                                             <input
@@ -516,7 +516,7 @@ export default function FormAnalysisPage() {
                                                 max={Math.max(60, clipRange[1])}
                                                 value={clipRange[0]}
                                                 onChange={(e) => setClipRange([parseInt(e.target.value), Math.max(parseInt(e.target.value) + 1, clipRange[1])])}
-                                                className="w-full accent-[#0093D6]"
+                                                className="w-full accent-[#4a7aff]"
                                             />
                                             <input
                                                 type="range"
@@ -524,7 +524,7 @@ export default function FormAnalysisPage() {
                                                 max={Math.max(60, clipRange[1] + 30)}
                                                 value={clipRange[1]}
                                                 onChange={(e) => setClipRange([clipRange[0], parseInt(e.target.value)])}
-                                                className="w-full accent-[#0093D6]"
+                                                className="w-full accent-[#4a7aff]"
                                             />
                                         </div>
                                     </div>
@@ -551,7 +551,7 @@ export default function FormAnalysisPage() {
                                             ) : (
                                                 <select
                                                     onChange={(e) => setSelectedActivityManual(activities.find(a => a.id === parseInt(e.target.value)) || null)}
-                                                    className="w-full rounded-[1.1rem] border border-white/10 bg-black/25 p-4 text-[10px] font-black uppercase tracking-[0.24em] text-slate-300 outline-none transition-colors focus:border-[#0093D6]/50"
+                                                    className="w-full rounded-[1.1rem] border border-white/10 bg-black/25 p-4 text-[10px] font-black uppercase tracking-[0.24em] text-slate-300 outline-none transition-colors focus:border-[#4a7aff]/50"
                                                 >
                                                     <option value="">Manual match (optional)...</option>
                                                     {activities.filter(isRun).slice(0, 20).map(a => (
@@ -567,8 +567,8 @@ export default function FormAnalysisPage() {
                             )}
                         </section>
 
-                        <section className="rounded-[2.2rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-xl">
-                            <SectionLabel index="02" title="History" subtitle="Previous lab sessions and generated coaching notes" />
+                        <section className="rounded-[2.2rem] border border-[#d9b36a]/12 bg-[#131a25]/90 p-6 shadow-2xl backdrop-blur-md">
+                            <SectionLabel index="02" title="Archive" subtitle="Previous lab sessions and coaching notes" />
                             <div className="mt-5 max-h-[430px] space-y-3 overflow-y-auto pr-2">
                                 {sessions.length === 0 ? (
                                     <div className="rounded-[1.6rem] border border-dashed border-white/10 bg-black/15 px-5 py-12 text-center">
@@ -593,7 +593,7 @@ export default function FormAnalysisPage() {
 
                     <div className="space-y-6 lg:col-span-8">
                         {!currentAnalysis ? (
-                            <section className="relative overflow-hidden rounded-[2.6rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+                            <section className="relative overflow-hidden rounded-[2.6rem] border border-[#d9b36a]/12 bg-[#131a25]/92 p-6 shadow-2xl backdrop-blur-md sm:p-8">
                                 <div className="absolute inset-0 opacity-[0.05]">
                                     <div className="grid h-full w-full grid-cols-12 gap-px">
                                         {Array.from({ length: 144 }).map((_, i) => (
@@ -607,7 +607,7 @@ export default function FormAnalysisPage() {
                                         <SectionLabel
                                             index="03"
                                             title="Analysis Canvas"
-                                            subtitle="Pose lab, clip selection, and result preview"
+                                            subtitle="Pose review, clip selection, and result preview"
                                         />
                                         <div className="flex flex-wrap gap-2">
                                             <StatPill label="Mode" value={isAnalyzing ? 'Running' : 'Idle'} tone={isAnalyzing ? 'yellow' : 'cyan'} />
@@ -636,8 +636,8 @@ export default function FormAnalysisPage() {
                                                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#041723]/85 backdrop-blur-md">
                                                             <LabProgressRing progress={analysisProgress} />
                                                             <div className="text-center">
-                                                                <div className="text-[10px] font-black uppercase tracking-[0.34em] text-sky-300">
-                                                                    Running pose lab
+                                                                <div className="text-[10px] font-black uppercase tracking-[0.34em] text-[#d9b36a]">
+                                                                    Reviewing mechanics
                                                                 </div>
                                                                 <div className="mt-2 text-[9px] font-black uppercase tracking-[0.32em] text-slate-500">
                                                                     Sampling at {SAMPLE_FPS} FPS
@@ -654,10 +654,10 @@ export default function FormAnalysisPage() {
                                                     <button
                                                         onClick={runAnalysis}
                                                         disabled={isAnalyzing}
-                                                        className="mt-5 inline-flex w-full items-center justify-center gap-3 rounded-full border border-[#0093D6]/40 bg-[#0093D6] px-6 py-4 text-[11px] font-black uppercase tracking-[0.34em] text-white shadow-[0_18px_40px_rgba(0,147,214,0.25)] transition-all hover:translate-y-[-1px] hover:bg-[#11a3e3] disabled:cursor-not-allowed disabled:opacity-60"
+                                                        className="mt-5 inline-flex w-full items-center justify-center gap-3 rounded-full border border-[#d9b36a]/30 bg-[#d9b36a] px-6 py-4 text-[11px] font-black uppercase tracking-[0.34em] text-[#121925] shadow-[0_18px_40px_rgba(217,179,106,0.22)] transition-all hover:translate-y-[-1px] hover:bg-[#e6c489] disabled:cursor-not-allowed disabled:opacity-60"
                                                     >
                                                         <span className="text-lg">↗</span>
-                                                        {isAnalyzing ? 'Analyzing' : 'Begin lab sequence'}
+                                                        {isAnalyzing ? 'Analyzing' : 'Begin review'}
                                                     </button>
                                                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                                         <StatPill label="Clip" value={`${clipRange[1] - clipRange[0]}s`} tone="yellow" />
@@ -687,7 +687,7 @@ export default function FormAnalysisPage() {
                                             className={`flex min-h-[480px] cursor-pointer flex-col items-center justify-center rounded-[2rem] border-2 border-dashed px-6 py-16 text-center transition-all ${
                                                 isDragging
                                                     ? 'border-[#FFF917]/70 bg-[#FFF917]/8'
-                                                    : 'border-white/10 bg-black/15 hover:border-[#0093D6]/45 hover:bg-[#0093D6]/8'
+                                                    : 'border-white/10 bg-black/15 hover:border-[#4a7aff]/45 hover:bg-[#4a7aff]/8'
                                             }`}
                                             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                                             onDragLeave={() => setIsDragging(false)}
@@ -697,8 +697,8 @@ export default function FormAnalysisPage() {
                                             <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-4xl text-white">
                                                 {isDragging ? '↓' : '⌬'}
                                             </div>
-                                            <h3 className="text-3xl font-black italic tracking-tighter text-white sm:text-4xl">
-                                                {isDragging ? 'Drop to begin' : 'Ready for discovery'}
+                                            <h3 className="font-['Instrument_Serif'] text-4xl italic tracking-tight text-white sm:text-5xl">
+                                                {isDragging ? 'Drop to begin' : 'Ready for a cleaner review'}
                                             </h3>
                                             <p className="mt-4 max-w-lg text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
                                                 Drop a treadmill side-profile video to start the kinetic chain analysis.
