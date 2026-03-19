@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { Callback } from './components/Callback.tsx'
+import { GoogleSignInComplete } from './components/GoogleSignInComplete.tsx'
 import { MagicLinkVerify } from './components/MagicLinkVerify.tsx'
 import { SetupRoute } from './components/SetupRoute.tsx'
 
@@ -20,6 +21,7 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/callback" element={<Callback />} />
+          <Route path="/signin/complete" element={<GoogleSignInComplete />} />
           <Route path="/api/auth/magic-link/verify" element={<MagicLinkVerify />} />
           <Route path="/setup" element={<SetupRoute />} />
           <Route path="/plan-route" element={<RoutePlanner />} />

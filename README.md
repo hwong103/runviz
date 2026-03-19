@@ -76,6 +76,12 @@ npx wrangler secret put GOOGLE_CLIENT_ID
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 npx wrangler secret put GOOGLE_REDIRECT_URI
 
+# Google Cloud Console
+# Add the Better Auth callback URI used by Google sign-in:
+#   https://runviz.hwong103.work/api/auth/callback/google
+# Keep the existing Drive callback too if you use the Google Drive helper:
+#   https://runviz.hwong103.work/auth/google/callback
+
 # Update vars in wrangler.jsonc
 # FRONTEND_URL=https://runviz.hwong103.work
 # FRONTEND_PREVIEW_HOST=runviz.runviz-stats.workers.dev
@@ -152,7 +158,7 @@ runviz/
 | `ORS_API_KEY` | From [OpenRouteService](https://openrouteservice.org/dev/#/signup) |
 | `GOOGLE_CLIENT_ID` | Optional Google OAuth client for Drive-powered form workflows |
 | `GOOGLE_CLIENT_SECRET` | Optional Google OAuth client secret |
-| `GOOGLE_REDIRECT_URI` | Redirect URI for the Worker Google callback |
+| `GOOGLE_REDIRECT_URI` | Redirect URI for the Worker Google callback (`/auth/google/callback`) |
 
 ### Cloudflare Worker Vars
 

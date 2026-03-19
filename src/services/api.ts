@@ -40,7 +40,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
 
 // Auth endpoints
 export const auth = {
-    async signInGoogle(callbackURL = `${window.location.origin}${import.meta.env.BASE_URL}`): Promise<void> {
+    async signInGoogle(callbackURL = `${window.location.origin}${import.meta.env.BASE_URL}signin/complete`): Promise<void> {
         await authClient.signIn.social({
             provider: 'google',
             callbackURL,
