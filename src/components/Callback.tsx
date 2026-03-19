@@ -8,11 +8,12 @@ export function Callback() {
 
     useEffect(() => {
         const code = searchParams.get('code');
+        const state = searchParams.get('state') || undefined;
         const error = searchParams.get('error');
 
-        async function handleCallback(code: string) {
+        async function handleCallback(code: string, state?: string) {
             try {
-                await auth.handleCallback(code);
+                await auth.handleCallback(code, state);
                 navigate('/');
             } catch (err) {
                 console.error('Callback error:', err);
@@ -27,7 +28,7 @@ export function Callback() {
         }
 
         if (code) {
-            handleCallback(code);
+            handleCallback(code, state);
         } else {
             navigate('/');
         }

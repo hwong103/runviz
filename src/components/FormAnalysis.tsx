@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useActivities } from '../hooks/useActivities';
-import { activities as activitiesApi } from '../services/api';
+import { activities as activitiesApi, auth } from '../services/api';
 import { saveFormAnalysis, listFormAnalyses } from '../services/cache';
 import type { Activity, FormAnalysis, FormVideo } from '../types';
 import { isRun } from '../types';
@@ -375,8 +375,7 @@ export default function FormAnalysisPage() {
             console.error('Failed to write to Strava:', error);
             if (error.status === 403) {
                 if (confirm('RunViz needs permission to write to your activities. Re-authenticate with write permission now?')) {
-                    const callbackUrl = `${window.location.origin}${import.meta.env.BASE_URL}callback`;
-                    window.location.href = `${import.meta.env.VITE_API_URL}/auth/strava?redirect_uri=${encodeURIComponent(callbackUrl)}&scope=read,activity:read_all,activity:write`;
+                    window.location.href = auth.getStravaLoginUrl('link', 'read,activity:read_all,activity:write');
                 }
             } else {
                 alert('Failed to write to Strava. ' + (error.message || ''));

@@ -46,12 +46,13 @@ git clone https://github.com/YOUR_USERNAME/runviz.git
 cd runviz
 ```
 
-### 2. Create Strava API Application
+### 2. Create Auth Providers
 
-1. Go to [Strava API Settings](https://www.strava.com/settings/api)
-2. Create a new application
-3. Set **Authorization Callback Domain** to your frontend host, for example `runviz-stats.pages.dev`
-4. Note your **Client ID** and **Client Secret**
+1. Create a Google OAuth client for Better Auth sign-in.
+2. Create a Resend API key for magic-link delivery.
+3. Create a Strava API application for activity data.
+
+For Strava, go to [Strava API Settings](https://www.strava.com/settings/api), create a new application, set **Authorization Callback Domain** to your frontend host, for example `runviz-stats.pages.dev`, and note your **Client ID** and **Client Secret**.
 
 ### 3. Deploy Cloudflare Workers Backend
 
@@ -69,7 +70,13 @@ cd workers
 wrangler kv:namespace create TOKENS
 # Copy the id and update wrangler.toml
 
+# Create D1
+npx wrangler d1 create runviz-db
+# Copy the database_id into workers/wrangler.toml
+
 # Set secrets
+wrangler secret put BETTER_AUTH_SECRET
+wrangler secret put RESEND_API_KEY
 wrangler secret put STRAVA_CLIENT_ID
 wrangler secret put STRAVA_CLIENT_SECRET
 wrangler secret put ORS_API_KEY
@@ -175,6 +182,8 @@ runviz/
 
 | Secret | Description |
 |--------|-------------|
+| `BETTER_AUTH_SECRET` | Secret used to sign Better Auth sessions and encrypt user-linked secrets |
+| `RESEND_API_KEY` | Resend API key for magic-link emails |
 | `STRAVA_CLIENT_ID` | From Strava API settings |
 | `STRAVA_CLIENT_SECRET` | From Strava API settings |
 | `ORS_API_KEY` | From [OpenRouteService](https://openrouteservice.org/dev/#/signup) |
@@ -186,6 +195,7 @@ runviz/
 
 | Var | Description |
 |-----|-------------|
+| `DB` | D1 database binding used by Better Auth |
 | `FRONTEND_URL` | Exact production Pages origin allowed for CORS and OAuth fallback redirects |
 | `FRONTEND_PREVIEW_HOST` | Preview host suffix for branch deploys, for example `runviz-stats.pages.dev` |
 | `ADDITIONAL_FRONTEND_URLS` | Optional comma-separated list of extra allowed frontend origins |

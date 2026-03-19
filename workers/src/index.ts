@@ -1,4 +1,13 @@
 import { handleRouteGeneration } from './routeService';
+import { createAuth } from './auth';
+import { encrypt } from './crypto';
+import {
+    buildAthleteSummary,
+    resolveSession,
+    resolveStravaAccess,
+    resolveStoredStravaKeys,
+    type TokenData,
+} from './session';
 
 /**
  * RunViz API - Cloudflare Workers Backend
@@ -7,9 +16,12 @@ import { handleRouteGeneration } from './routeService';
  */
 
 export interface Env {
+    DB: D1Database;
     TOKENS: KVNamespace;
     STRAVA_CLIENT_ID: string;
     STRAVA_CLIENT_SECRET: string;
+    BETTER_AUTH_SECRET: string;
+    RESEND_API_KEY: string;
     FRONTEND_URL: string;
     FRONTEND_PREVIEW_HOST?: string;
     ADDITIONAL_FRONTEND_URLS?: string;
@@ -17,16 +29,6 @@ export interface Env {
     GOOGLE_CLIENT_ID: string;
     GOOGLE_CLIENT_SECRET: string;
     GOOGLE_REDIRECT_URI: string;
-}
-
-interface TokenData {
-    accessToken: string;
-    refreshToken: string;
-    expiresAt: number;
-    athleteId: number;
-    athleteName: string;
-    athleteProfile: string;
-    scopes?: string;
 }
 
 function getConfiguredOrigins(env: Env): string[] {
@@ -76,6 +78,16 @@ export function corsHeaders(origin: string, env: Env): HeadersInit {
     };
 }
 
+function withCors(response: Response, origin: string, env: Env): Response {
+    const headers = new Headers(response.headers);
+    const cors = corsHeaders(origin, env);
+    Object.entries(cors).forEach(([key, value]) => headers.set(key, String(value)));
+    return new Response(response.body, {
+        status: response.status,
+        headers,
+    });
+}
+
 // Get session ID from cookie
 export function getSessionId(request: Request): string | null {
     const cookie = request.headers.get('Cookie');
@@ -100,6 +112,7 @@ export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         const url = new URL(request.url);
         const origin = request.headers.get('Origin') || env.FRONTEND_URL;
+        const auth = createAuth(env, url.origin);
 
         // Handle CORS preflight
         if (request.method === 'OPTIONS') {
@@ -107,9 +120,29 @@ export default {
         }
 
         try {
+            if (url.pathname.startsWith('/api/auth/')) {
+                return withCors(await auth.handler(request), origin, env);
+            }
+
+            if (url.pathname === '/api/session') {
+                return await handleHybridSession(request, env, origin, auth);
+            }
+
+            if (url.pathname === '/api/logout') {
+                return handleLegacyLogout(origin, env);
+            }
+
+            if (url.pathname === '/setup/strava-key' && request.method === 'POST') {
+                return await handleSaveStravaKey(request, env, origin, auth);
+            }
+
+            if (url.pathname === '/setup/strava-key' && request.method === 'GET') {
+                return await handleGetStravaKeyStatus(env, origin, auth, request);
+            }
+
             // Route handling
             if (url.pathname === '/auth/strava') {
-                return handleAuthStart(url, env);
+                return await handleAuthStart(request, url, env, auth);
             }
 
             if (url.pathname === '/auth/strava/scopes') {
@@ -118,14 +151,6 @@ export default {
 
             if (url.pathname === '/auth/callback') {
                 return await handleAuthCallback(request, env, origin);
-            }
-
-            if (url.pathname === '/auth/session') {
-                return await handleSession(request, env, origin);
-            }
-
-            if (url.pathname === '/auth/logout') {
-                return handleLogout(origin, env);
             }
 
             // Google OAuth endpoints
@@ -149,7 +174,7 @@ export default {
             const cleanPath = url.pathname.replace(/\/+$/, '');
 
             if (cleanPath === '/api/routes/generate') {
-                return await handleRouteGeneration(request, env, origin);
+                return await handleRouteGeneration(request, env, origin, auth);
             }
 
             if (cleanPath === '/api/geocoding/search') {
@@ -162,11 +187,11 @@ export default {
 
             // Support PUT /api/activities/:id for form analysis write-back
             if (request.method === 'PUT' && url.pathname.startsWith('/api/activities/')) {
-                return await handleStravaActivityUpdate(request, env, origin);
+                return await handleStravaActivityUpdate(request, env, origin, auth);
             }
 
             if (url.pathname.startsWith('/api/')) {
-                return await handleApiRequest(request, url, env, origin);
+                return await handleApiRequest(request, url, env, origin, auth);
             }
 
             return new Response(`Not Found: ${url.pathname}`, { status: 404, headers: corsHeaders(origin, env) });
@@ -184,24 +209,45 @@ export default {
 };
 
 // Start OAuth flow
-function handleAuthStart(url: URL, env: Env): Response {
+async function handleAuthStart(request: Request, url: URL, env: Env, auth: ReturnType<typeof createAuth>): Promise<Response> {
     const redirectUri = url.searchParams.get('redirect_uri') || `${env.FRONTEND_URL}/callback`;
     const scope = url.searchParams.get('scope') || 'read,activity:read_all,activity:write';
+    const mode = url.searchParams.get('mode') || 'legacy';
+    const state = generateSessionId().slice(0, 16);
+    const stateContext: { mode: string; userId?: string } = { mode };
+    let clientId = env.STRAVA_CLIENT_ID;
+
+    if (mode === 'link') {
+        const betterSession = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+        if (betterSession?.user?.id) {
+            stateContext.userId = betterSession.user.id;
+            const storedKeys = await resolveStoredStravaKeys(env, betterSession.user.id);
+            clientId = storedKeys?.clientId || clientId;
+        }
+    }
+
+    await env.TOKENS.put(`strava-oauth:${state}`, JSON.stringify(stateContext), {
+        expirationTtl: 60 * 10,
+    });
 
     const authUrl = new URL(STRAVA_AUTH_URL);
-    authUrl.searchParams.set('client_id', env.STRAVA_CLIENT_ID);
+    authUrl.searchParams.set('client_id', clientId);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('scope', scope);
-    authUrl.searchParams.set('state', generateSessionId().slice(0, 16));
+    authUrl.searchParams.set('state', state);
 
     return Response.redirect(authUrl.toString(), 302);
 }
 
 // Handle OAuth callback
 async function handleAuthCallback(request: Request, env: Env, origin: string): Promise<Response> {
-    const body = await request.json() as { code: string };
+    const body = await request.json() as { code: string; state?: string };
     const code = body.code;
+    const state = body.state;
+    const stateContext = state
+        ? await env.TOKENS.get(`strava-oauth:${state}`).then((value) => value ? JSON.parse(value) as { mode?: string; userId?: string } : null)
+        : null;
 
     if (!code) {
         return new Response(
@@ -211,12 +257,13 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
     }
 
     // Exchange code for tokens
+    const storedKeys = stateContext?.userId ? await resolveStoredStravaKeys(env, stateContext.userId) : null;
     const tokenResponse = await fetch(STRAVA_TOKEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            client_id: env.STRAVA_CLIENT_ID,
-            client_secret: env.STRAVA_CLIENT_SECRET,
+            client_id: storedKeys?.clientId || env.STRAVA_CLIENT_ID,
+            client_secret: storedKeys?.clientSecret || env.STRAVA_CLIENT_SECRET,
             code: code,
             grant_type: 'authorization_code',
         }),
@@ -238,8 +285,6 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
         athlete: { id: number; firstname: string; lastname: string; profile: string };
     };
 
-    // Create session and store tokens
-    const sessionId = generateSessionId();
     const storedData: TokenData = {
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token,
@@ -250,18 +295,39 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
         scopes: (tokenData as any).scope, // Strava returns scope in token response
     };
 
+    const athlete = buildAthleteSummary(storedData);
+
+    if (stateContext?.mode === 'link' && stateContext.userId) {
+        await env.TOKENS.put(`strava:${stateContext.userId}`, JSON.stringify(storedData), {
+            expirationTtl: 60 * 60 * 24 * 30,
+        });
+        if (state) {
+            await env.TOKENS.delete(`strava-oauth:${state}`);
+        }
+
+        return new Response(
+            JSON.stringify({ linked: true, athlete }),
+            {
+                headers: {
+                    ...corsHeaders(origin, env),
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+    }
+
+    // Create session and store tokens
+    const sessionId = generateSessionId();
     await env.TOKENS.put(`session:${sessionId}`, JSON.stringify(storedData), {
         expirationTtl: 60 * 60 * 24 * 30, // 30 days
     });
+    if (state) {
+        await env.TOKENS.delete(`strava-oauth:${state}`);
+    }
 
     return new Response(
         JSON.stringify({
-            athlete: {
-                id: tokenData.athlete.id,
-                firstname: tokenData.athlete.firstname,
-                lastname: tokenData.athlete.lastname,
-                profile: tokenData.athlete.profile,
-            },
+            athlete,
         }),
         {
             headers: {
@@ -274,41 +340,77 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
 }
 
 // Check session
-async function handleSession(request: Request, env: Env, origin: string): Promise<Response> {
-    const sessionId = getSessionId(request);
-
-    if (!sessionId) {
-        return new Response(
-            JSON.stringify({ authenticated: false }),
-            { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
-        );
-    }
-
-    const stored = await env.TOKENS.get(`session:${sessionId}`);
-    if (!stored) {
-        return new Response(
-            JSON.stringify({ authenticated: false }),
-            { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
-        );
-    }
-
-    const tokenData = JSON.parse(stored) as TokenData;
+async function handleHybridSession(request: Request, env: Env, origin: string, auth: ReturnType<typeof createAuth>): Promise<Response> {
+    const session = await resolveSession(request, env, auth);
     return new Response(
-        JSON.stringify({
-            authenticated: true,
-            athlete: {
-                id: tokenData.athleteId,
-                firstname: tokenData.athleteName.split(' ')[0],
-                lastname: tokenData.athleteName.split(' ').slice(1).join(' '),
-                profile: tokenData.athleteProfile,
-            },
-        }),
+        JSON.stringify(session),
         { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
     );
 }
 
+async function handleSaveStravaKey(request: Request, env: Env, origin: string, auth: ReturnType<typeof createAuth>): Promise<Response> {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!session?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    const body = await request.json() as { clientId?: string; clientSecret?: string };
+    if (!body.clientId || !body.clientSecret) {
+        return new Response(JSON.stringify({ error: 'Missing fields' }), {
+            status: 400,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    if (!/^\d+$/.test(body.clientId)) {
+        return new Response(JSON.stringify({ error: 'Invalid Client ID' }), {
+            status: 400,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    const encryptedSecret = await encrypt(body.clientSecret, env.BETTER_AUTH_SECRET);
+    await env.DB.prepare(
+        `INSERT INTO strava_keys (user_id, client_id, client_secret_enc, created_at, updated_at)
+         VALUES (?, ?, ?, unixepoch(), unixepoch())
+         ON CONFLICT(user_id) DO UPDATE SET
+           client_id = excluded.client_id,
+           client_secret_enc = excluded.client_secret_enc,
+           updated_at = unixepoch()`
+    ).bind(session.user.id, body.clientId, encryptedSecret).run();
+
+    return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleGetStravaKeyStatus(env: Env, origin: string, auth: ReturnType<typeof createAuth>, request: Request): Promise<Response> {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!session?.user?.id) {
+        return new Response(JSON.stringify({ configured: false }), {
+            status: 401,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    const row = await env.DB.prepare(
+        'SELECT client_id, updated_at FROM strava_keys WHERE user_id = ?'
+    ).bind(session.user.id).first<{ client_id: string; updated_at: number }>();
+
+    return new Response(JSON.stringify({
+        configured: !!row,
+        clientId: row?.client_id ?? null,
+        updatedAt: row?.updated_at ?? null,
+    }), {
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+    });
+}
+
 // Logout
-function handleLogout(origin: string, env: Env): Response {
+function handleLegacyLogout(origin: string, env: Env): Response {
     return new Response(
         JSON.stringify({ success: true }),
         {
@@ -326,35 +428,28 @@ async function handleApiRequest(
     request: Request,
     url: URL,
     env: Env,
-    origin: string
+    origin: string,
+    auth: ReturnType<typeof createAuth>
 ): Promise<Response> {
-    const sessionId = getSessionId(request);
+    const access = await resolveStravaAccess(request, env, auth);
 
-    if (!sessionId) {
+    if (!access) {
         return new Response(
             JSON.stringify({ error: 'Unauthorized' }),
             { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
-
-    const stored = await env.TOKENS.get(`session:${sessionId}`);
-    if (!stored) {
-        return new Response(
-            JSON.stringify({ error: 'Session expired' }),
-            { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
-        );
-    }
-
-    let tokenData = JSON.parse(stored) as TokenData;
+    let tokenData = access.tokenData;
 
     // Refresh token if expired
     if (tokenData.expiresAt < Date.now() / 1000) {
+        const keys = access.userId ? await resolveStoredStravaKeys(env, access.userId) : null;
         const refreshResponse = await fetch(STRAVA_TOKEN_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                client_id: env.STRAVA_CLIENT_ID,
-                client_secret: env.STRAVA_CLIENT_SECRET,
+                client_id: keys?.clientId || env.STRAVA_CLIENT_ID,
+                client_secret: keys?.clientSecret || env.STRAVA_CLIENT_SECRET,
                 refresh_token: tokenData.refreshToken,
                 grant_type: 'refresh_token',
             }),
@@ -380,9 +475,16 @@ async function handleApiRequest(
             expiresAt: refreshData.expires_at,
         };
 
-        await env.TOKENS.put(`session:${sessionId}`, JSON.stringify(tokenData), {
-            expirationTtl: 60 * 60 * 24 * 30,
-        });
+        const storageKey = access.source === 'better-auth' && access.userId
+            ? `strava:${access.userId}`
+            : access.sessionId
+                ? `session:${access.sessionId}`
+                : null;
+        if (storageKey) {
+            await env.TOKENS.put(storageKey, JSON.stringify(tokenData), {
+                expirationTtl: 60 * 60 * 24 * 30,
+            });
+        }
     }
 
     // Proxy request to Strava API
@@ -581,14 +683,11 @@ async function handleGoogleToken(request: Request, env: Env, origin: string): Pr
     });
 }
 
-async function handleStravaActivityUpdate(request: Request, env: Env, origin: string): Promise<Response> {
-    const sessionId = getSessionId(request);
-    if (!sessionId) return new Response('Unauthorized', { status: 401, headers: corsHeaders(origin, env) });
+async function handleStravaActivityUpdate(request: Request, env: Env, origin: string, auth: ReturnType<typeof createAuth>): Promise<Response> {
+    const access = await resolveStravaAccess(request, env, auth);
+    if (!access) return new Response('Unauthorized', { status: 401, headers: corsHeaders(origin, env) });
 
-    const stored = await env.TOKENS.get(`session:${sessionId}`);
-    if (!stored) return new Response('Session expired', { status: 401, headers: corsHeaders(origin, env) });
-
-    const tokenData = JSON.parse(stored) as TokenData;
+    const tokenData = access.tokenData;
 
     // Check if activity:write scope is present
     if (!tokenData.scopes?.includes('activity:write')) {

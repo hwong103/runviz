@@ -11,6 +11,11 @@ FRONTEND_PREVIEW_HOST = "runviz-stats.pages.dev"
 # ORS_API_KEY must be configured as a Wrangler secret:
 # wrangler secret put ORS_API_KEY
 
+[[d1_databases]]
+binding = "DB"
+database_name = "runviz-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
 [[kv_namespaces]]
 binding = "TOKENS"
 id = "30c9eb9422124409935de1f20bb28237"
