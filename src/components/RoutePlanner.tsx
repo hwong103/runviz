@@ -264,9 +264,8 @@ const RoutePlanner: React.FC = () => {
     return (
         <div className="min-h-screen overflow-hidden bg-[#0a0f17] text-[#f5efe3] relative">
             <div className="pointer-events-none absolute inset-0">
-                <div className="absolute -top-24 right-[-6rem] h-72 w-72 rounded-full bg-[#4a7aff]/10 blur-3xl" />
-                <div className="absolute bottom-[-8rem] left-[-6rem] h-80 w-80 rounded-full bg-[#d9b36a]/10 blur-3xl" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(217,179,106,0.10),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(74,122,255,0.08),transparent_28%)]" />
+                <div className="absolute -top-24 right-[-6rem] h-72 w-72 rounded-full bg-[#4a7aff]/8 blur-3xl" />
+                <div className="absolute bottom-[-8rem] left-[-6rem] h-80 w-80 rounded-full bg-[#d9b36a]/8 blur-3xl" />
             </div>
 
             <div className="relative mx-auto max-w-[1680px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
@@ -286,15 +285,12 @@ const RoutePlanner: React.FC = () => {
                         </button>
 
                         <div className="min-w-0 text-left sm:text-center">
-                            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#d9b36a]/25 bg-[#d9b36a]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.4em] text-[#d9b36a]">
-                                <span className="h-2 w-2 rounded-full bg-[#d9b36a]" />
-                                Private Route Atelier
-                            </div>
+                            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.4em] text-[#d9b36a]">Route Planner</div>
                             <h1 className="font-['Instrument_Serif'] text-[clamp(2.2rem,4vw,4.6rem)] italic leading-none tracking-[-0.05em] text-[#f5efe3]">
                                 Plan a route that feels intentional
                             </h1>
                             <p className="mt-2 text-[10px] font-black uppercase tracking-[0.34em] text-[#f5efe3]/35 sm:text-xs">
-                                Choose a start point, shape the effort, and leave with something worth running.
+                                Pick a start, set the distance, export the route.
                             </p>
                         </div>
 
@@ -319,20 +315,15 @@ const RoutePlanner: React.FC = () => {
 
                 <section className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5">
                     <aside className="lg:col-span-4 xl:col-span-3 space-y-4">
-                        <div className="rounded-[2rem] border border-[#d9b36a]/12 bg-[#131a25]/90 p-4 shadow-[0_18px_80px_rgba(0,0,0,0.28)] backdrop-blur-md sm:p-5">
+                        <div className="rounded-[2rem] border border-[#d9b36a]/12 bg-[#131a25]/94 p-4 shadow-[0_18px_80px_rgba(0,0,0,0.22)] sm:p-5">
                             <div className="mb-5 flex items-center justify-between">
                                 <div>
-                                    <div className="mb-2 inline-flex items-center gap-2 text-[#d9b36a]">
-                                        <span className="h-2 w-2 rounded-full bg-[#d9b36a]" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.45em]">Route Configuration</span>
-                                    </div>
+                                    <div className="mb-2 text-[10px] font-black uppercase tracking-[0.45em] text-[#d9b36a]">Route Configuration</div>
                                     <div className="text-xs font-black uppercase tracking-[0.28em] text-white/45">
-                                        Search and dial in the session
+                                        Search and set the effort
                                     </div>
                                 </div>
-                                <div className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-white/50">
-                                    {generatedRoutes.length} routes
-                                </div>
+                                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">{generatedRoutes.length} routes</div>
                             </div>
 
                             <div className="space-y-4" ref={suggestionRef}>
@@ -456,7 +447,7 @@ const RoutePlanner: React.FC = () => {
 
                         <div className="grid grid-cols-3 gap-3">
                             {routeSummary.map((item) => (
-                                <div key={item.label} className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+                                <div key={item.label} className="rounded-[1.35rem] border border-white/10 bg-white/[0.03] p-4">
                                     <div className="text-[9px] font-black uppercase tracking-[0.34em] text-white/30">{item.label}</div>
                                     <div className="mt-3 text-sm font-black uppercase tracking-[0.08em] text-[#f6f2f1]">{item.value}</div>
                                 </div>
@@ -464,20 +455,15 @@ const RoutePlanner: React.FC = () => {
                         </div>
 
                         {generatedRoutes.length > 0 && (
-                            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-4 shadow-[0_18px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:p-5">
+                            <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_18px_80px_rgba(0,0,0,0.18)] sm:p-5">
                                 <div className="mb-4 flex items-center justify-between">
                                     <div>
-                                        <div className="inline-flex items-center gap-2 text-[#fff917]">
-                                            <span className="h-2 w-2 rounded-full bg-[#fff917]" />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.42em]">Route library</span>
-                                        </div>
+                                        <div className="text-[10px] font-black uppercase tracking-[0.42em] text-[#fff917]">Route Library</div>
                                         <div className="mt-2 text-xs font-black uppercase tracking-[0.28em] text-white/35">
                                             Select a route to preview
                                         </div>
                                     </div>
-                                    <div className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-[10px] font-black uppercase tracking-[0.3em] text-white/45">
-                                        {selectedRoute ? 'Active' : 'None'}
-                                    </div>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">{selectedRoute ? 'Active' : 'None'}</div>
                                 </div>
 
                                 <div className="max-h-[40vh] space-y-2 overflow-y-auto pr-1 custom-scrollbar sm:max-h-[34rem]">
@@ -526,7 +512,7 @@ const RoutePlanner: React.FC = () => {
                     </aside>
 
                     <section className="lg:col-span-8 xl:col-span-9 space-y-4">
-                        <div className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/5 p-2 shadow-[0_24px_120px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:p-3">
+                        <div className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.03] p-2 shadow-[0_24px_120px_rgba(0,0,0,0.25)] sm:p-3">
                             <div className="relative h-[45svh] min-h-[330px] overflow-hidden rounded-[2rem] sm:h-[60vh] lg:h-[760px]">
                                 <MapContainer
                                     center={startPoint || [-33.8688, 151.2093]}
@@ -552,13 +538,8 @@ const RoutePlanner: React.FC = () => {
                                     )}
                                 </MapContainer>
 
-                                <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] flex justify-between p-4 sm:p-5">
-                                    <div className="rounded-full border border-white/10 bg-[#041723]/65 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.34em] text-white/60 backdrop-blur-xl">
-                                        Dark terrain map
-                                    </div>
-                                    <div className="rounded-full border border-white/10 bg-[#041723]/65 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.34em] text-white/60 backdrop-blur-xl">
-                                        Click anywhere to set start point
-                                    </div>
+                                <div className="pointer-events-none absolute left-4 top-4 z-[500] rounded-full border border-white/10 bg-[#041723]/65 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.34em] text-white/60 sm:left-5 sm:top-5">
+                                    Click anywhere to set the start point
                                 </div>
 
                                 {!startPoint && (
@@ -574,21 +555,9 @@ const RoutePlanner: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-                            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-4 shadow-[0_18px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:p-5">
-                                <div className="mb-4 flex items-center justify-between">
-                                    <div>
-                                        <div className="inline-flex items-center gap-2 text-[#fff917]">
-                                            <span className="h-2 w-2 rounded-full bg-[#fff917]" />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.42em]">Session legend</span>
-                                        </div>
-                                        <div className="mt-2 text-xs font-black uppercase tracking-[0.28em] text-white/35">
-                                            Map and route state
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-wrap gap-3">
+                        <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_18px_80px_rgba(0,0,0,0.18)] sm:p-5">
+                            <div className="mb-4 text-[10px] font-black uppercase tracking-[0.42em] text-white/35">Map states</div>
+                            <div className="flex flex-wrap gap-3">
                                     <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-3 text-[10px] font-black uppercase tracking-[0.3em] text-white/75">
                                         <span className="h-3 w-3 rounded-full bg-[#10b981] shadow-[0_0_18px_rgba(16,185,129,0.45)]" />
                                         Active Path
@@ -601,24 +570,6 @@ const RoutePlanner: React.FC = () => {
                                         <span className="h-3 w-3 rounded-full bg-[#0093d6]" />
                                         Start Marker
                                     </span>
-                                </div>
-                            </div>
-
-                            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-4 shadow-[0_18px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:p-5">
-                                <div className="mb-4 flex items-center justify-between">
-                                    <div>
-                                        <div className="inline-flex items-center gap-2 text-[#0093d6]">
-                                            <span className="h-2 w-2 rounded-full bg-[#0093d6]" />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.42em]">Session note</span>
-                                        </div>
-                                        <div className="mt-2 text-xs font-black uppercase tracking-[0.28em] text-white/35">
-                                            Search, shape, and export from one composed planning flow
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="rounded-[1.35rem] border border-white/10 bg-black/20 px-4 py-4 text-sm leading-relaxed text-white/70">
-                                    Start from a familiar point, tune the distance to the day, and leave with a route that feels considered rather than improvised.
-                                </div>
                             </div>
                         </div>
                     </section>

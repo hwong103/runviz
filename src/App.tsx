@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
@@ -266,27 +266,25 @@ function App() {
   if (!isAuthenticated) {
     return (
       <div className="rv-grid-lines flex min-h-screen items-center justify-center px-4 py-10">
-        <div className="rv-panel rv-panel-strong flex w-full max-w-5xl flex-col gap-10 overflow-hidden px-6 py-8 sm:px-10 lg:flex-row lg:items-end lg:px-12 lg:py-12">
-          <div className="flex-1 space-y-6">
+        <div className="rv-panel rv-panel-strong flex w-full max-w-5xl flex-col gap-8 overflow-hidden px-6 py-8 sm:px-10 lg:flex-row lg:items-end lg:px-12 lg:py-12">
+          <div className="flex-1 space-y-5">
             <p className="rv-kicker">For Ambitious Runners</p>
             <BrandWordmark />
             <h1 className="rv-metric max-w-2xl text-5xl sm:text-6xl lg:text-7xl">
-              Train with the polish of a private coach, not the clutter of a dashboard.
+              A calmer training view for runners getting more serious.
             </h1>
             <p className="max-w-xl text-base leading-7 text-[var(--rv-text-dim)] sm:text-lg">
-              RunViz turns your Strava history into a premium training companion for hobby runners chasing sharper sessions, smarter progression, and a better feel for their own performance.
+              RunViz turns your Strava history into a premium training companion with route planning, form review, and clearer performance context.
             </p>
-            <div className="flex flex-wrap gap-3 text-left">
-              <span className="rv-chip">Training load intelligence</span>
-              <span className="rv-chip">Route generation + GPX export</span>
-              <span className="rv-chip">Video-based form analysis</span>
-            </div>
+            <p className="text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
+              Training load intelligence, route generation, and video-based form analysis.
+            </p>
           </div>
           <div className="rv-panel w-full max-w-md border-[var(--rv-border-strong)]/70 px-6 py-8 sm:px-8">
             <p className="rv-kicker mb-4">Connect Strava</p>
-            <h2 className="mb-3 text-3xl font-bold tracking-tight text-[var(--rv-text)]">Step into your training atelier</h2>
+            <h2 className="mb-3 text-3xl font-bold tracking-tight text-[var(--rv-text)]">Open your training view</h2>
             <p className="mb-8 text-sm leading-6 text-[var(--rv-text-dim)]">
-              Authenticate once to unlock route planning, form review, and a calmer, more premium view of the numbers that shape your training.
+              Authenticate once to unlock the planner, form lab, and your full training history.
             </p>
             <button
               onClick={login}
@@ -298,7 +296,7 @@ function App() {
               </svg>
               Connect Strava
             </button>
-            <p className="mt-4 text-xs uppercase tracking-[0.25em] text-[var(--rv-text-faint)]">Data remains anchored to your existing RunViz metrics and history.</p>
+            <p className="mt-4 text-xs uppercase tracking-[0.25em] text-[var(--rv-text-faint)]">Your existing metrics and history stay intact.</p>
           </div>
         </div>
       </div>
@@ -317,50 +315,13 @@ function App() {
         />
       )}
 
-      <div className="flex min-h-screen">
-        <aside className="hidden w-24 shrink-0 border-r border-white/5 bg-[#03131f]/90 px-4 py-6 lg:flex lg:flex-col lg:items-center lg:justify-between">
-          <div className="space-y-6">
-            <div className="flex justify-center">
-              <LabGlyph className="h-8 w-8 text-[var(--rv-blue)]" />
-            </div>
-            <nav className="space-y-4">
-              <SidebarLink label="Dashboard" active>
-                <DashboardGlyph />
-              </SidebarLink>
-              <SidebarLink label="Planner" to="/plan-route">
-                <MapGlyph />
-              </SidebarLink>
-              <SidebarLink label="Form Lab" to="/form-analysis">
-                <LabGlyph />
-              </SidebarLink>
-            </nav>
-          </div>
-
-          {athlete?.profile ? (
-            <button
-              onClick={() => setIsMenuOpen((open) => !open)}
-              className="relative flex h-[3.25rem] w-[3.25rem] items-center justify-center overflow-hidden rounded-full border border-white/[0.15] bg-white/5 transition hover:border-[var(--rv-blue)]/60"
-            >
-              <img src={athlete.profile} alt="Profile" className="h-full w-full object-cover" />
-            </button>
-          ) : (
-            <button
-              onClick={() => setIsMenuOpen((open) => !open)}
-              className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-bold uppercase tracking-[0.25em] text-[var(--rv-text-dim)]"
-            >
-              RV
-            </button>
-          )}
-        </aside>
-
-        <div className="min-w-0 flex-1">
+      <div className="min-h-screen">
+        <div className="min-w-0">
           <header className="sticky top-0 z-40 border-b border-white/5 bg-[#051723]/88 backdrop-blur-2xl">
             <div className="mx-auto flex max-w-[1720px] flex-col gap-5 px-4 py-4 sm:px-6 lg:px-8">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-4">
-                  <div className="lg:hidden">
-                    <LabGlyph className="h-8 w-8 text-[var(--rv-blue)]" />
-                  </div>
+                  <LabGlyph className="h-8 w-8 text-[var(--rv-blue)]" />
                   <div>
                     <BrandWordmark compact />
                     <p className="mt-1 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
@@ -407,7 +368,7 @@ function App() {
                       )}
                       <div className="hidden text-left sm:block">
                         <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
-                        <div className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">Athlete #{athlete?.id}</div>
+                        <div className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">Athlete</div>
                       </div>
                     </button>
 
@@ -417,7 +378,7 @@ function App() {
                         <div className="rv-panel rv-panel-strong absolute right-0 z-50 mt-3 w-72 overflow-hidden p-2">
                           <div className="border-b border-white/5 px-4 py-4">
                             <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
-                            <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">Athlete #{athlete?.id}</div>
+                            <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">RunViz account</div>
                           </div>
                           <div className="space-y-1 px-2 py-2">
                             <button
@@ -487,9 +448,9 @@ function App() {
                     </select>
                   )}
 
-                  <span className="rv-chip">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
                     <span className={`h-2.5 w-2.5 rounded-full ${syncing ? 'bg-[var(--rv-yellow)] animate-pulse' : 'bg-[var(--rv-green)]'}`} />
-                    {syncing ? 'Sync in progress' : formatLastSync(lastSync)}
+                    <span className="ml-2">{syncing ? 'Sync in progress' : formatLastSync(lastSync)}</span>
                   </span>
                 </div>
               </div>
@@ -497,17 +458,15 @@ function App() {
           </header>
 
           <main className="mx-auto flex max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            <section className="rv-panel rv-panel-strong rv-grid-lines relative overflow-hidden px-6 py-8 sm:px-8 lg:px-12 lg:py-12">
-              <div className="absolute -right-16 top-[-4rem] h-56 w-56 rounded-full bg-[var(--rv-blue)]/10 blur-[110px]" />
-              <div className="absolute bottom-[-3rem] left-[-2rem] h-40 w-40 rounded-full bg-[var(--rv-yellow)]/12 blur-[90px]" />
-              <div className="relative flex flex-col gap-10 xl:flex-row xl:items-end xl:justify-between">
-                <div className="max-w-4xl border-l border-[var(--rv-yellow)]/35 pl-6 sm:pl-8">
+            <section className="rv-panel rv-panel-strong px-6 py-8 sm:px-8 lg:px-12 lg:py-12">
+              <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
+                <div className="max-w-4xl">
                   <p className="rv-kicker mb-4">Private Training View</p>
                   <h1 className="rv-metric text-6xl sm:text-7xl xl:text-[5.8rem]">
-                    The quietest way to take your running more seriously.
+                    A quieter way to track serious progress.
                   </h1>
                   <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--rv-text-dim)] sm:text-base">
-                    Built for ambitious hobby runners who want depth without noise: route planning, load tracking, shoe rotation, and form analysis arranged with more confidence and less dashboard clutter.
+                    Route planning, load tracking, shoe rotation, and form analysis in a simpler training view.
                   </p>
                 </div>
                 <div className="grid w-full gap-4 sm:grid-cols-3 xl:max-w-xl">
@@ -530,7 +489,7 @@ function App() {
                         <p className="rv-kicker mb-2">Training Rhythm</p>
                         <h2 className="text-xl font-bold tracking-tight text-[var(--rv-text)]">Temporal consistency</h2>
                       </div>
-                      <span className="rv-chip hidden sm:inline-flex">Click any day to inspect the run</span>
+                      <span className="hidden text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)] sm:inline">Click a day to inspect a run</span>
                     </div>
                     <CalendarHeatmap
                       activities={activities}
@@ -544,10 +503,9 @@ function App() {
                   <section className="rv-panel px-5 py-5 sm:px-7 sm:py-6 lg:col-span-7">
                     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                       <div>
-                        <p className="rv-kicker mb-2">Signature Tools</p>
-                        <h2 className="text-xl font-bold tracking-tight text-[var(--rv-text)]">Planner and lab workflows</h2>
+                        <p className="rv-kicker mb-2">Tools</p>
+                        <h2 className="text-xl font-bold tracking-tight text-[var(--rv-text)]">Planner and form lab</h2>
                       </div>
-                      <span className="text-xs uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">Keep existing behavior, sharper shell</span>
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <Link to="/plan-route" className="rv-panel rv-panel-accent block px-5 py-5 transition hover:-translate-y-1">
@@ -636,43 +594,6 @@ function HeroStat({
       <div className={`rv-metric mt-4 text-5xl ${accentClass}`}>{value}</div>
       <div className="mt-2 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">{unit}</div>
     </div>
-  );
-}
-
-function SidebarLink({
-  children,
-  label,
-  to = '/',
-  active = false,
-}: {
-  children: ReactNode;
-  label: string;
-  to?: string;
-  active?: boolean;
-}) {
-  return (
-    <Link
-      to={to}
-      className={`group flex h-14 w-14 items-center justify-center rounded-2xl border transition ${active
-        ? 'border-[var(--rv-blue)]/55 bg-[var(--rv-blue)]/16 text-[var(--rv-text)] shadow-[0_12px_30px_rgba(0,147,214,0.18)]'
-        : 'border-white/5 bg-white/[0.04] text-[var(--rv-text-faint)] hover:border-white/[0.15] hover:text-[var(--rv-text)]'
-        }`}
-      aria-label={label}
-      title={label}
-    >
-      <span className="transition group-hover:scale-110">{children}</span>
-    </Link>
-  );
-}
-
-function DashboardGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="3.5" y="3.5" width="7" height="7" rx="1.2" />
-      <rect x="13.5" y="3.5" width="7" height="7" rx="1.2" />
-      <rect x="3.5" y="13.5" width="7" height="7" rx="1.2" />
-      <rect x="13.5" y="13.5" width="7" height="7" rx="1.2" />
-    </svg>
   );
 }
 

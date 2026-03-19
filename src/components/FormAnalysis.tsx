@@ -20,7 +20,7 @@ function SectionLabel({ index, title, subtitle }: { index: string; title: string
         <div className="flex items-center justify-between gap-4">
             <div>
                 <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.35em] text-sky-400">
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-sky-500/30 bg-sky-500/10 text-[9px] text-sky-300">{index}</span>
+                    <span className="text-sky-300">{index}</span>
                     <span>{title}</span>
                 </div>
                 <p className="mt-2 text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">{subtitle}</p>
@@ -410,7 +410,7 @@ export default function FormAnalysisPage() {
             />
 
             <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-                <header className="mb-6 grid grid-cols-1 gap-4 rounded-[2rem] border border-[#d9b36a]/14 bg-[#131a25]/92 px-5 py-5 shadow-2xl backdrop-blur-md lg:grid-cols-[1fr_auto] lg:items-center lg:px-7">
+                <header className="mb-6 grid grid-cols-1 gap-4 rounded-[2rem] border border-[#d9b36a]/14 bg-[#131a25]/96 px-5 py-5 shadow-2xl lg:grid-cols-[1fr_auto] lg:items-center lg:px-7">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={handleBack}
@@ -419,22 +419,12 @@ export default function FormAnalysisPage() {
                             <span className="inline-block text-xl transition-transform group-hover:-translate-x-0.5">←</span>
                         </button>
                         <div>
-                            <div className="flex flex-wrap items-center gap-3">
-                                <h1 className="font-['Instrument_Serif'] text-4xl sm:text-5xl lg:text-6xl italic tracking-tight text-white">
-                                    Form review, with a steadier eye
-                                </h1>
-                                <span className="rounded-full border border-[#d9b36a]/20 bg-[#d9b36a]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.34em] text-[#d9b36a]">
-                                    Private Training Atelier
-                                </span>
-                            </div>
-                            <div className="mt-2 flex flex-wrap items-center gap-3">
-                                <span className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">
-                                    On-device pose sensing
-                                </span>
-                                <div className="h-1 w-1 rounded-full bg-slate-600" />
-                                <span className="text-[9px] font-black uppercase tracking-[0.34em] text-[#d9b36a]">
-                                    Review Suite
-                                </span>
+                            <div className="text-[10px] font-black uppercase tracking-[0.4em] text-[#d9b36a]">Form Lab</div>
+                            <h1 className="mt-2 font-['Instrument_Serif'] text-4xl sm:text-5xl lg:text-6xl italic tracking-tight text-white">
+                                Form review, with a steadier eye
+                            </h1>
+                            <div className="mt-2 text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">
+                                On-device pose sensing
                             </div>
                         </div>
                     </div>
@@ -451,7 +441,7 @@ export default function FormAnalysisPage() {
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
                     <div className="space-y-6 lg:col-span-4">
-                        <section className="rounded-[2.2rem] border border-[#d9b36a]/12 bg-[#131a25]/90 p-6 shadow-2xl backdrop-blur-md">
+                        <section className="rounded-[2.2rem] border border-[#d9b36a]/12 bg-[#131a25]/94 p-6 shadow-2xl">
                             <SectionLabel index="01" title="Video Source" subtitle="Choose a clip worth reviewing" />
 
                             {!selectedVideo ? (
@@ -567,7 +557,7 @@ export default function FormAnalysisPage() {
                             )}
                         </section>
 
-                        <section className="rounded-[2.2rem] border border-[#d9b36a]/12 bg-[#131a25]/90 p-6 shadow-2xl backdrop-blur-md">
+                        <section className="rounded-[2.2rem] border border-[#d9b36a]/12 bg-[#131a25]/94 p-6 shadow-2xl">
                             <SectionLabel index="02" title="Archive" subtitle="Previous lab sessions and coaching notes" />
                             <div className="mt-5 max-h-[430px] space-y-3 overflow-y-auto pr-2">
                                 {sessions.length === 0 ? (
@@ -593,15 +583,7 @@ export default function FormAnalysisPage() {
 
                     <div className="space-y-6 lg:col-span-8">
                         {!currentAnalysis ? (
-                            <section className="relative overflow-hidden rounded-[2.6rem] border border-[#d9b36a]/12 bg-[#131a25]/92 p-6 shadow-2xl backdrop-blur-md sm:p-8">
-                                <div className="absolute inset-0 opacity-[0.05]">
-                                    <div className="grid h-full w-full grid-cols-12 gap-px">
-                                        {Array.from({ length: 144 }).map((_, i) => (
-                                            <div key={i} className="bg-white/20" />
-                                        ))}
-                                    </div>
-                                </div>
-
+                            <section className="relative overflow-hidden rounded-[2.6rem] border border-[#d9b36a]/12 bg-[#131a25]/96 p-6 shadow-2xl sm:p-8">
                                 <div className="relative z-10">
                                     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                                         <SectionLabel
@@ -609,9 +591,8 @@ export default function FormAnalysisPage() {
                                             title="Analysis Canvas"
                                             subtitle="Pose review, clip selection, and result preview"
                                         />
-                                        <div className="flex flex-wrap gap-2">
-                                            <StatPill label="Mode" value={isAnalyzing ? 'Running' : 'Idle'} tone={isAnalyzing ? 'yellow' : 'cyan'} />
-                                            <StatPill label="Source" value={selectedVideo ? 'Loaded' : 'Waiting'} tone={selectedVideo ? 'emerald' : 'neutral'} />
+                                        <div className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
+                                            {isAnalyzing ? 'Analyzing' : selectedVideo ? 'Ready' : 'Waiting for video'}
                                         </div>
                                     </div>
 
@@ -701,7 +682,7 @@ export default function FormAnalysisPage() {
                                                 {isDragging ? 'Drop to begin' : 'Ready for a cleaner review'}
                                             </h3>
                                             <p className="mt-4 max-w-lg text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
-                                                Drop a treadmill side-profile video to start the kinetic chain analysis.
+                                                Drop a side-profile running clip to start the review.
                                             </p>
                                             <p className="mt-4 text-[9px] font-black uppercase tracking-[0.34em] text-emerald-300">
                                                 Video never leaves your device
