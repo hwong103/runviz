@@ -77,7 +77,7 @@ export function useAuth() {
     }
 
     function connectStrava() {
-        window.location.href = auth.getStravaLoginUrl(state.needsStravaConnect ? 'link' : 'legacy');
+        window.location.href = auth.getStravaLoginUrl('link');
     }
 
     async function sendMagicLink(email: string) {

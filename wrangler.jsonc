@@ -2,6 +2,7 @@
   "name": "runviz",
   "main": "./workers/src/index.ts",
   "compatibility_date": "2026-03-19",
+  "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "FRONTEND_URL": "https://runviz.hwong103.work",
     "FRONTEND_PREVIEW_HOST": "runviz.runviz-stats.workers.dev"
@@ -10,7 +11,8 @@
     {
       "binding": "DB",
       "database_name": "runviz-db",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+      "database_id": "72876590-27d0-45b2-8b69-e066f1ee2505",
+      "migrations_dir": "./workers/migrations"
     }
   ],
   "kv_namespaces": [

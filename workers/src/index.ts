@@ -19,8 +19,6 @@ export interface Env {
     ASSETS: Fetcher;
     DB: D1Database;
     TOKENS: KVNamespace;
-    STRAVA_CLIENT_ID: string;
-    STRAVA_CLIENT_SECRET: string;
     BETTER_AUTH_SECRET: string;
     RESEND_API_KEY: string;
     FRONTEND_URL: string;
@@ -213,26 +211,32 @@ export default {
 async function handleAuthStart(request: Request, url: URL, env: Env, auth: ReturnType<typeof createAuth>): Promise<Response> {
     const redirectUri = url.searchParams.get('redirect_uri') || `${env.FRONTEND_URL}/callback`;
     const scope = url.searchParams.get('scope') || 'read,activity:read_all,activity:write';
-    const mode = url.searchParams.get('mode') || 'legacy';
     const state = generateSessionId().slice(0, 16);
-    const stateContext: { mode: string; userId?: string } = { mode };
-    let clientId = env.STRAVA_CLIENT_ID;
-
-    if (mode === 'link') {
-        const betterSession = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-        if (betterSession?.user?.id) {
-            stateContext.userId = betterSession.user.id;
-            const storedKeys = await resolveStoredStravaKeys(env, betterSession.user.id);
-            clientId = storedKeys?.clientId || clientId;
-        }
+    const origin = request.headers.get('Origin') || env.FRONTEND_URL;
+    const betterSession = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!betterSession?.user?.id) {
+        return new Response(
+            JSON.stringify({ error: 'Sign in before connecting Strava.' }),
+            { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
+        );
     }
+
+    const storedKeys = await resolveStoredStravaKeys(env, betterSession.user.id);
+    if (!storedKeys) {
+        return new Response(
+            JSON.stringify({ error: 'Save your Strava Client ID and Client Secret before connecting.' }),
+            { status: 400, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
+        );
+    }
+
+    const stateContext: { mode: string; userId?: string } = { mode: 'link', userId: betterSession.user.id };
 
     await env.TOKENS.put(`strava-oauth:${state}`, JSON.stringify(stateContext), {
         expirationTtl: 60 * 10,
     });
 
     const authUrl = new URL(STRAVA_AUTH_URL);
-    authUrl.searchParams.set('client_id', clientId);
+    authUrl.searchParams.set('client_id', storedKeys.clientId);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('scope', scope);
@@ -259,12 +263,18 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
 
     // Exchange code for tokens
     const storedKeys = stateContext?.userId ? await resolveStoredStravaKeys(env, stateContext.userId) : null;
+    if (!stateContext?.userId || !storedKeys) {
+        return new Response(
+            JSON.stringify({ error: 'Strava app credentials are not configured for this account.' }),
+            { status: 400, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
+        );
+    }
     const tokenResponse = await fetch(STRAVA_TOKEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            client_id: storedKeys?.clientId || env.STRAVA_CLIENT_ID,
-            client_secret: storedKeys?.clientSecret || env.STRAVA_CLIENT_SECRET,
+            client_id: storedKeys.clientId,
+            client_secret: storedKeys.clientSecret,
             code: code,
             grant_type: 'authorization_code',
         }),
@@ -298,28 +308,7 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
 
     const athlete = buildAthleteSummary(storedData);
 
-    if (stateContext?.mode === 'link' && stateContext.userId) {
-        await env.TOKENS.put(`strava:${stateContext.userId}`, JSON.stringify(storedData), {
-            expirationTtl: 60 * 60 * 24 * 30,
-        });
-        if (state) {
-            await env.TOKENS.delete(`strava-oauth:${state}`);
-        }
-
-        return new Response(
-            JSON.stringify({ linked: true, athlete }),
-            {
-                headers: {
-                    ...corsHeaders(origin, env),
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
-    }
-
-    // Create session and store tokens
-    const sessionId = generateSessionId();
-    await env.TOKENS.put(`session:${sessionId}`, JSON.stringify(storedData), {
+    await env.TOKENS.put(`strava:${stateContext.userId}`, JSON.stringify(storedData), {
         expirationTtl: 60 * 60 * 24 * 30, // 30 days
     });
     if (state) {
@@ -328,13 +317,13 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
 
     return new Response(
         JSON.stringify({
+            linked: true,
             athlete,
         }),
         {
             headers: {
                 ...corsHeaders(origin, env),
                 'Content-Type': 'application/json',
-                'Set-Cookie': `runviz_session=${sessionId}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=2592000`,
             },
         }
     );
@@ -445,12 +434,18 @@ async function handleApiRequest(
     // Refresh token if expired
     if (tokenData.expiresAt < Date.now() / 1000) {
         const keys = access.userId ? await resolveStoredStravaKeys(env, access.userId) : null;
+        if (!keys) {
+            return new Response(
+                JSON.stringify({ error: 'Strava app credentials are missing for this account.' }),
+                { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
+            );
+        }
         const refreshResponse = await fetch(STRAVA_TOKEN_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                client_id: keys?.clientId || env.STRAVA_CLIENT_ID,
-                client_secret: keys?.clientSecret || env.STRAVA_CLIENT_SECRET,
+                client_id: keys.clientId,
+                client_secret: keys.clientSecret,
                 refresh_token: tokenData.refreshToken,
                 grant_type: 'refresh_token',
             }),

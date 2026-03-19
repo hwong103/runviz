@@ -71,8 +71,6 @@ npx wrangler d1 create runviz-db
 # Set secrets
 npx wrangler secret put BETTER_AUTH_SECRET
 npx wrangler secret put RESEND_API_KEY
-npx wrangler secret put STRAVA_CLIENT_ID
-npx wrangler secret put STRAVA_CLIENT_SECRET
 npx wrangler secret put ORS_API_KEY
 npx wrangler secret put GOOGLE_CLIENT_ID
 npx wrangler secret put GOOGLE_CLIENT_SECRET
@@ -95,6 +93,8 @@ Create `.env` in the root directory:
 ```
 
 The app and API now deploy together through the root [`wrangler.jsonc`](./wrangler.jsonc). The Worker script handles `/api/*` and Better Auth routes, and Cloudflare serves the React app from `dist` for all other routes.
+
+Each signed-in user now saves their own Strava Client ID and Client Secret during setup before connecting Strava. Those credentials are stored per account and are no longer configured as global Worker secrets.
 
 ## 🛠️ Development
 
@@ -149,8 +149,6 @@ runviz/
 |--------|-------------|
 | `BETTER_AUTH_SECRET` | Secret used to sign Better Auth sessions and encrypt user-linked secrets |
 | `RESEND_API_KEY` | Resend API key for magic-link emails |
-| `STRAVA_CLIENT_ID` | From Strava API settings |
-| `STRAVA_CLIENT_SECRET` | From Strava API settings |
 | `ORS_API_KEY` | From [OpenRouteService](https://openrouteservice.org/dev/#/signup) |
 | `GOOGLE_CLIENT_ID` | Optional Google OAuth client for Drive-powered form workflows |
 | `GOOGLE_CLIENT_SECRET` | Optional Google OAuth client secret |

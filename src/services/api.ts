@@ -54,7 +54,7 @@ export const auth = {
         });
     },
 
-    getStravaLoginUrl(mode: 'legacy' | 'link' = 'legacy', scope = 'read,activity:read_all,activity:write'): string {
+    getStravaLoginUrl(mode: 'link' = 'link', scope = 'read,activity:read_all,activity:write'): string {
         const callbackUrl = `${window.location.origin}${import.meta.env.BASE_URL}callback`;
         return `${API_URL}/auth/strava?redirect_uri=${encodeURIComponent(callbackUrl)}&mode=${mode}&scope=${encodeURIComponent(scope)}`;
     },
@@ -87,6 +87,17 @@ export const auth = {
 
     async getStravaScopes(): Promise<{ scopes: string }> {
         return fetchApi('/auth/strava/scopes');
+    },
+
+    async getStravaKeyStatus(): Promise<{ configured: boolean; clientId: string | null; updatedAt: number | null }> {
+        return fetchApi('/setup/strava-key');
+    },
+
+    async saveStravaKey(clientId: string, clientSecret: string): Promise<{ ok: boolean }> {
+        return fetchApi('/setup/strava-key', {
+            method: 'POST',
+            body: JSON.stringify({ clientId, clientSecret }),
+        });
     },
 };
 
