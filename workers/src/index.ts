@@ -119,6 +119,26 @@ export default {
         }
 
         try {
+            if (url.pathname === '/auth/strava') {
+                const target = new URL('/api/auth/strava', url.origin);
+                target.search = url.search;
+                return Response.redirect(target.toString(), 302);
+            }
+
+            if (url.pathname === '/auth/strava/scopes') {
+                const target = new URL('/api/auth/strava/scopes', url.origin);
+                target.search = url.search;
+                return Response.redirect(target.toString(), 302);
+            }
+
+            if (url.pathname === '/api/auth/strava') {
+                return await handleAuthStart(request, url, env, auth);
+            }
+
+            if (url.pathname === '/api/auth/strava/scopes') {
+                return await handleStravaScopes(request, env, origin);
+            }
+
             if (url.pathname.startsWith('/api/auth/')) {
                 return withCors(await auth.handler(request), origin, env);
             }
@@ -137,15 +157,6 @@ export default {
 
             if (url.pathname === '/setup/strava-key' && request.method === 'GET') {
                 return await handleGetStravaKeyStatus(env, origin, auth, request);
-            }
-
-            // Route handling
-            if (url.pathname === '/auth/strava') {
-                return await handleAuthStart(request, url, env, auth);
-            }
-
-            if (url.pathname === '/auth/strava/scopes') {
-                return await handleStravaScopes(request, env, origin);
             }
 
             if (url.pathname === '/auth/callback') {
