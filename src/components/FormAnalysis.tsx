@@ -391,8 +391,8 @@ export default function FormAnalysisPage() {
             <div className="min-h-screen bg-[#041723] text-[#F6F2F1] flex items-center justify-center">
                 <div className="flex flex-col items-center gap-5 rounded-[2rem] border border-white/10 bg-white/[0.04] px-8 py-10 shadow-2xl backdrop-blur-xl">
                     <div className="h-14 w-14 animate-spin rounded-full border-4 border-[#0093D6]/30 border-t-[#FFF917]" />
-                    <div className="text-xl font-black italic tracking-tighter text-white">Initializing Lab</div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.34em] text-slate-500">Loading pose tools and history</div>
+                    <div className="text-xl font-black italic tracking-tighter text-white">Loading form lab</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.34em] text-slate-500">Loading pose tools and saved analyses</div>
                 </div>
             </div>
         );
@@ -421,10 +421,10 @@ export default function FormAnalysisPage() {
                         <div>
                             <div className="text-[10px] font-black uppercase tracking-[0.4em] text-[#d9b36a]">Form Lab</div>
                             <h1 className="mt-2 font-['Instrument_Serif'] text-4xl sm:text-5xl lg:text-6xl italic tracking-tight text-white">
-                                Form review, with a steadier eye
+                                Review your running form
                             </h1>
                             <div className="mt-2 text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">
-                                On-device pose sensing
+                                Video analysis that runs on your device
                             </div>
                         </div>
                     </div>
@@ -434,7 +434,7 @@ export default function FormAnalysisPage() {
                             100% On-device
                         </div>
                         <div className="rounded-full border border-[#d9b36a]/20 bg-[#d9b36a]/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.34em] text-[#ecd3a7]">
-                            Cached history enabled
+                            Analysis history saved locally
                         </div>
                     </div>
                 </header>
@@ -442,7 +442,7 @@ export default function FormAnalysisPage() {
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
                     <div className="space-y-6 lg:col-span-4">
                         <section className="rounded-[2.2rem] border border-[#d9b36a]/12 bg-[#131a25]/94 p-6 shadow-2xl">
-                            <SectionLabel index="01" title="Video Source" subtitle="Choose a clip worth reviewing" />
+                            <SectionLabel index="01" title="Video Source" subtitle="Upload a clip to analyze" />
 
                             {!selectedVideo ? (
                                 <div
@@ -460,10 +460,10 @@ export default function FormAnalysisPage() {
                                         {isDragging ? '↓' : '▣'}
                                     </div>
                                     <div className="font-['Instrument_Serif'] text-2xl italic tracking-tight text-white">
-                                        {isDragging ? 'Drop video here' : 'Bring in a clip'}
+                                        {isDragging ? 'Drop video here' : 'Upload a running clip'}
                                     </div>
                                     <div className="mt-3 max-w-sm text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
-                                        Drag and drop or click to browse. MP4, MOV, WebM, AVI, MKV.
+                                        Drag and drop or click to browse. Supported files: MP4, MOV, WebM, AVI, MKV.
                                     </div>
                                     <div className="mt-4 text-[9px] font-black uppercase tracking-[0.32em] text-emerald-300">
                                         Video stays on your device
@@ -494,7 +494,7 @@ export default function FormAnalysisPage() {
 
                                     <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-5">
                                         <div className="flex items-center justify-between gap-3">
-                                            <label className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Clip Region</label>
+                                            <label className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Clip Length</label>
                                         <span className="rounded-full border border-[#d9b36a]/20 bg-[#d9b36a]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.32em] text-[#ecd3a7]">
                                             {clipRange[1] - clipRange[0]}s selected
                                         </span>
@@ -520,7 +520,7 @@ export default function FormAnalysisPage() {
                                     </div>
 
                                     <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-5">
-                                        <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Link to Activity</div>
+                                        <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Match to a Run</div>
                                         <div className="mt-4">
                                             {activeActivity ? (
                                                 <div className="flex items-center gap-4 rounded-[1.3rem] border border-emerald-500/20 bg-emerald-500/10 p-4">
@@ -543,7 +543,7 @@ export default function FormAnalysisPage() {
                                                     onChange={(e) => setSelectedActivityManual(activities.find(a => a.id === parseInt(e.target.value)) || null)}
                                                     className="w-full rounded-[1.1rem] border border-white/10 bg-black/25 p-4 text-[10px] font-black uppercase tracking-[0.24em] text-slate-300 outline-none transition-colors focus:border-[#4a7aff]/50"
                                                 >
-                                                    <option value="">Manual match (optional)...</option>
+                                                    <option value="">Choose a run manually (optional)...</option>
                                                     {activities.filter(isRun).slice(0, 20).map(a => (
                                                         <option key={a.id} value={a.id}>
                                                             {format(parseActivityLocalDate(a.start_date_local), 'MMM d')} - {a.name}
@@ -558,13 +558,13 @@ export default function FormAnalysisPage() {
                         </section>
 
                         <section className="rounded-[2.2rem] border border-[#d9b36a]/12 bg-[#131a25]/94 p-6 shadow-2xl">
-                            <SectionLabel index="02" title="Archive" subtitle="Previous lab sessions and coaching notes" />
+                            <SectionLabel index="02" title="Past Analyses" subtitle="Open a saved form review" />
                             <div className="mt-5 max-h-[430px] space-y-3 overflow-y-auto pr-2">
                                 {sessions.length === 0 ? (
                                     <div className="rounded-[1.6rem] border border-dashed border-white/10 bg-black/15 px-5 py-12 text-center">
                                         <div className="text-3xl opacity-20">▢</div>
                                         <p className="mx-auto mt-4 max-w-xs text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
-                                            No sessions captured yet. Run the first analysis to populate the archive.
+                                            No saved analyses yet. Run your first review to see it here.
                                         </p>
                                     </div>
                                 ) : (
@@ -588,11 +588,11 @@ export default function FormAnalysisPage() {
                                     <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                                         <SectionLabel
                                             index="03"
-                                            title="Analysis Canvas"
-                                            subtitle="Pose review, clip selection, and result preview"
+                                            title="Analysis"
+                                            subtitle="Preview the clip and run the form check"
                                         />
                                         <div className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
-                                            {isAnalyzing ? 'Analyzing' : selectedVideo ? 'Ready' : 'Waiting for video'}
+                                            {isAnalyzing ? 'Analysis in progress' : selectedVideo ? 'Ready to analyze' : 'Waiting for video'}
                                         </div>
                                     </div>
 
@@ -618,7 +618,7 @@ export default function FormAnalysisPage() {
                                                             <LabProgressRing progress={analysisProgress} />
                                                             <div className="text-center">
                                                                 <div className="text-[10px] font-black uppercase tracking-[0.34em] text-[#d9b36a]">
-                                                                    Reviewing mechanics
+                                                                    Analyzing running form
                                                                 </div>
                                                                 <div className="mt-2 text-[9px] font-black uppercase tracking-[0.32em] text-slate-500">
                                                                     Sampling at {SAMPLE_FPS} FPS
@@ -631,14 +631,14 @@ export default function FormAnalysisPage() {
 
                                             <div className="space-y-4">
                                                 <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-5">
-                                                    <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Session controls</div>
+                                                    <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Analysis Controls</div>
                                                     <button
                                                         onClick={runAnalysis}
                                                         disabled={isAnalyzing}
                                                         className="mt-5 inline-flex w-full items-center justify-center gap-3 rounded-full border border-[#d9b36a]/30 bg-[#d9b36a] px-6 py-4 text-[11px] font-black uppercase tracking-[0.34em] text-[#121925] shadow-[0_18px_40px_rgba(217,179,106,0.22)] transition-all hover:translate-y-[-1px] hover:bg-[#e6c489] disabled:cursor-not-allowed disabled:opacity-60"
                                                     >
                                                         <span className="text-lg">↗</span>
-                                                        {isAnalyzing ? 'Analyzing' : 'Begin review'}
+                                                        {isAnalyzing ? 'Analyzing' : 'Start analysis'}
                                                     </button>
                                                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                                         <StatPill label="Clip" value={`${clipRange[1] - clipRange[0]}s`} tone="yellow" />
@@ -647,7 +647,7 @@ export default function FormAnalysisPage() {
                                                 </div>
 
                                                 <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-5">
-                                                    <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Detected activity</div>
+                                                    <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Matched Run</div>
                                                     {activeActivity ? (
                                                         <div className="mt-4 rounded-[1.4rem] border border-emerald-500/20 bg-emerald-500/10 p-4">
                                                             <div className="text-sm font-black text-white">{activeActivity.name}</div>
@@ -657,7 +657,7 @@ export default function FormAnalysisPage() {
                                                         </div>
                                                     ) : (
                                                         <div className="mt-4 rounded-[1.4rem] border border-dashed border-white/10 bg-black/15 p-4 text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
-                                                            Match a run manually or wait for auto-linking after loading a video.
+                                                            Choose a run manually, or wait for RunViz to match one after the video loads.
                                                         </div>
                                                     )}
                                                 </div>
@@ -679,10 +679,10 @@ export default function FormAnalysisPage() {
                                                 {isDragging ? '↓' : '⌬'}
                                             </div>
                                             <h3 className="font-['Instrument_Serif'] text-4xl italic tracking-tight text-white sm:text-5xl">
-                                                {isDragging ? 'Drop to begin' : 'Ready for a cleaner review'}
+                                                {isDragging ? 'Drop to start' : 'Ready to review a run'}
                                             </h3>
                                             <p className="mt-4 max-w-lg text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
-                                                Drop a side-profile running clip to start the review.
+                                                Drop a side-view running clip to start the analysis.
                                             </p>
                                             <p className="mt-4 text-[9px] font-black uppercase tracking-[0.34em] text-emerald-300">
                                                 Video never leaves your device

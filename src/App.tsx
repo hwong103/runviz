@@ -271,20 +271,20 @@ function App() {
             <p className="rv-kicker">For Ambitious Runners</p>
             <BrandWordmark />
             <h1 className="rv-metric max-w-2xl text-5xl sm:text-6xl lg:text-7xl">
-              A calmer training view for runners getting more serious.
+              Clear training insights for runners getting more serious.
             </h1>
             <p className="max-w-xl text-base leading-7 text-[var(--rv-text-dim)] sm:text-lg">
-              RunViz turns your Strava history into a premium training companion with route planning, form review, and clearer performance context.
+              Connect Strava to see your training load, plan routes, review running form, and keep your key metrics in one place.
             </p>
             <p className="text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
-              Training load intelligence, route generation, and video-based form analysis.
+              Training load, route planning, and video-based form analysis.
             </p>
           </div>
           <div className="rv-panel w-full max-w-md border-[var(--rv-border-strong)]/70 px-6 py-8 sm:px-8">
             <p className="rv-kicker mb-4">Connect Strava</p>
-            <h2 className="mb-3 text-3xl font-bold tracking-tight text-[var(--rv-text)]">Open your training view</h2>
+            <h2 className="mb-3 text-3xl font-bold tracking-tight text-[var(--rv-text)]">See your running data</h2>
             <p className="mb-8 text-sm leading-6 text-[var(--rv-text-dim)]">
-              Authenticate once to unlock the planner, form lab, and your full training history.
+              Sign in once to load your activities, open the route planner, and use the form lab.
             </p>
             <button
               onClick={login}
@@ -461,18 +461,18 @@ function App() {
             <section className="rv-panel rv-panel-strong px-6 py-8 sm:px-8 lg:px-12 lg:py-12">
               <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
                 <div className="max-w-4xl">
-                  <p className="rv-kicker mb-4">Private Training View</p>
+                  <p className="rv-kicker mb-4">Training Overview</p>
                   <h1 className="rv-metric text-6xl sm:text-7xl xl:text-[5.8rem]">
-                    A quieter way to track serious progress.
+                    Track progress without the clutter.
                   </h1>
                   <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--rv-text-dim)] sm:text-base">
-                    Route planning, load tracking, shoe rotation, and form analysis in a simpler training view.
+                    See your recent training, compare effort over time, manage shoe usage, and jump into route planning or form review.
                   </p>
                 </div>
                 <div className="grid w-full gap-4 sm:grid-cols-3 xl:max-w-xl">
-                  <HeroStat label="Visible Runs" value={filteredActivities.filter(isRun).length.toString()} unit="SESSIONS" />
-                  <HeroStat label="Known Gear" value={allShoes.length.toString()} unit="SHOES" accent="blue" />
-                  <HeroStat label="Current Filter" value={viewPeriod.mode === 'all' ? 'LIVE' : viewPeriod.mode.toUpperCase()} unit="WINDOW" accent="yellow" />
+                  <HeroStat label="Runs Shown" value={filteredActivities.filter(isRun).length.toString()} unit="SESSIONS" />
+                  <HeroStat label="Shoes Tracked" value={allShoes.length.toString()} unit="SHOES" accent="blue" />
+                  <HeroStat label="Time Range" value={viewPeriod.mode === 'all' ? 'LIVE' : viewPeriod.mode.toUpperCase()} unit="FILTER" accent="yellow" />
                 </div>
               </div>
             </section>
@@ -486,8 +486,8 @@ function App() {
                   <section className="rv-panel px-5 py-5 sm:px-7 sm:py-6 lg:col-span-5">
                     <div className="mb-6 flex items-center justify-between gap-3">
                       <div>
-                        <p className="rv-kicker mb-2">Training Rhythm</p>
-                        <h2 className="text-xl font-bold tracking-tight text-[var(--rv-text)]">Temporal consistency</h2>
+                        <p className="rv-kicker mb-2">Training Calendar</p>
+                        <h2 className="text-xl font-bold tracking-tight text-[var(--rv-text)]">Runs by day</h2>
                       </div>
                       <span className="hidden text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)] sm:inline">Click a day to inspect a run</span>
                     </div>
@@ -510,13 +510,13 @@ function App() {
                     <div className="grid gap-4 md:grid-cols-2">
                       <Link to="/plan-route" className="rv-panel rv-panel-accent block px-5 py-5 transition hover:-translate-y-1">
                         <p className="rv-kicker mb-3">Route Planner</p>
-                        <h3 className="mb-3 text-2xl font-bold italic tracking-tight text-[var(--rv-text)]">Design a session-worthy route</h3>
-                        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">Search a start point, tune the distance, and leave with a route that feels planned rather than improvised.</p>
+                        <h3 className="mb-3 text-2xl font-bold italic tracking-tight text-[var(--rv-text)]">Plan your next route</h3>
+                        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">Choose a starting point, set a distance target, and export a route as GPX.</p>
                       </Link>
                       <Link to="/form-analysis" className="rv-panel block px-5 py-5 transition hover:-translate-y-1 hover:border-[var(--rv-blue)]/40">
                         <p className="rv-kicker mb-3">Form Lab</p>
-                        <h3 className="mb-3 text-2xl font-bold italic tracking-tight text-[var(--rv-text)]">Review mechanics with more care</h3>
-                        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">Upload a clip, pair it to a run, and turn raw pose analysis into a more thoughtful post-session review.</p>
+                        <h3 className="mb-3 text-2xl font-bold italic tracking-tight text-[var(--rv-text)]">Review running form</h3>
+                        <p className="text-sm leading-6 text-[var(--rv-text-dim)]">Upload a video, match it to a run, and save a form analysis you can revisit later.</p>
                       </Link>
                     </div>
                   </section>
@@ -547,8 +547,8 @@ function App() {
 
           <footer className="border-t border-white/5 px-4 py-8 sm:px-6 lg:px-8">
             <div className="mx-auto flex max-w-[1720px] flex-col gap-4 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)] sm:flex-row sm:items-center sm:justify-between">
-              <span>Active protocol: Navigation v4.2</span>
-              <span>Geo-engine: Strava enterprise API</span>
+              <span>RunViz analytics v4.2</span>
+              <span>Synced with the Strava API</span>
               <a href="https://github.com/hwong103/runviz" className="transition hover:text-[var(--rv-text)]">Project source</a>
             </div>
           </footer>
@@ -565,7 +565,7 @@ function BrandWordmark({ compact = false }: { compact?: boolean }) {
         RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
       </span>
       <span className="rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--rv-yellow)]">
-        {compact ? 'Atelier' : 'Private Training Atelier'}
+        {compact ? 'Running Lab' : 'Running Training Lab'}
       </span>
     </div>
   );
@@ -619,7 +619,7 @@ function LabGlyph({ className = 'h-5 w-5 text-current' }: { className?: string }
 }
 
 function formatLastSync(lastSync: Date | null) {
-  if (!lastSync) return 'Awaiting first sync';
+  if (!lastSync) return 'No sync yet';
   return `Last sync ${lastSync.toLocaleDateString()}`;
 }
 

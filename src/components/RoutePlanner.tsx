@@ -63,7 +63,7 @@ function formatTime(seconds: number) {
 }
 
 function summarizeAddress(address?: string | null) {
-    if (!address) return 'Awaiting starting point';
+    if (!address) return 'No starting point selected';
     return address;
 }
 
@@ -287,10 +287,10 @@ const RoutePlanner: React.FC = () => {
                         <div className="min-w-0 text-left sm:text-center">
                             <div className="mb-2 text-[10px] font-black uppercase tracking-[0.4em] text-[#d9b36a]">Route Planner</div>
                             <h1 className="font-['Instrument_Serif'] text-[clamp(2.2rem,4vw,4.6rem)] italic leading-none tracking-[-0.05em] text-[#f5efe3]">
-                                Plan a route that feels intentional
+                                Plan a route for your next run
                             </h1>
                             <p className="mt-2 text-[10px] font-black uppercase tracking-[0.34em] text-[#f5efe3]/35 sm:text-xs">
-                                Pick a start, set the distance, export the route.
+                                Choose a start point, set the distance, and export the route.
                             </p>
                         </div>
 
@@ -320,7 +320,7 @@ const RoutePlanner: React.FC = () => {
                                 <div>
                                     <div className="mb-2 text-[10px] font-black uppercase tracking-[0.45em] text-[#d9b36a]">Route Configuration</div>
                                     <div className="text-xs font-black uppercase tracking-[0.28em] text-white/45">
-                                        Search and set the effort
+                                        Search for a start point and target distance
                                     </div>
                                 </div>
                                 <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">{generatedRoutes.length} routes</div>
@@ -460,7 +460,7 @@ const RoutePlanner: React.FC = () => {
                                     <div>
                                         <div className="text-[10px] font-black uppercase tracking-[0.42em] text-[#fff917]">Route Library</div>
                                         <div className="mt-2 text-xs font-black uppercase tracking-[0.28em] text-white/35">
-                                            Select a route to preview
+                                            Select a route to preview on the map
                                         </div>
                                     </div>
                                     <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">{selectedRoute ? 'Active' : 'None'}</div>
@@ -547,7 +547,7 @@ const RoutePlanner: React.FC = () => {
                                         <div className="max-w-md rounded-[1.75rem] border border-white/10 bg-[#041723]/85 px-6 py-5 text-center shadow-[0_20px_80px_rgba(0,0,0,0.4)]">
                                             <div className="text-[10px] font-black uppercase tracking-[0.45em] text-[#0093d6]">Route input needed</div>
                                             <div className="mt-3 text-sm font-medium leading-relaxed text-white/75">
-                                                Search for a place or click the map to lock in your start point, then generate a route.
+                                                Search for a place or click the map to choose your starting point, then generate routes.
                                             </div>
                                         </div>
                                     </div>
@@ -556,7 +556,7 @@ const RoutePlanner: React.FC = () => {
                         </div>
 
                         <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-4 shadow-[0_18px_80px_rgba(0,0,0,0.18)] sm:p-5">
-                            <div className="mb-4 text-[10px] font-black uppercase tracking-[0.42em] text-white/35">Map states</div>
+                            <div className="mb-4 text-[10px] font-black uppercase tracking-[0.42em] text-white/35">Map legend</div>
                             <div className="flex flex-wrap gap-3">
                                     <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-3 text-[10px] font-black uppercase tracking-[0.3em] text-white/75">
                                         <span className="h-3 w-3 rounded-full bg-[#10b981] shadow-[0_0_18px_rgba(16,185,129,0.45)]" />
