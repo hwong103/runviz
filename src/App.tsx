@@ -149,6 +149,16 @@ function App() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    if (!isMenuOpen || !avatarRef.current) return;
+
+    const rect = avatarRef.current.getBoundingClientRect();
+    setMenuPos({
+      top: rect.bottom + 8,
+      right: window.innerWidth - rect.right,
+    });
+  }, [isMenuOpen]);
+
   // Consolidated list of all known shoes
   const allShoes = useMemo(() => {
     const profileShoes = [...(athlete?.shoes || []), ...(athlete?.gear || [])];
@@ -493,6 +503,7 @@ function App() {
                 <button
                   onClick={() => sync({ forceFull: true })}
                   disabled={syncing}
+                  type="button"
                   title={syncing ? 'Syncing...' : 'Sync Data'}
                   className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.03] text-[var(--rv-text-faint)] transition hover:border-white/15 hover:text-[var(--rv-text-dim)] disabled:cursor-wait disabled:opacity-40"
                 >
@@ -500,17 +511,25 @@ function App() {
                 </button>
 
                   <button
+                    type="button"
                     ref={avatarRef}
                     onClick={() => {
-                      if (!isMenuOpen && avatarRef.current) {
+                      if (isMenuOpen) {
+                        setIsMenuOpen(false);
+                        return;
+                      }
+
+                      if (avatarRef.current) {
                         const rect = avatarRef.current.getBoundingClientRect();
                         setMenuPos({
                           top: rect.bottom + 8,
                           right: window.innerWidth - rect.right,
                         });
                       }
-                      setIsMenuOpen(open => !open);
+                      setIsMenuOpen(true);
                     }}
+                    aria-haspopup="menu"
+                    aria-expanded={isMenuOpen}
                     className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-white/[0.10] bg-white/[0.05] transition hover:border-white/25"
                   >
                     {athlete?.profile ? (
