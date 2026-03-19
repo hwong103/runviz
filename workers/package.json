@@ -1,16 +1,20 @@
 {
-    "name": "runviz-api",
+    "name": "runviz-worker-source",
     "version": "1.0.1",
     "private": true,
     "scripts": {
-        "dev": "wrangler dev",
-        "dev:remote": "wrangler dev --remote",
-        "deploy": "wrangler deploy",
-        "tail": "wrangler tail"
+        "dev": "wrangler dev --config ../wrangler.jsonc",
+        "dev:remote": "wrangler dev --remote --config ../wrangler.jsonc",
+        "deploy": "wrangler deploy --config ../wrangler.jsonc",
+        "tail": "wrangler tail --config ../wrangler.jsonc"
     },
     "devDependencies": {
         "@cloudflare/workers-types": "^4.20240117.0",
         "typescript": "^5.3.3",
         "wrangler": "^4.62.0"
+    },
+    "dependencies": {
+        "better-auth": "^1.5.5",
+        "resend": "^6.9.4"
     }
 }
