@@ -23,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/auth/strava" element={<StravaAuthStart />} />
+          <Route path="/api/auth/strava" element={<StravaAuthStart />} />
           <Route path="/callback" element={<Callback />} />
           <Route path="/api/auth/callback/google" element={<GoogleAuthCallback />} />
           <Route path="/signin/complete" element={<GoogleSignInComplete />} />
