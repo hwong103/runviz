@@ -131,6 +131,10 @@ export default {
                 return Response.redirect(target.toString(), 302);
             }
 
+            if (url.pathname === '/api/auth/strava-url') {
+                return await handleAuthStartUrl(request, url, env, origin, auth);
+            }
+
             if (url.pathname === '/api/auth/strava') {
                 return await handleAuthStart(request, url, env, auth);
             }
@@ -220,6 +224,37 @@ export default {
 
 // Start OAuth flow
 async function handleAuthStart(request: Request, url: URL, env: Env, auth: ReturnType<typeof createAuth>): Promise<Response> {
+    const authUrl = await buildStravaAuthUrl(request, url, env, auth);
+    if (authUrl instanceof Response) {
+        return authUrl;
+    }
+
+    return Response.redirect(authUrl.toString(), 302);
+}
+
+async function handleAuthStartUrl(
+    request: Request,
+    url: URL,
+    env: Env,
+    origin: string,
+    auth: ReturnType<typeof createAuth>
+): Promise<Response> {
+    const authUrl = await buildStravaAuthUrl(request, url, env, auth);
+    if (authUrl instanceof Response) {
+        return authUrl;
+    }
+
+    return new Response(JSON.stringify({ url: authUrl.toString() }), {
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+    });
+}
+
+async function buildStravaAuthUrl(
+    request: Request,
+    url: URL,
+    env: Env,
+    auth: ReturnType<typeof createAuth>
+): Promise<URL | Response> {
     const redirectUri = url.searchParams.get('redirect_uri') || `${env.FRONTEND_URL}/callback`;
     const scope = url.searchParams.get('scope') || 'read,activity:read_all,activity:write';
     const state = generateSessionId().slice(0, 16);
@@ -253,7 +288,7 @@ async function handleAuthStart(request: Request, url: URL, env: Env, auth: Retur
     authUrl.searchParams.set('scope', scope);
     authUrl.searchParams.set('state', state);
 
-    return Response.redirect(authUrl.toString(), 302);
+    return authUrl;
 }
 
 // Handle OAuth callback

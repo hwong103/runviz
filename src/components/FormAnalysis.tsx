@@ -375,7 +375,8 @@ export default function FormAnalysisPage() {
             console.error('Failed to write to Strava:', error);
             if (error.status === 403) {
                 if (confirm('RunViz needs permission to write to your activities. Re-authenticate with write permission now?')) {
-                    window.location.href = auth.getStravaLoginUrl('link', 'read,activity:read_all,activity:write');
+                    const { url } = await auth.getStravaLoginUrl('link', 'read,activity:read_all,activity:write');
+                    window.location.href = url;
                 }
             } else {
                 alert('Failed to write to Strava. ' + (error.message || ''));

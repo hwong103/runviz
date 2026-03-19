@@ -76,8 +76,9 @@ export function useAuth() {
         return auth.signInGoogle();
     }
 
-    function connectStrava() {
-        window.location.href = auth.getStravaLoginUrl('link');
+    async function connectStrava() {
+        const { url } = await auth.getStravaLoginUrl('link');
+        window.location.href = url;
     }
 
     async function sendMagicLink(email: string) {

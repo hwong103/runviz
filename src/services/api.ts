@@ -54,9 +54,9 @@ export const auth = {
         });
     },
 
-    getStravaLoginUrl(mode: 'link' = 'link', scope = 'read,activity:read_all,activity:write'): string {
+    getStravaLoginUrl(mode: 'link' = 'link', scope = 'read,activity:read_all,activity:write'): Promise<{ url: string }> {
         const callbackUrl = `${window.location.origin}${import.meta.env.BASE_URL}callback`;
-        return `${API_URL}/api/auth/strava?redirect_uri=${encodeURIComponent(callbackUrl)}&mode=${mode}&scope=${encodeURIComponent(scope)}`;
+        return fetchApi(`/api/auth/strava-url?redirect_uri=${encodeURIComponent(callbackUrl)}&mode=${mode}&scope=${encodeURIComponent(scope)}`);
     },
 
     async handleCallback(code: string, state?: string): Promise<{ athlete: { id: number; firstname: string; lastname: string; profile: string } }> {
