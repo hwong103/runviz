@@ -114,6 +114,7 @@ function App() {
   const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const avatarRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
   const [magicEmail, setMagicEmail] = useState('');
   const [magicSending, setMagicSending] = useState(false);
@@ -152,29 +153,46 @@ function App() {
   useEffect(() => {
     if (!isMenuOpen || !avatarRef.current) return;
 
-    const rect = avatarRef.current.getBoundingClientRect();
-    setMenuPos({
-      top: rect.bottom + 8,
-      right: window.innerWidth - rect.right,
-    });
+    const updateMenuPos = () => {
+      if (!avatarRef.current) return;
+
+      const rect = avatarRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + 10,
+        right: Math.max(window.innerWidth - rect.right, 16),
+      });
+    };
+
+    updateMenuPos();
+    window.addEventListener('resize', updateMenuPos);
+    window.addEventListener('scroll', updateMenuPos, true);
+
+    return () => {
+      window.removeEventListener('resize', updateMenuPos);
+      window.removeEventListener('scroll', updateMenuPos, true);
+    };
   }, [isMenuOpen]);
 
   useEffect(() => {
     if (!isMenuOpen) return;
 
-    const handleWindowClick = () => setIsMenuOpen(false);
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (avatarRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
+      setIsMenuOpen(false);
+    };
+
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setIsMenuOpen(false);
     };
 
-    const timer = window.setTimeout(() => {
-      window.addEventListener('click', handleWindowClick);
-      window.addEventListener('keydown', handleEsc);
-    }, 0);
+    document.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleEsc);
 
     return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener('click', handleWindowClick);
+      document.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('keydown', handleEsc);
     };
   }, [isMenuOpen]);
@@ -467,10 +485,10 @@ function App() {
       <div className="min-h-screen">
         <div className="min-w-0">
           <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#070f1a]/90 backdrop-blur-2xl">
-            <div className="mx-auto flex h-[52px] max-w-[1720px] items-center gap-4 px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto flex h-[60px] max-w-[1720px] items-center gap-4 px-4 sm:px-6 lg:px-8">
               <div className="flex shrink-0 items-center gap-2.5">
                 <LabGlyph className="h-6 w-6 text-[var(--rv-blue)]" />
-                <span className="text-xl font-bold tracking-[-0.06em] text-[var(--rv-text)]">
+                <span className="text-[1.35rem] font-bold tracking-[-0.06em] text-[var(--rv-text)]">
                   RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
                 </span>
               </div>
@@ -480,14 +498,14 @@ function App() {
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <div className="flex items-center gap-0.5 rounded-full border border-white/[0.07] bg-white/[0.03] p-0.5">
                   {([
-                    { mode: 'all', label: 'Live' },
+                    { mode: 'all', label: 'All' },
                     { mode: 'year', label: 'Year' },
                     { mode: 'month', label: 'Month' },
                   ] as const).map(({ mode, label }) => (
                     <button
                       key={mode}
                       onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                      className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] transition-all ${viewPeriod.mode === mode
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] transition-all ${viewPeriod.mode === mode
                         ? 'bg-[var(--rv-blue)] text-white shadow-[0_4px_12px_rgba(74,122,255,0.35)]'
                         : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-text-dim)]'
                         }`}
@@ -501,7 +519,7 @@ function App() {
                   <select
                     value={viewPeriod.year}
                     onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value, 10) }))}
-                    className="rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
+                    className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
                   >
                     {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
@@ -511,7 +529,7 @@ function App() {
                   <select
                     value={viewPeriod.month || 0}
                     onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value, 10) }))}
-                    className="rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
+                    className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
                   >
                     {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
                   </select>
@@ -533,22 +551,7 @@ function App() {
                   <button
                     type="button"
                     ref={avatarRef}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      if (isMenuOpen) {
-                        setIsMenuOpen(false);
-                        return;
-                      }
-
-                      if (avatarRef.current) {
-                        const rect = avatarRef.current.getBoundingClientRect();
-                        setMenuPos({
-                          top: rect.bottom + 8,
-                          right: window.innerWidth - rect.right,
-                        });
-                      }
-                      setIsMenuOpen(true);
-                    }}
+                    onClick={() => setIsMenuOpen((open) => !open)}
                     aria-haspopup="menu"
                     aria-expanded={isMenuOpen}
                     className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-white/[0.10] bg-white/[0.05] transition hover:border-white/25"
@@ -567,8 +570,8 @@ function App() {
 
           {isMenuOpen && createPortal(
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
               <div
+                ref={menuRef}
                 className="rv-panel rv-panel-strong fixed z-50 w-72 overflow-hidden p-2 animate-in fade-in zoom-in-95 duration-150"
                 style={{ top: menuPos.top, right: menuPos.right }}
                 onClick={(event) => event.stopPropagation()}
