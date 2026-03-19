@@ -188,6 +188,16 @@ textarea {
     line-height: 0.9;
 }
 
+.rv-data {
+    color: var(--rv-text);
+    font-family: "Sora", sans-serif;
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+}
+
 .rv-chip {
     align-items: center;
     background: rgba(255, 255, 255, 0.03);
@@ -201,6 +211,13 @@ textarea {
     letter-spacing: 0.2em;
     padding: 0.6rem 0.9rem;
     text-transform: uppercase;
+}
+
+.rv-chip-compact {
+    font-size: 0.58rem;
+    gap: 0.45rem;
+    letter-spacing: 0.16em;
+    padding: 0.48rem 0.78rem;
 }
 
 .rv-grid-lines {

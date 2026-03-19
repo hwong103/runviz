@@ -326,7 +326,7 @@ function StatCard({
             className={`rv-panel relative overflow-hidden p-4 sm:p-5 transition-all duration-300 group hover:-translate-y-1 hover:border-white/20 ${showHelp ? 'z-30' : 'z-0'}`}
         >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
-            <div className="flex items-center gap-2 mb-4 pr-6">
+            <div className="mb-3 flex items-center gap-2 pr-6">
                 <span className="text-xl opacity-80 group-hover:scale-110 transition-transform duration-300">{icon}</span>
                 <span className="text-[10px] text-[var(--rv-text-faint)] font-bold uppercase tracking-[0.28em]">{label}</span>
             </div>
@@ -353,8 +353,8 @@ function StatCard({
                     )}
                 </>
             )}
-            <div className="flex items-baseline gap-1 flex-wrap">
-                <span className={`rv-metric text-3xl sm:text-4xl ${color}`}>{value}</span>
+            <div className="flex flex-wrap items-baseline gap-1.5">
+                <span className={`rv-data text-[1.8rem] sm:text-[2.15rem] ${color}`}>{value}</span>
                 <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">{unit}</span>
             </div>
         </div>

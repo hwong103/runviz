@@ -438,7 +438,7 @@ function App() {
       <div className="min-h-screen">
         <div className="min-w-0">
           <header className="sticky top-0 z-40 border-b border-white/5 bg-[color-mix(in_srgb,var(--rv-bg-deep)_88%,transparent)] backdrop-blur-2xl">
-            <div className="mx-auto flex max-w-[1720px] flex-col gap-5 px-4 py-4 sm:px-6 lg:px-8">
+            <div className="mx-auto flex max-w-[1720px] flex-col gap-4 px-4 py-3 sm:px-6 lg:px-8">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-4">
                   <LabGlyph className="h-8 w-8 text-[var(--rv-blue)]" />
@@ -453,14 +453,14 @@ function App() {
                 <div className="flex w-full min-w-0 items-center gap-3 overflow-x-auto no-scrollbar sm:w-auto sm:flex-wrap sm:justify-end sm:overflow-visible">
                   <Link
                     to="/plan-route"
-                    className="rv-chip shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
+                    className="rv-chip rv-chip-compact shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
                   >
                     <MapGlyph className="h-4 w-4 text-[var(--rv-blue)]" />
                     Route Planner
                   </Link>
                   <Link
                     to="/form-analysis"
-                    className="rv-chip shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
+                    className="rv-chip rv-chip-compact shrink-0 transition hover:border-[var(--rv-blue)]/50 hover:text-[var(--rv-text)]"
                   >
                     <LabGlyph className="h-4 w-4 text-[var(--rv-yellow)]" />
                     Form Lab
@@ -468,7 +468,7 @@ function App() {
                   <button
                     onClick={() => sync({ forceFull: true })}
                     disabled={syncing}
-                    className={`shrink-0 px-5 py-3 text-xs ${syncing
+                    className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] ${syncing
                       ? 'cursor-wait border border-white/10 bg-white/5 text-[var(--rv-text-faint)]'
                       : 'rv-button-secondary border-[var(--rv-blue)]/45 bg-[var(--rv-blue)]/18 text-[var(--rv-text)] hover:bg-[var(--rv-blue)]/24'
                       }`}
@@ -479,12 +479,12 @@ function App() {
                   <div className="relative">
                     <button
                       onClick={() => setIsMenuOpen((open) => !open)}
-                      className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-3 py-2 transition hover:border-white/20"
+                      className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:border-white/20"
                     >
                       {athlete?.profile ? (
-                        <img src={athlete.profile} className="h-9 w-9 rounded-full object-cover" alt="Profile" />
+                        <img src={athlete.profile} className="h-8 w-8 rounded-full object-cover" alt="Profile" />
                       ) : (
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.08] text-xs font-bold uppercase tracking-[0.18em]">RV</div>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.08] text-[11px] font-bold uppercase tracking-[0.16em]">RV</div>
                       )}
                       <div className="hidden text-left sm:block">
                         <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
@@ -527,8 +527,8 @@ function App() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-center gap-3 overflow-x-auto rounded-full border border-white/[0.08] bg-white/[0.04] p-1 no-scrollbar">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-2 overflow-x-auto rounded-full border border-white/[0.08] bg-white/[0.04] p-1 no-scrollbar">
                   {([
                     { mode: 'all', label: 'Live' },
                     { mode: 'year', label: 'Year' },
@@ -537,7 +537,7 @@ function App() {
                     <button
                       key={mode}
                       onClick={() => setViewPeriod(prev => ({ ...prev, mode }))}
-                      className={`shrink-0 rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.28em] transition sm:px-6 ${viewPeriod.mode === mode
+                      className={`shrink-0 rounded-full px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.22em] transition sm:px-4 ${viewPeriod.mode === mode
                         ? 'bg-[var(--rv-blue)] text-white shadow-[0_10px_24px_rgba(0,147,214,0.3)]'
                         : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-text)]'
                         }`}
@@ -552,7 +552,7 @@ function App() {
                     <select
                       value={viewPeriod.year}
                       onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value, 10) }))}
-                      className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
+                      className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
                     >
                       {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
@@ -562,7 +562,7 @@ function App() {
                     <select
                       value={viewPeriod.month || 0}
                       onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value, 10) }))}
-                      className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
+                      className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--rv-text)] outline-none transition focus:border-[var(--rv-blue)]"
                     >
                       {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
                     </select>
@@ -578,15 +578,17 @@ function App() {
           </header>
 
           <main className="mx-auto flex max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            <section className="rv-panel rv-panel-strong px-6 py-8 sm:px-8 lg:px-12 lg:py-12">
-              <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
-                <div className="max-w-4xl">
-                  <p className="rv-kicker mb-4">Training Overview</p>
-                  <h1 className="rv-metric text-6xl sm:text-7xl xl:text-[5.8rem]">
-                    Track progress without the clutter.
-                  </h1>
-                  <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--rv-text-dim)] sm:text-base">
-                    See your recent training, compare effort over time, manage shoe usage, and jump into route planning or form review.
+            <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6 sm:py-6">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+                <div className="max-w-3xl">
+                  <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+                    <p className="rv-kicker">Training Overview</p>
+                    <h1 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--rv-text)] sm:text-3xl">
+                      Current training at a glance.
+                    </h1>
+                  </div>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--rv-text-dim)]">
+                    Recent mileage, active gear, and your current view window without the oversized hero treatment.
                   </p>
                 </div>
                 <div className="grid w-full gap-4 sm:grid-cols-3 xl:max-w-xl">
@@ -715,9 +717,9 @@ function HeroStat({
       : 'text-[var(--rv-green)]';
 
   return (
-    <div className="rv-panel px-4 py-4 sm:px-5">
+    <div className="rv-panel px-4 py-3.5 sm:px-5">
       <div className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">{label}</div>
-      <div className={`rv-metric mt-4 text-5xl ${accentClass}`}>{value}</div>
+      <div className={`rv-data mt-3 text-3xl sm:text-4xl ${accentClass}`}>{value}</div>
       <div className="mt-2 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">{unit}</div>
     </div>
   );
