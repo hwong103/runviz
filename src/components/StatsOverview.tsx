@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import type { CSSProperties } from 'react';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type { LucideIcon } from 'lucide-react';
 import { Clock3, Flame, Footprints, Gauge, HeartPulse, Mountain, PieChart, Ruler, Scale, Target, TrendingUp, Trophy } from 'lucide-react';
@@ -313,19 +315,32 @@ function StatCard({
 }: StatCardProps) {
     const showHelp = !!helpMetric && activeHelp === helpMetric;
     const cardRef = useRef<HTMLDivElement | null>(null);
-    const [tooltipAlign, setTooltipAlign] = useState<'left' | 'right'>('right');
+    const [tooltipStyle, setTooltipStyle] = useState<CSSProperties>({});
 
     useEffect(() => {
         if (!showHelp || !cardRef.current) return;
-        const rect = cardRef.current.getBoundingClientRect();
-        const viewportMidpoint = window.innerWidth / 2;
-        setTooltipAlign(rect.left < viewportMidpoint ? 'left' : 'right');
+        const frame = requestAnimationFrame(() => {
+            if (!cardRef.current) return;
+            const rect = cardRef.current.getBoundingClientRect();
+            const TOOLTIP_W = 256;
+            const GAP = 8;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const left = Math.min(rect.left, window.innerWidth - TOOLTIP_W - 8);
+
+            setTooltipStyle(
+                spaceBelow > 160
+                    ? { position: 'fixed', top: rect.bottom + GAP, left, width: TOOLTIP_W }
+                    : { position: 'fixed', top: rect.top - GAP, left, width: TOOLTIP_W, transform: 'translateY(-100%)' }
+            );
+        });
+
+        return () => cancelAnimationFrame(frame);
     }, [showHelp]);
 
     return (
         <div
             ref={cardRef}
-            className={`rv-panel relative p-4 sm:p-5 transition-all duration-300 group hover:-translate-y-1 hover:border-white/20 ${showHelp ? 'z-30 overflow-visible' : 'z-0 overflow-hidden'}`}
+            className="rv-panel relative overflow-hidden p-4 sm:p-5 transition-all duration-300 group hover:-translate-y-1 hover:border-white/20"
         >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
             <div className="mb-3 flex items-center gap-2 pr-6">
@@ -345,13 +360,17 @@ function StatCard({
                     >
                         ?
                     </button>
-                    {showHelp && (
-                        <div className={`rv-panel rv-panel-strong absolute top-10 z-50 w-64 max-w-[calc(100vw-1rem)] p-3 shadow-[0_20px_44px_rgba(0,0,0,0.35)] animate-in fade-in zoom-in-95 duration-200 ${tooltipAlign === 'left' ? 'left-2 right-auto' : 'right-2 left-auto'}`}>
+                    {showHelp && createPortal(
+                        <div
+                            className="rv-panel rv-panel-strong z-[9999] pointer-events-none p-3 shadow-[0_20px_44px_rgba(0,0,0,0.35)] animate-in fade-in zoom-in-95 duration-200"
+                            style={tooltipStyle}
+                        >
                             <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-blue)]">{label}</div>
                             <div className="text-[11px] leading-relaxed font-medium normal-case text-[var(--rv-text-dim)]">
                                 {helpText}
                             </div>
-                        </div>
+                        </div>,
+                        document.body
                     )}
                 </>
             )}
