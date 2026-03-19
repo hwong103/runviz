@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
@@ -112,6 +113,8 @@ function App() {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const avatarRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
   const [magicEmail, setMagicEmail] = useState('');
   const [magicSending, setMagicSending] = useState(false);
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
@@ -484,33 +487,9 @@ function App() {
                   </select>
                 )}
 
-                <div className="ml-1 hidden items-center gap-1.5 lg:flex">
-                  <span className={`h-1.5 w-1.5 rounded-full ${syncing ? 'animate-pulse bg-[var(--rv-yellow)]' : 'bg-[var(--rv-green)]'}`} />
-                  <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--rv-text-faint)]">
-                    {syncing ? 'Syncing' : formatLastSync(lastSync)}
-                  </span>
-                </div>
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
-                <Link
-                  to="/plan-route"
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-[var(--rv-text-faint)] transition hover:bg-white/[0.05] hover:text-[var(--rv-text-dim)]"
-                >
-                  <MapGlyph className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Routes</span>
-                </Link>
-
-                <Link
-                  to="/form-analysis"
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-[var(--rv-text-faint)] transition hover:bg-white/[0.05] hover:text-[var(--rv-text-dim)]"
-                >
-                  <LabGlyph className="h-3.5 w-3.5 text-[var(--rv-yellow)]" />
-                  <span className="hidden sm:inline">Form Lab</span>
-                </Link>
-
-                <div className="h-5 w-px bg-white/[0.08]" />
-
                 <button
                   onClick={() => sync({ forceFull: true })}
                   disabled={syncing}
@@ -520,9 +499,18 @@ function App() {
                   <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
                 </button>
 
-                <div className="relative">
                   <button
-                    onClick={() => setIsMenuOpen((open) => !open)}
+                    ref={avatarRef}
+                    onClick={() => {
+                      if (!isMenuOpen && avatarRef.current) {
+                        const rect = avatarRef.current.getBoundingClientRect();
+                        setMenuPos({
+                          top: rect.bottom + 8,
+                          right: window.innerWidth - rect.right,
+                        });
+                      }
+                      setIsMenuOpen(open => !open);
+                    }}
                     className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-white/[0.10] bg-white/[0.05] transition hover:border-white/25"
                   >
                     {athlete?.profile ? (
@@ -533,42 +521,87 @@ function App() {
                       </span>
                     )}
                   </button>
-
-                  {isMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
-                      <div className="rv-panel rv-panel-strong absolute right-0 z-50 mt-2 w-64 overflow-hidden p-2">
-                        <div className="border-b border-white/5 px-4 py-3">
-                          <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
-                          <div className="mt-0.5 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">RunViz account</div>
-                        </div>
-                        <div className="space-y-0.5 px-2 py-2">
-                          <button
-                            onClick={() => {
-                              sync({ forceFull: true });
-                              setIsMenuOpen(false);
-                            }}
-                            disabled={syncing}
-                            className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-left transition hover:bg-white/5"
-                          >
-                            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Full Sync</span>
-                            <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-blue)]">{syncing ? 'Running' : 'Start'}</span>
-                          </button>
-                          <button
-                            onClick={logout}
-                            className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-left transition hover:bg-red-500/10"
-                          >
-                            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Logout</span>
-                            <span className="text-[10px] uppercase tracking-[0.22em] text-[#ff7f64]">Exit</span>
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
               </div>
             </div>
           </header>
+
+          {isMenuOpen && createPortal(
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
+              <div
+                className="rv-panel rv-panel-strong fixed z-50 w-72 overflow-hidden p-2 animate-in fade-in zoom-in-95 duration-150"
+                style={{ top: menuPos.top, right: menuPos.right }}
+              >
+                <div className="border-b border-white/5 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    {athlete?.profile ? (
+                      <img src={athlete.profile} className="h-8 w-8 rounded-full object-cover" alt="Profile" />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.08] text-xs font-bold uppercase">
+                        {athlete?.firstname?.[0] ?? 'R'}
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-sm font-bold text-[var(--rv-text)]">{athleteLabel}</div>
+                      <div className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">RunViz account</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-b border-white/5 px-2 py-2">
+                  <Link
+                    to="/plan-route"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition hover:bg-white/5"
+                  >
+                    <MapGlyph className="h-4 w-4 text-[var(--rv-blue)]" />
+                    <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Route Planner</span>
+                  </Link>
+                  <Link
+                    to="/form-analysis"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition hover:bg-white/5"
+                  >
+                    <LabGlyph className="h-4 w-4 text-[var(--rv-yellow)]" />
+                    <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Form Lab</span>
+                  </Link>
+                </div>
+
+                <div className="border-b border-white/5 px-2 py-2">
+                  <div className="flex items-center justify-between rounded-2xl px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-1.5 w-1.5 rounded-full ${syncing ? 'animate-pulse bg-[var(--rv-yellow)]' : 'bg-[var(--rv-green)]'}`} />
+                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">
+                        {syncing ? 'Sync in progress' : formatLastSync(lastSync)}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      sync({ forceFull: true });
+                      setIsMenuOpen(false);
+                    }}
+                    disabled={syncing}
+                    className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-left transition hover:bg-white/5 disabled:opacity-50"
+                  >
+                    <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Full Sync</span>
+                    <span className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-blue)]">{syncing ? 'Running' : 'Start'}</span>
+                  </button>
+                </div>
+
+                <div className="px-2 py-2">
+                  <button
+                    onClick={logout}
+                    className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-left transition hover:bg-red-500/10"
+                  >
+                    <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--rv-text)]">Logout</span>
+                    <span className="text-[10px] uppercase tracking-[0.22em] text-[#ff7f64]">Exit</span>
+                  </button>
+                </div>
+              </div>
+            </>,
+            document.body
+          )}
 
           <main className="mx-auto flex max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} />
