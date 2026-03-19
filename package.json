@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build && cp dist/index.html dist/404.html",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:pages": "npm run build && npx wrangler pages dev dist",
+    "deploy:worker": "npm --prefix workers run deploy"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.32",

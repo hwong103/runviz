@@ -1,9 +1,13 @@
 name = "runviz-api"
 main = "src/index.ts"
-compatibility_date = "2024-01-01"
+compatibility_date = "2026-03-19"
 
 [vars]
-FRONTEND_URL = "https://hwong103.github.io/runviz"
+FRONTEND_URL = "https://runviz-stats.pages.dev"
+FRONTEND_PREVIEW_HOST = "runviz-stats.pages.dev"
+# Optional comma-separated allowlist for custom frontend domains.
+# Example:
+# ADDITIONAL_FRONTEND_URLS = "https://runviz.example.com,https://staging.runviz.example.com"
 # ORS_API_KEY must be configured as a Wrangler secret:
 # wrangler secret put ORS_API_KEY
 

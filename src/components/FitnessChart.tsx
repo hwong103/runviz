@@ -89,8 +89,8 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             {
                 label: 'Fitness (CTL)',
                 data: metrics.map((m) => m.ctl),
-                borderColor: '#22C55E',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                borderColor: '#13C38B',
+                backgroundColor: 'rgba(19, 195, 139, 0.12)',
                 fill: true,
                 tension: 0.4,
                 pointRadius: 0,
@@ -98,8 +98,8 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             {
                 label: 'Fatigue (ATL)',
                 data: metrics.map((m) => m.atl),
-                borderColor: '#F97316',
-                backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                borderColor: '#FF8E2B',
+                backgroundColor: 'rgba(255, 142, 43, 0.12)',
                 fill: true,
                 tension: 0.4,
                 pointRadius: 0,
@@ -107,8 +107,8 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             {
                 label: 'Form (TSB)',
                 data: metrics.map((m) => m.tsb),
-                borderColor: '#8B5CF6',
-                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                borderColor: '#FFF917',
+                backgroundColor: 'rgba(255, 249, 23, 0.09)',
                 fill: true,
                 tension: 0.4,
                 pointRadius: 0,
@@ -128,77 +128,79 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
                 display: true,
                 position: 'top' as const,
                 labels: {
-                    color: '#9CA3AF',
+                    color: 'rgba(246, 242, 241, 0.64)',
                     usePointStyle: true,
                     padding: 20,
                     boxWidth: 8,
                 },
             },
             tooltip: {
-                backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                titleColor: '#fff',
-                bodyColor: '#9CA3AF',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'rgba(6, 21, 31, 0.95)',
+                titleColor: '#F6F2F1',
+                bodyColor: 'rgba(246, 242, 241, 0.72)',
+                borderColor: 'rgba(246, 242, 241, 0.08)',
                 borderWidth: 1,
             },
         },
         scales: {
             x: {
-                grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                ticks: { color: '#6B7280', maxTicksLimit: 10 },
+                grid: { color: 'rgba(246, 242, 241, 0.05)' },
+                ticks: { color: 'rgba(246, 242, 241, 0.34)', maxTicksLimit: 10 },
             },
             y: {
-                grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                ticks: { color: '#6B7280' },
+                grid: { color: 'rgba(246, 242, 241, 0.05)' },
+                ticks: { color: 'rgba(246, 242, 241, 0.34)' },
             },
         },
     };
 
     return (
-        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-4 sm:p-6 border border-white/10">
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-                <h2 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
-                    <span className="text-2xl">💪</span>
-                    Fitness
-                </h2>
+        <div className="rv-panel rv-panel-strong px-5 py-5 sm:px-7 sm:py-6">
+            <div className="mb-6 flex flex-wrap items-center gap-3">
+                <div>
+                    <p className="rv-kicker mb-2">Performance Lab</p>
+                    <h2 className="text-2xl font-bold tracking-tight text-[var(--rv-text)]">
+                        Fitness metrics
+                    </h2>
+                </div>
 
                 <div
-                    className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider sm:ml-auto"
+                    className="sm:ml-auto rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.24em]"
                     style={{ backgroundColor: `${interpretation.color}20`, color: interpretation.color, border: `1px solid ${interpretation.color}40` }}
                 >
                     {interpretation.description}
                 </div>
             </div>
 
-            <div className="h-64">
+            <div className="h-72">
                 {metrics.length > 0 ? (
                     <Line data={chartData} options={options} />
                 ) : (
-                    <div className="flex items-center justify-center h-full text-gray-400">
+                    <div className="flex h-full items-center justify-center text-[var(--rv-text-dim)]">
                         No activity data for this period
                     </div>
                 )}
             </div>
 
             {/* Current values */}
-            <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/5">
-                <div className="text-center">
-                    <div className="text-2xl font-black text-emerald-400">
+            <div className="mt-6 grid grid-cols-3 gap-3 border-t border-white/5 pt-6">
+                <div className="rounded-[1.4rem] border border-white/[0.06] bg-black/[0.15] px-3 py-4 text-center">
+                    <div className="rv-metric text-3xl text-[#13C38B]">
                         {displayMetric ? displayMetric.ctl.toFixed(0) : '-'}
                     </div>
-                    <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Fitness</div>
+                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fitness</div>
                 </div>
-                <div className="text-center">
-                    <div className="text-2xl font-black text-orange-400">
+                <div className="rounded-[1.4rem] border border-white/[0.06] bg-black/[0.15] px-3 py-4 text-center">
+                    <div className="rv-metric text-3xl text-[#FF8E2B]">
                         {displayMetric ? displayMetric.atl.toFixed(0) : '-'}
                     </div>
-                    <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Fatigue</div>
+                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fatigue</div>
                 </div>
-                <div className="text-center">
-                    <div className="text-2xl font-black text-purple-400">
+                <div className="rounded-[1.4rem] border border-white/[0.06] bg-black/[0.15] px-3 py-4 text-center">
+                    <div className="rv-metric text-3xl text-[var(--rv-yellow)]">
                         {displayMetric ? displayMetric.tsb.toFixed(0) : '-'}
                     </div>
-                    <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Form</div>
+                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Form</div>
                 </div>
             </div>
         </div>

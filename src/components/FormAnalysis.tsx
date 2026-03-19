@@ -15,6 +15,137 @@ const CADENCE_MAX = 220;
 
 const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-matroska'];
 
+function SectionLabel({ index, title, subtitle }: { index: string; title: string; subtitle: string }) {
+    return (
+        <div className="flex items-center justify-between gap-4">
+            <div>
+                <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.35em] text-sky-400">
+                    <span className="text-sky-300">{index}</span>
+                    <span>{title}</span>
+                </div>
+                <p className="mt-2 text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">{subtitle}</p>
+            </div>
+        </div>
+    );
+}
+
+function MetricTile({
+    label,
+    value,
+    unit,
+    accent = 'text-white',
+    hint,
+}: {
+    label: string;
+    value: string;
+    unit?: string;
+    accent?: string;
+    hint?: string;
+}) {
+    return (
+        <div className="rounded-[1.6rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors hover:border-white/12">
+            <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">{label}</div>
+            <div className={`mt-4 flex items-end gap-2 ${accent}`}>
+                <div className="text-4xl font-black italic tracking-tighter">{value}</div>
+                {unit && <div className="pb-1 text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">{unit}</div>}
+            </div>
+            {hint && <div className="mt-3 text-[10px] font-medium leading-relaxed text-slate-500">{hint}</div>}
+        </div>
+    );
+}
+
+function StatPill({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'neutral' | 'cyan' | 'yellow' | 'emerald' | 'orange' | 'rose' }) {
+    const toneClass: Record<string, string> = {
+        neutral: 'border-white/8 bg-white/[0.04] text-slate-300',
+        cyan: 'border-sky-500/20 bg-sky-500/10 text-sky-300',
+        yellow: 'border-yellow-400/20 bg-yellow-400/10 text-yellow-200',
+        emerald: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
+        orange: 'border-orange-500/20 bg-orange-500/10 text-orange-300',
+        rose: 'border-rose-500/20 bg-rose-500/10 text-rose-300',
+    };
+
+    return (
+        <div className={`rounded-full border px-4 py-3 ${toneClass[tone]}`}>
+            <div className="text-[8px] font-black uppercase tracking-[0.34em] opacity-70">{label}</div>
+            <div className="mt-1 text-lg font-black italic tracking-tighter">{value}</div>
+        </div>
+    );
+}
+
+function HistoryRow({
+    analysis,
+    active,
+    onClick,
+}: {
+    analysis: FormAnalysis;
+    active: boolean;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            onClick={onClick}
+            className={`w-full rounded-[1.4rem] border p-4 text-left transition-all duration-200 ${
+                active
+                    ? 'border-sky-400/45 bg-sky-500/10 shadow-[0_0_0_1px_rgba(14,165,233,0.12)]'
+                    : 'border-white/8 bg-black/20 hover:border-white/12 hover:bg-white/[0.05]'
+            }`}
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.34em] text-sky-400">
+                        {format(new Date(analysis.createdAt), 'MMM d')}
+                    </div>
+                    <div className="mt-2 text-sm font-black text-white">
+                        {analysis.metrics.cadence} SPM
+                    </div>
+                </div>
+                <div className="rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.28em] text-slate-400">
+                    {analysis.commentary.confidence.toFixed(2)}
+                </div>
+            </div>
+            <div className="mt-3 line-clamp-2 text-xs leading-relaxed text-slate-300">
+                "{analysis.commentary.tips[0]}"
+            </div>
+        </button>
+    );
+}
+
+function LabProgressRing({ progress }: { progress: number }) {
+    const radius = 54;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (progress / 100) * circumference;
+
+    return (
+        <div className="relative h-32 w-32">
+            <svg className="h-full w-full -rotate-90" viewBox="0 0 128 128" aria-hidden="true">
+                <circle cx="64" cy="64" r={radius} stroke="rgba(255,255,255,0.08)" strokeWidth="8" fill="transparent" />
+                <circle
+                    cx="64"
+                    cy="64"
+                    r={radius}
+                    stroke="url(#lab-progress-gradient)"
+                    strokeWidth="8"
+                    fill="transparent"
+                    strokeLinecap="round"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    className="transition-all duration-300"
+                />
+                <defs>
+                    <linearGradient id="lab-progress-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#FFF917" />
+                        <stop offset="100%" stopColor="#0093D6" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="text-3xl font-black italic tracking-tighter text-white">{progress}%</div>
+                <div className="mt-1 text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Processing</div>
+            </div>
+        </div>
+    );
+}
+
 export default function FormAnalysisPage() {
     const navigate = useNavigate();
     const { activities } = useActivities();
@@ -257,17 +388,18 @@ export default function FormAnalysisPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#0a0c10] flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-                    <div className="text-white text-xl font-medium">Initializing Lab...</div>
+            <div className="min-h-screen bg-[#041723] text-[#F6F2F1] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-5 rounded-[2rem] border border-white/10 bg-white/[0.04] px-8 py-10 shadow-2xl backdrop-blur-xl">
+                    <div className="h-14 w-14 animate-spin rounded-full border-4 border-[#0093D6]/30 border-t-[#FFF917]" />
+                    <div className="text-xl font-black italic tracking-tighter text-white">Loading form lab</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.34em] text-slate-500">Loading pose tools and saved analyses</div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0c10] text-gray-200">
+        <div className="min-h-screen bg-[#0a0f17] text-[#f5efe3]">
             {/* Hidden file input */}
             <input
                 ref={fileInputRef}
@@ -277,51 +409,40 @@ export default function FormAnalysisPage() {
                 className="hidden"
             />
 
-            <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
-                <header className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-12">
+            <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+                <header className="rv-shell-card mb-6 grid grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[1fr_auto] lg:items-center lg:px-7">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={handleBack}
-                            className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/5 group"
+                            className="group flex h-12 w-12 items-center justify-center rounded-2xl border border-[#d9b36a]/12 bg-white/[0.04] transition-all hover:border-[#d9b36a]/35 hover:bg-[#d9b36a]/10"
                         >
-                            <span className="text-2xl group-hover:-translate-x-1 transition-transform inline-block">←</span>
+                            <span className="inline-block text-xl transition-transform group-hover:-translate-x-0.5">←</span>
                         </button>
                         <div>
-                            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black italic tracking-tighter">
-                                <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                                    FORM ANALYSIS LAB
-                                </span>
+                            <div className="text-[10px] font-black uppercase tracking-[0.4em] text-[#d9b36a]">Form Lab</div>
+                            <h1 className="mt-2 font-['Instrument_Serif'] text-4xl sm:text-5xl lg:text-6xl italic tracking-tight text-white">
+                                Review your running form
                             </h1>
-                            <div className="flex items-center gap-3 mt-1">
-                                <span className="text-gray-500 font-bold uppercase tracking-widest text-[9px]">
-                                    ON-DEVICE POSE SENSING
-                                </span>
-                                <div className="h-1 w-1 bg-gray-500 rounded-full" />
-                                <span className="text-[9px] font-black uppercase tracking-widest text-cyan-500/80">Beta v1.0</span>
+                            <div className="mt-2 text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">
+                                Video analysis that runs on your device
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-emerald-500/5">
-                        <span className="relative flex h-2 w-2">
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                        </span>
-                        100% On-Device
+                    <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+                        <div className="rounded-full border border-[#4a7aff]/20 bg-[#4a7aff]/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.34em] text-[#cfd9ff]">
+                            100% On-device
+                        </div>
+                        <div className="rounded-full border border-[#d9b36a]/20 bg-[#d9b36a]/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.34em] text-[#ecd3a7]">
+                            Analysis history saved locally
+                        </div>
                     </div>
                 </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-                    {/* Left Panel: Controls & Video Selection */}
-                    <div className="lg:col-span-4 space-y-8">
-                        {/* Video Selection */}
-                        <section className="bg-white/5 rounded-[2.5rem] p-8 border border-white/10 shadow-2xl overflow-hidden relative group">
-                            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <span className="text-8xl">📽️</span>
-                            </div>
-
-                            <h2 className="text-lg font-black text-white mb-6 uppercase tracking-tight flex items-center gap-3">
-                                <span className="text-cyan-400 text-xl font-normal">01</span> VIDEO SOURCE
-                            </h2>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
+                    <div className="space-y-6 lg:col-span-4">
+                        <section className="rv-shell-card p-6">
+                            <SectionLabel index="01" title="Video Source" subtitle="Upload a clip to analyze" />
 
                             {!selectedVideo ? (
                                 <div
@@ -329,373 +450,366 @@ export default function FormAnalysisPage() {
                                     onDragLeave={() => setIsDragging(false)}
                                     onDrop={handleFileDrop}
                                     onClick={() => fileInputRef.current?.click()}
-                                    className={`w-full cursor-pointer border-2 border-dashed rounded-[1.5rem] py-10 transition-all flex flex-col items-center gap-3 ${isDragging
-                                            ? 'border-cyan-400 bg-cyan-500/10 scale-[1.02]'
-                                            : 'border-white/10 hover:border-cyan-500/50 hover:bg-cyan-500/5'
-                                        }`}
+                                    className={`mt-5 flex cursor-pointer flex-col items-center justify-center rounded-[1.8rem] border-2 border-dashed px-6 py-12 text-center transition-all ${
+                                        isDragging
+                                            ? 'border-[#d9b36a]/70 bg-[#d9b36a]/8 shadow-[0_0_0_1px_rgba(217,179,106,0.12)]'
+                                            : 'border-white/10 bg-black/15 hover:border-[#4a7aff]/45 hover:bg-[#4a7aff]/8'
+                                    }`}
                                 >
-                                    <span className="text-4xl">{isDragging ? '📥' : '🎬'}</span>
-                                    <span className="text-xs font-black text-white uppercase tracking-widest">
-                                        {isDragging ? 'Drop Video Here' : 'Upload Video'}
-                                    </span>
-                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">
-                                        Drag & drop or click to browse • MP4, MOV, WebM
-                                    </span>
-                                    <span className="text-[8px] font-bold text-gray-600 uppercase tracking-wider mt-1">
-                                        🔒 Video stays on your device — never uploaded
-                                    </span>
+                                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-3xl">
+                                        {isDragging ? '↓' : '▣'}
+                                    </div>
+                                    <div className="font-['Instrument_Serif'] text-2xl italic tracking-tight text-white">
+                                        {isDragging ? 'Drop video here' : 'Upload a running clip'}
+                                    </div>
+                                    <div className="mt-3 max-w-sm text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
+                                        Drag and drop or click to browse. Supported files: MP4, MOV, WebM, AVI, MKV.
+                                    </div>
+                                    <div className="mt-4 text-[9px] font-black uppercase tracking-[0.32em] text-emerald-300">
+                                        Video stays on your device
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="space-y-6">
-                                    <div className="p-5 bg-black/40 rounded-2xl border border-white/5 relative group/item">
-                                        <div className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1 truncate">{selectedVideo.filename}</div>
-                                        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                            {format(new Date(selectedVideo.creationTime), 'MMM d, h:mm a')}
+                                <div className="mt-5 space-y-5">
+                                    <div className="rv-subtle-card p-5">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="truncate text-sm font-black text-white">{selectedVideo.filename}</div>
+                                                <div className="mt-2 text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
+                                                    {format(new Date(selectedVideo.creationTime), 'MMM d, h:mm a')}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={clearVideo}
+                                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition-colors hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-200"
+                                            >
+                                                ×
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={clearVideo}
-                                            className="absolute -top-2 -right-2 w-8 h-8 bg-black border border-white/10 rounded-full flex items-center justify-center hover:bg-red-500/20 hover:text-red-400 transition-all opacity-0 group-hover/item:opacity-100"
-                                        >
-                                            ✕
-                                        </button>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            <StatPill label="Duration" value={`${selectedVideo.durationSec || 0}s`} tone="cyan" />
+                                            <StatPill label="Resolution" value={selectedVideo.width && selectedVideo.height ? `${selectedVideo.width}x${selectedVideo.height}` : 'Pending'} />
+                                        </div>
                                     </div>
 
-                                    {/* Clip Range Picker */}
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Clip Region</label>
-                                            <span className="text-[10px] font-black text-cyan-400 bg-cyan-400/10 px-2 py-0.5 rounded-md">
-                                                {clipRange[1] - clipRange[0]}s Selected
-                                            </span>
+                                    <div className="rv-subtle-card p-5">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <label className="rv-quiet-label">Clip Length</label>
+                                        <span className="rounded-full border border-[#d9b36a]/20 bg-[#d9b36a]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.32em] text-[#ecd3a7]">
+                                            {clipRange[1] - clipRange[0]}s selected
+                                        </span>
                                         </div>
-                                        <div className="flex gap-4 items-center">
-                                            <div className="flex-1 space-y-2">
-                                                <input
-                                                    type="range"
-                                                    min="0"
-                                                    max={Math.max(60, clipRange[1])}
-                                                    value={clipRange[0]}
-                                                    onChange={(e) => setClipRange([parseInt(e.target.value), Math.max(parseInt(e.target.value) + 1, clipRange[1])])}
-                                                    className="w-full accent-cyan-500"
-                                                />
-                                                <input
-                                                    type="range"
-                                                    min={clipRange[0] + 1}
-                                                    max={Math.max(60, clipRange[1] + 30)}
-                                                    value={clipRange[1]}
-                                                    onChange={(e) => setClipRange([clipRange[0], parseInt(e.target.value)])}
-                                                    className="w-full accent-cyan-500"
-                                                />
-                                            </div>
+                                        <div className="mt-5 space-y-4">
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max={Math.max(60, clipRange[1])}
+                                                value={clipRange[0]}
+                                                onChange={(e) => setClipRange([parseInt(e.target.value), Math.max(parseInt(e.target.value) + 1, clipRange[1])])}
+                                                className="w-full accent-[#4a7aff]"
+                                            />
+                                            <input
+                                                type="range"
+                                                min={clipRange[0] + 1}
+                                                max={Math.max(60, clipRange[1] + 30)}
+                                                value={clipRange[1]}
+                                                onChange={(e) => setClipRange([clipRange[0], parseInt(e.target.value)])}
+                                                className="w-full accent-[#4a7aff]"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="rv-subtle-card p-5">
+                                        <div className="rv-quiet-label">Match to a Run</div>
+                                        <div className="mt-4">
+                                            {activeActivity ? (
+                                                <div className="flex items-center gap-4 rounded-[1.3rem] border border-emerald-500/20 bg-emerald-500/10 p-4">
+                                                    <div className="flex h-11 w-11 items-center justify-center rounded-full border border-emerald-400/20 bg-emerald-400/10 text-lg text-emerald-200">⌁</div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="truncate text-sm font-black text-white">{activeActivity.name}</div>
+                                                        <div className="mt-1 text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
+                                                            {format(parseActivityLocalDate(activeActivity.start_date_local), 'MMM d, yyyy')} · {(activeActivity.distance / 1000).toFixed(2)} km
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => { setSelectedActivityManual(null); setMatchingActivity(null); }}
+                                                        className="text-slate-500 transition-colors hover:text-rose-300"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    onChange={(e) => setSelectedActivityManual(activities.find(a => a.id === parseInt(e.target.value)) || null)}
+                                                    className="rv-field w-full p-4 text-[10px] font-black uppercase tracking-[0.24em] text-slate-300"
+                                                >
+                                                    <option value="">Choose a run manually (optional)...</option>
+                                                    {activities.filter(isRun).slice(0, 20).map(a => (
+                                                        <option key={a.id} value={a.id}>
+                                                            {format(parseActivityLocalDate(a.start_date_local), 'MMM d')} - {a.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             )}
-
-                            {/* Activity Linkage */}
-                            <div className="mt-8 pt-8 border-t border-white/5 space-y-4">
-                                <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Link to Activity</h2>
-                                {activeActivity ? (
-                                    <div className="p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/20 flex items-center gap-4">
-                                        <div className="text-2xl">⚡</div>
-                                        <div className="min-w-0">
-                                            <div className="text-xs font-black text-white truncate">{activeActivity.name}</div>
-                                            <div className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">
-                                                {format(parseActivityLocalDate(activeActivity.start_date_local), 'MMM d, yyyy')} • {(activeActivity.distance / 1000).toFixed(2)}km
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => { setSelectedActivityManual(null); setMatchingActivity(null); }}
-                                            className="ml-auto text-gray-600 hover:text-red-400 transition-colors"
-                                        >✕</button>
-                                    </div>
-                                ) : (
-                                    <select
-                                        onChange={(e) => setSelectedActivityManual(activities.find(a => a.id === parseInt(e.target.value)) || null)}
-                                        className="w-full bg-black/40 text-gray-400 text-[10px] font-black uppercase tracking-widest p-4 rounded-2xl border border-white/5 outline-none focus:border-cyan-500/50 transition-all appearance-none"
-                                    >
-                                        <option value="">Manual Match (Optional)...</option>
-                                        {activities.filter(isRun).slice(0, 20).map(a => (
-                                            <option key={a.id} value={a.id}>
-                                                {format(parseActivityLocalDate(a.start_date_local), 'MMM d')} - {a.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                )}
-                            </div>
                         </section>
 
-                        {/* Recent Analyses List */}
-                        <section className="bg-white/5 rounded-[2.5rem] p-8 border border-white/10 shadow-2xl">
-                            <h2 className="text-lg font-black text-white mb-6 uppercase tracking-tight flex items-center gap-3">
-                                <span>📋</span> HISTORY
-                            </h2>
-                            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                        <section className="rv-shell-card p-6">
+                            <SectionLabel index="02" title="Past Analyses" subtitle="Open a saved form review" />
+                            <div className="mt-5 max-h-[430px] space-y-3 overflow-y-auto pr-2">
                                 {sessions.length === 0 ? (
-                                    <div className="text-center py-12 px-6 bg-black/20 rounded-3xl border border-dashed border-white/5">
-                                        <div className="text-2xl mb-2 opacity-20">📊</div>
-                                        <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest leading-relaxed">
-                                            No sessions captured yet. Start your first analysis.
+                                    <div className="rounded-[1.6rem] border border-dashed border-white/10 bg-black/15 px-5 py-12 text-center">
+                                        <div className="text-3xl opacity-20">▢</div>
+                                        <p className="mx-auto mt-4 max-w-xs text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
+                                            No saved analyses yet. Run your first review to see it here.
                                         </p>
                                     </div>
                                 ) : (
                                     sessions.map(s => (
-                                        <div
+                                        <HistoryRow
                                             key={s.id}
+                                            analysis={s}
+                                            active={currentAnalysis?.id === s.id}
                                             onClick={() => setCurrentAnalysis(s)}
-                                            className={`p-5 rounded-2xl transition-all cursor-pointer border ${currentAnalysis?.id === s.id ? 'bg-cyan-500/10 border-cyan-500/40' : 'bg-black/20 border-white/5 hover:border-white/10'}`}
-                                        >
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="text-[9px] font-black text-cyan-400 uppercase tracking-[0.2em]">
-                                                    {format(new Date(s.createdAt), 'MMM d')}
-                                                </span>
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                                    {s.metrics.cadence} SPM
-                                                </span>
-                                            </div>
-                                            <div className="text-[11px] font-bold text-gray-200 line-clamp-1 italic">
-                                                "{s.commentary.tips[0]}"
-                                            </div>
-                                        </div>
+                                        />
                                     ))
                                 )}
                             </div>
                         </section>
                     </div>
 
-                    {/* Right Panel: Analysis Canvas & Results */}
-                    <div className="lg:col-span-8 space-y-8">
+                    <div className="space-y-6 lg:col-span-8">
                         {!currentAnalysis ? (
-                            <div className="bg-white/5 rounded-[3rem] border border-white/10 overflow-hidden min-h-[700px] flex flex-col items-center justify-center p-12 relative">
-                                {/* Analysis Background Patterns */}
-                                <div className="absolute inset-0 opacity-[0.02] pointer-events-none overflow-hidden">
-                                    <div className="grid grid-cols-20 grid-rows-20 gap-px w-full h-full">
-                                        {Array.from({ length: 400 }).map((_, i) => (
-                                            <div key={i} className="bg-white border-t border-l border-transparent" />
-                                        ))}
+                            <section className="rv-shell-card relative overflow-hidden rounded-[2.6rem] p-6 sm:p-8">
+                                <div className="relative z-10">
+                                    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                                        <SectionLabel
+                                            index="03"
+                                            title="Analysis"
+                                            subtitle="Preview the clip and run the form check"
+                                        />
+                                        <div className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
+                                            {isAnalyzing ? 'Analysis in progress' : selectedVideo ? 'Ready to analyze' : 'Waiting for video'}
+                                        </div>
                                     </div>
-                                </div>
 
-                                {selectedVideo ? (
-                                    <div className="w-full flex flex-col items-center gap-10 z-10">
-                                        <div className="relative w-full aspect-video max-w-2xl bg-black rounded-[2rem] overflow-hidden shadow-2xl ring-1 ring-white/10">
-                                            <video
-                                                ref={videoRef}
-                                                src={selectedVideo.baseUrl}
-                                                className="w-full h-full object-contain"
-                                                playsInline
-                                                controls
-                                                onLoadedMetadata={(e) => {
-                                                    const vid = e.currentTarget;
-                                                    const dur = Math.floor(vid.duration);
-                                                    setClipRange([0, Math.min(30, dur)]);
-                                                    setSelectedVideo(prev => prev ? { ...prev, durationSec: dur, width: vid.videoWidth, height: vid.videoHeight } : null);
-                                                }}
-                                            />
-                                            {isAnalyzing && (
-                                                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-6">
-                                                    <div className="relative w-32 h-32">
-                                                        <svg className="w-full h-full -rotate-90">
-                                                            <circle cx="64" cy="64" r="60" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/10" />
-                                                            <circle
-                                                                cx="64" cy="64" r="60" stroke="currentColor" strokeWidth="8" fill="transparent"
-                                                                className="text-cyan-500 transition-all duration-300"
-                                                                strokeDasharray={2 * Math.PI * 60}
-                                                                strokeDashoffset={2 * Math.PI * 60 * (1 - analysisProgress / 100)}
-                                                            />
-                                                        </svg>
-                                                        <div className="absolute inset-0 flex items-center justify-center font-black text-2xl tracking-tighter italic">
-                                                            {analysisProgress}%
+                                    {selectedVideo ? (
+                                        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
+                                            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/30">
+                                                <div className="relative aspect-video">
+                                                    <video
+                                                        ref={videoRef}
+                                                        src={selectedVideo.baseUrl}
+                                                        className="h-full w-full object-contain"
+                                                        playsInline
+                                                        controls
+                                                        onLoadedMetadata={(e) => {
+                                                            const vid = e.currentTarget;
+                                                            const dur = Math.floor(vid.duration);
+                                                            setClipRange([0, Math.min(30, dur)]);
+                                                            setSelectedVideo(prev => prev ? { ...prev, durationSec: dur, width: vid.videoWidth, height: vid.videoHeight } : null);
+                                                        }}
+                                                    />
+                                                    {isAnalyzing && (
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#041723]/85 backdrop-blur-md">
+                                                            <LabProgressRing progress={analysisProgress} />
+                                                            <div className="text-center">
+                                                                <div className="text-[10px] font-black uppercase tracking-[0.34em] text-[#d9b36a]">
+                                                                    Analyzing running form
+                                                                </div>
+                                                                <div className="mt-2 text-[9px] font-black uppercase tracking-[0.32em] text-slate-500">
+                                                                    Sampling at {SAMPLE_FPS} FPS
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400 animate-pulse">Running Pose Lab</div>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-
-                                        <button
-                                            onClick={runAnalysis}
-                                            disabled={isAnalyzing}
-                                            className="group bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-black font-black py-5 px-16 rounded-full transition-all transform hover:scale-[1.05] active:scale-[0.95] shadow-2xl shadow-cyan-500/40 uppercase tracking-widest text-sm flex items-center gap-4"
-                                        >
-                                            <span className="text-xl">🚀</span>
-                                            <span>BEGIN LAB SEQUENCE</span>
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div
-                                        className={`text-center z-10 w-full py-16 border-2 border-dashed rounded-[2rem] transition-all cursor-pointer ${isDragging
-                                                ? 'border-cyan-400 bg-cyan-500/10'
-                                                : 'border-white/5 hover:border-cyan-500/30'
-                                            }`}
-                                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                                        onDragLeave={() => setIsDragging(false)}
-                                        onDrop={handleFileDrop}
-                                        onClick={() => fileInputRef.current?.click()}
-                                    >
-                                        <div className="w-32 h-32 bg-cyan-500/10 rounded-full flex items-center justify-center mb-8 mx-auto ring-1 ring-cyan-500/20 shadow-2xl">
-                                            <span className="text-5xl">{isDragging ? '📥' : '🧪'}</span>
-                                        </div>
-                                        <h3 className="text-3xl font-black text-white mb-6 italic tracking-tight uppercase">Ready for Discovery?</h3>
-                                        <p className="text-gray-500 max-w-sm mx-auto mb-4 font-bold uppercase tracking-widest leading-relaxed text-[11px]">
-                                            Drop a treadmill side-profile video to begin the kinetic chain analysis.
-                                        </p>
-                                        <p className="text-gray-600 text-[9px] font-bold uppercase tracking-wider">
-                                            🔒 Video stays on your device — it is never uploaded
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            /* Analysis Results View */
-                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                {/* Hero Results Card */}
-                                <section className="bg-white/5 rounded-[3rem] p-10 sm:p-14 border border-white/10 shadow-2xl relative overflow-hidden">
-                                    {/* Glass Geometric Accents */}
-                                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
-                                    <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
-
-                                    <div className="flex flex-col sm:flex-row justify-between items-start gap-8 relative z-10">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full text-[9px] font-black uppercase tracking-[0.2em]">Lab Session Complete</span>
-                                                <span className="text-gray-600 text-[9px] font-black uppercase tracking-[0.2em]">Confidence: {(currentAnalysis.commentary.confidence * 100).toFixed(0)}%</span>
                                             </div>
-                                            <h2 className="text-5xl font-black text-white italic tracking-tighter mb-2">SCORE ANALYSIS</h2>
-                                            <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">
+
+                                            <div className="space-y-4">
+                                                <div className="rv-subtle-card p-5">
+                                                    <div className="rv-quiet-label">Analysis Controls</div>
+                                                    <button
+                                                        onClick={runAnalysis}
+                                                        disabled={isAnalyzing}
+                                                        className="rv-button-primary mt-5 inline-flex w-full items-center justify-center gap-3 border-[#d9b36a]/30 bg-[#d9b36a] px-6 py-4 text-[#121925] shadow-[0_18px_40px_rgba(217,179,106,0.22)] hover:bg-[#e6c489] disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        <span className="text-lg">↗</span>
+                                                        {isAnalyzing ? 'Analyzing' : 'Start analysis'}
+                                                    </button>
+                                                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                                        <StatPill label="Clip" value={`${clipRange[1] - clipRange[0]}s`} tone="yellow" />
+                                                        <StatPill label="History" value={`${sessions.length}`} tone="neutral" />
+                                                    </div>
+                                                </div>
+
+                                                <div className="rv-subtle-card p-5">
+                                                    <div className="rv-quiet-label">Matched Run</div>
+                                                    {activeActivity ? (
+                                                        <div className="mt-4 rounded-[1.4rem] border border-emerald-500/20 bg-emerald-500/10 p-4">
+                                                            <div className="text-sm font-black text-white">{activeActivity.name}</div>
+                                                            <div className="mt-2 text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
+                                                                {format(parseActivityLocalDate(activeActivity.start_date_local), 'MMM d, yyyy')} · {(activeActivity.distance / 1000).toFixed(2)} km
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mt-4 rounded-[1.4rem] border border-dashed border-white/10 bg-black/15 p-4 text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">
+                                                            Choose a run manually, or wait for RunViz to match one after the video loads.
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className={`flex min-h-[480px] cursor-pointer flex-col items-center justify-center rounded-[2rem] border-2 border-dashed px-6 py-16 text-center transition-all ${
+                                                isDragging
+                                                    ? 'border-[#FFF917]/70 bg-[#FFF917]/8'
+                                                    : 'border-white/10 bg-black/15 hover:border-[#4a7aff]/45 hover:bg-[#4a7aff]/8'
+                                            }`}
+                                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                                            onDragLeave={() => setIsDragging(false)}
+                                            onDrop={handleFileDrop}
+                                            onClick={() => fileInputRef.current?.click()}
+                                        >
+                                            <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-4xl text-white">
+                                                {isDragging ? '↓' : '⌬'}
+                                            </div>
+                                            <h3 className="font-['Instrument_Serif'] text-4xl italic tracking-tight text-white sm:text-5xl">
+                                                {isDragging ? 'Drop to start' : 'Ready to review a run'}
+                                            </h3>
+                                            <p className="mt-4 max-w-lg text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+                                                Drop a side-view running clip to start the analysis.
+                                            </p>
+                                            <p className="mt-4 text-[9px] font-black uppercase tracking-[0.34em] text-emerald-300">
+                                                Video never leaves your device
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+                        ) : (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <section className="relative overflow-hidden rounded-[2.6rem] border border-[#FFF917]/35 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-xl sm:p-8 lg:p-10">
+                                    <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[#FFF917]/10 blur-3xl" />
+                                    <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-[#0093D6]/12 blur-3xl" />
+
+                                    <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+                                        <div className="max-w-3xl">
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <span className="rounded-full border border-[#FFF917]/20 bg-[#FFF917]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.34em] text-yellow-200">
+                                                    Lab session complete
+                                                </span>
+                                                <span className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">
+                                                    Confidence {(currentAnalysis.commentary.confidence * 100).toFixed(0)}%
+                                                </span>
+                                            </div>
+                                            <h2 className="mt-4 text-4xl font-black italic tracking-tighter text-white sm:text-5xl lg:text-6xl">
+                                                Session intelligence
+                                            </h2>
+                                            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.34em] text-slate-500">
                                                 Captured {format(new Date(currentAnalysis.createdAt), 'MMMM do, yyyy • h:mm a')}
                                             </p>
                                         </div>
 
-                                        <div className="flex gap-4">
+                                        <div className="flex flex-wrap gap-3">
                                             {activeActivity && !currentAnalysis.lastWrittenAt && (
                                                 <button
                                                     onClick={handleWriteToStrava}
                                                     disabled={isWritingToStrava}
-                                                    className="bg-[#FC4C02] hover:bg-[#E34402] text-white font-black py-4 px-8 rounded-2xl transition-all shadow-xl shadow-[#FC4C02]/20 uppercase tracking-widest text-[11px] flex items-center gap-3 shrink-0"
+                                                    className="inline-flex items-center gap-3 rounded-full border border-[#FC4C02]/40 bg-[#FC4C02] px-6 py-4 text-[11px] font-black uppercase tracking-[0.34em] text-white shadow-[0_18px_40px_rgba(252,76,2,0.2)] transition-all hover:translate-y-[-1px] hover:bg-[#ff5b14] disabled:cursor-not-allowed disabled:opacity-60"
                                                 >
-                                                    {isWritingToStrava ? 'Syncing...' : 'Write to Strava'}
+                                                    {isWritingToStrava ? 'Syncing' : 'Write to Strava'}
                                                 </button>
                                             )}
                                             {currentAnalysis.lastWrittenAt && (
-                                                <div className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3">
-                                                    ✓ Written to Activity
+                                                <div className="inline-flex items-center gap-3 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-5 py-4 text-[10px] font-black uppercase tracking-[0.34em] text-emerald-300">
+                                                    Written to activity
                                                 </div>
                                             )}
                                             <button
                                                 onClick={() => setCurrentAnalysis(null)}
-                                                className="bg-white/5 hover:bg-white/10 text-white font-black p-4 rounded-2xl border border-white/10 transition-all flex items-center justify-center shrink-0"
+                                                className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white transition-colors hover:border-white/20 hover:bg-white/10"
                                             >
-                                                <span>✕</span>
+                                                ×
                                             </button>
                                         </div>
                                     </div>
 
-                                    {/* Metric Grid */}
-                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-16 relative z-10">
-                                        <div className="p-8 bg-black/40 rounded-[2rem] border border-white/5 shadow-inner">
-                                            <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Cadence</div>
-                                            <div className="flex items-baseline gap-2">
-                                                <div className="text-4xl font-black text-white italic tracking-tighter">{currentAnalysis.metrics.cadence}</div>
-                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">spm</div>
-                                            </div>
-                                        </div>
-                                        <div className="p-8 bg-black/40 rounded-[2rem] border border-white/5 shadow-inner">
-                                            <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Vertical Osc.</div>
-                                            <div className="flex items-baseline gap-2">
-                                                <div className="text-4xl font-black text-white italic tracking-tighter">{currentAnalysis.metrics.verticalOscillation.toFixed(1)}</div>
-                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">cm</div>
-                                            </div>
-                                        </div>
-                                        <div className="p-8 bg-black/40 rounded-[2rem] border border-white/5 shadow-inner">
-                                            <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Trunk Lean</div>
-                                            <div className="flex items-baseline gap-2">
-                                                <div className="text-4xl font-black text-white italic tracking-tighter">{currentAnalysis.metrics.trunkLean.toFixed(1)}</div>
-                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">deg</div>
-                                            </div>
-                                        </div>
-                                        <div className="p-8 bg-black/40 rounded-[2rem] border border-white/5 shadow-inner">
-                                            <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Overstride</div>
-                                            <div className={`text-4xl font-black italic tracking-tighter ${currentAnalysis.metrics.overstrideFlag ? 'text-red-400' : 'text-emerald-400'}`}>
-                                                {currentAnalysis.metrics.overstrideFlag ? 'Detected' : 'Neutral'}
-                                            </div>
-                                        </div>
+                                    <div className="relative z-10 mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                        <MetricTile label="Cadence" value={String(currentAnalysis.metrics.cadence)} unit="spm" accent="text-white" />
+                                        <MetricTile label="Vertical Osc." value={currentAnalysis.metrics.verticalOscillation.toFixed(1)} unit="cm" accent="text-sky-300" />
+                                        <MetricTile label="Trunk Lean" value={currentAnalysis.metrics.trunkLean.toFixed(1)} unit="deg" accent="text-sky-300" />
+                                        <MetricTile label="Overstride" value={currentAnalysis.metrics.overstrideFlag ? 'Detected' : 'Neutral'} accent={currentAnalysis.metrics.overstrideFlag ? 'text-rose-300' : 'text-emerald-300'} />
                                     </div>
 
-                                    {/* Stride Length (Solo highlight) */}
                                     {currentAnalysis.metrics.strideLength && (
-                                        <div className="mt-8 p-8 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-[2rem] border border-white/5 flex items-center justify-between">
-                                            <div>
-                                                <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">Calculated Stride Length</div>
-                                                <div className="text-sm font-medium text-gray-300">Based on activity speed ({(activeActivity?.average_speed! * 3.6).toFixed(1)} km/h)</div>
-                                            </div>
-                                            <div className="flex items-baseline gap-3">
-                                                <div className="text-5xl font-black text-white italic tracking-tighter">{currentAnalysis.metrics.strideLength.toFixed(2)}</div>
-                                                <div className="text-sm font-black text-gray-500 uppercase tracking-widest">meters</div>
+                                        <div className="relative z-10 mt-4 rounded-[1.8rem] border border-[#FFF917]/25 bg-[#FFF917]/10 p-5">
+                                            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                                                <div>
+                                                    <div className="text-[9px] font-black uppercase tracking-[0.34em] text-yellow-200">
+                                                        Calculated stride length
+                                                    </div>
+                                                    <div className="mt-2 text-sm font-medium leading-relaxed text-slate-300">
+                                                        Based on activity speed ({(activeActivity?.average_speed! * 3.6).toFixed(1)} km/h)
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-end gap-3">
+                                                    <div className="text-5xl font-black italic tracking-tighter text-white">{currentAnalysis.metrics.strideLength.toFixed(2)}</div>
+                                                    <div className="pb-1 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">meters</div>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
                                 </section>
 
-                                {/* Commentary and Coaching Card */}
-                                <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="bg-white/5 rounded-[3rem] p-10 border border-white/10 shadow-2xl">
-                                        <h3 className="text-xl font-black text-white mb-8 flex items-center gap-4 uppercase tracking-tighter">
-                                            <span className="w-8 h-8 bg-cyan-400/20 rounded-full flex items-center justify-center text-cyan-400">⚡</span>
-                                            COACH'S COMMENTARY
-                                        </h3>
-                                        <div className="space-y-6">
-                                            <div className="p-8 bg-white/5 rounded-3xl border border-white/5 text-gray-200 font-medium leading-relaxed italic text-lg leading-loose quote">
+                                <section className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+                                    <div className="rounded-[2.6rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+                                        <SectionLabel index="04" title="Coach Commentary" subtitle="What the model sees, and what to fix next" />
+                                        <div className="mt-6 space-y-4">
+                                            <div className="rounded-[1.7rem] border border-white/10 bg-black/20 p-6 text-lg italic leading-relaxed text-slate-200">
                                                 "{currentAnalysis.commentary.baselineComparison}"
                                             </div>
 
-                                            <div className="space-y-4">
-                                                <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">PRIORITY TIPS</h4>
+                                            <div className="space-y-3">
                                                 {currentAnalysis.commentary.tips.map((tip, i) => (
-                                                    <div key={i} className="flex gap-5 p-5 bg-black/20 rounded-2xl border border-white/5 group hover:border-cyan-500/30 transition-all">
-                                                        <div className="text-cyan-400 font-black text-xl italic opacity-50 font-mono">0{i + 1}</div>
-                                                        <div className="text-sm font-bold text-gray-200 leading-relaxed group-hover:text-white">{tip}</div>
+                                                    <div key={i} className="flex gap-4 rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4 transition-colors hover:border-[#0093D6]/30">
+                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#0093D6]/20 bg-[#0093D6]/10 text-sm font-black italic text-sky-300">
+                                                            0{i + 1}
+                                                        </div>
+                                                        <div className="text-sm leading-relaxed text-slate-200">{tip}</div>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Technical Chart/Details Space */}
-                                    <div className="bg-white/5 rounded-[3rem] p-10 border border-white/10 shadow-2xl flex flex-col justify-between">
-                                        <div>
-                                            <h3 className="text-xl font-black text-white mb-8 flex items-center gap-4 uppercase tracking-tighter">
-                                                <span className="w-8 h-8 bg-indigo-400/20 rounded-full flex items-center justify-center text-indigo-400">🧪</span>
-                                                KINETIC TRACES
-                                            </h3>
-                                            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed mb-8">
-                                                Stride-by-stride biomechanical variance tracked over {currentAnalysis.clipEndSec - currentAnalysis.clipStartSec} seconds.
-                                            </p>
-                                        </div>
+                                    <div className="rounded-[2.6rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+                                        <SectionLabel index="05" title="Kinetic Traces" subtitle={`Variance tracked over ${currentAnalysis.clipEndSec - currentAnalysis.clipStartSec} seconds`} />
 
-                                        <div className="space-y-4 mb-4">
-                                            {/* Minimal Data Visualization Concept */}
-                                            <div className="h-40 flex items-end gap-1 px-4 border-l border-b border-white/5">
+                                        <div className="mt-6 rounded-[1.7rem] border border-white/10 bg-black/20 p-4">
+                                            <div className="flex h-56 items-end gap-1.5">
                                                 {currentAnalysis.series.slice(0, 40).map((s, i) => (
-                                                    <div
-                                                        key={i}
-                                                        className="flex-1 bg-cyan-500/20 hover:bg-cyan-500 transition-all rounded-t-sm"
-                                                        style={{ height: `${Math.min(100, (s.cadence / 220) * 100)}%` }}
-                                                    />
+                                                    <div key={i} className="group flex-1 rounded-t-md bg-[#0093D6]/20 transition-all hover:bg-[#0093D6]" style={{ height: `${Math.min(100, (s.cadence / 220) * 100)}%` }}>
+                                                        <div className="h-full w-full rounded-t-md bg-gradient-to-t from-[#0093D6]/20 to-[#FFF917]/10 opacity-70 transition-opacity group-hover:opacity-100" />
+                                                    </div>
                                                 ))}
                                             </div>
-                                            <div className="flex justify-between text-[8px] font-black text-gray-600 uppercase tracking-widest px-2">
+                                            <div className="mt-3 flex justify-between text-[8px] font-black uppercase tracking-[0.34em] text-slate-600">
                                                 <span>0s</span>
-                                                <span>TEMPORAL SERIES (CADENCE VARIANCE)</span>
+                                                <span>Cadence variance</span>
                                                 <span>{currentAnalysis.clipEndSec - currentAnalysis.clipStartSec}s</span>
                                             </div>
                                         </div>
 
-                                        <div className="p-6 bg-white/5 rounded-2xl border border-white/5">
-                                            <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Technical Summary</div>
-                                            <div className="text-[11px] font-medium text-gray-400">
+                                        <div className="mt-4 rounded-[1.4rem] border border-white/8 bg-white/[0.03] p-4">
+                                            <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">Technical summary</div>
+                                            <div className="mt-3 text-[11px] leading-relaxed text-slate-400">
                                                 Model: {currentAnalysis.modelVersion} <br />
-                                                Sampling Rate: {SAMPLE_FPS} FPS • Resolution: {(canvasRef.current?.width || 1280)}x{(canvasRef.current?.height || 720)}
+                                                Sampling Rate: {SAMPLE_FPS} FPS · Resolution: {(canvasRef.current?.width || 1280)}x{(canvasRef.current?.height || 720)}
                                             </div>
                                         </div>
                                     </div>
