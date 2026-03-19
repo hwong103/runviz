@@ -118,6 +118,8 @@ Then in Cloudflare:
 
 Because this app uses React Router, Cloudflare Pages also needs SPA fallback routing. That is already included via [`public/_redirects`](./public/_redirects).
 
+If your Cloudflare project is using a Worker-style deploy command such as `npx wrangler versions upload` from the repo root, this repo now also includes a root [`wrangler.jsonc`](./wrangler.jsonc) that uploads the built `dist/` directory as static assets with SPA fallback enabled.
+
 ## 🛠️ Development
 
 ```bash
