@@ -17,6 +17,11 @@ const CADENCE_MAX = 220;
 
 const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-matroska'];
 
+interface PoseSample {
+    time: number;
+    landmarks: Array<{ x: number; y: number }>;
+}
+
 function SectionLabel({ index, title, subtitle }: { index: string; title: string; subtitle: string }) {
     return (
         <div className="flex items-center justify-between gap-4">
@@ -268,7 +273,7 @@ export default function FormAnalysisPage() {
 
             const duration = clipRange[1] - clipRange[0];
             const sampleInterval = 1 / SAMPLE_FPS;
-            const samples: any[] = [];
+            const samples: PoseSample[] = [];
 
             const startTime = Date.now();
 
@@ -348,15 +353,16 @@ export default function FormAnalysisPage() {
             setCurrentAnalysis(updatedAnalysis);
 
             alert('Successfully synced with Strava!');
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Failed to write to Strava:', error);
-            if (error.status === 403) {
+            if (typeof error === 'object' && error !== null && 'status' in error && (error as { status?: number }).status === 403) {
                 if (confirm('RunViz needs permission to write to your activities. Re-authenticate with write permission now?')) {
                     const { url } = await auth.getStravaLoginUrl('link', 'read,activity:read_all,activity:write');
                     window.location.href = url;
                 }
             } else {
-                alert('Failed to write to Strava. ' + (error.message || ''));
+                const message = error instanceof Error ? error.message : '';
+                alert('Failed to write to Strava. ' + message);
             }
         } finally {
             setIsWritingToStrava(false);
@@ -730,9 +736,9 @@ export default function FormAnalysisPage() {
                                                     <div className="text-[9px] font-black uppercase tracking-[0.34em] text-yellow-200">
                                                         Calculated stride length
                                                     </div>
-                                                    <div className="mt-2 text-sm font-medium leading-relaxed text-slate-300">
-                                                        Based on activity speed ({(activeActivity?.average_speed! * 3.6).toFixed(1)} km/h)
-                                                    </div>
+                                                        <div className="mt-2 text-sm font-medium leading-relaxed text-slate-300">
+                                                        Based on activity speed ({((activeActivity?.average_speed ?? 0) * 3.6).toFixed(1)} km/h)
+                                                        </div>
                                                 </div>
                                                 <div className="flex items-end gap-3">
                                                     <div className="text-5xl font-black italic tracking-tighter text-white">{currentAnalysis.metrics.strideLength.toFixed(2)}</div>
@@ -805,7 +811,7 @@ export default function FormAnalysisPage() {
 
 // --- Analysis Engine Helpers ---
 
-function processSamples(samples: any[], activity: Activity | null) {
+function processSamples(samples: PoseSample[], activity: Activity | null) {
     // 1. Calculate Cadence (Steps per minute)
     // Detect peaks in foot movement or just count cycles
     // Simplified: Find periodicity in left/right ankle Y coordinates
@@ -920,7 +926,7 @@ function historyBaselines(sessions: FormAnalysis[]) {
     };
 }
 
-function generateCommentary(metrics: any, baseline: any): FormAnalysis['commentary'] {
+function generateCommentary(metrics: FormAnalysis['metrics'], baseline: ReturnType<typeof historyBaselines>): FormAnalysis['commentary'] {
     const tips = [];
     let comparison = "Looking solid! Your form shows good consistency.";
 
