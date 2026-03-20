@@ -5,6 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { routes as routesApi, geocoding } from '../services/api';
 import type { GeneratedRoute, RoutePoint } from '../types';
+import { useTheme } from '../hooks/useTheme';
 
 // Fix Leaflet marker icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -69,6 +70,7 @@ function summarizeAddress(address?: string | null) {
 
 const RoutePlanner: React.FC = () => {
     const navigate = useNavigate();
+    const { resolved } = useTheme();
     const [targetDistance, setTargetDistance] = useState(5);
     const [startPoint, setStartPoint] = useState<[number, number] | null>(null);
     const [generatedRoutes, setGeneratedRoutes] = useState<GeneratedRoute[]>([]);
@@ -251,8 +253,12 @@ const RoutePlanner: React.FC = () => {
         URL.revokeObjectURL(url);
     };
 
+    const tileUrl = resolved === 'light'
+        ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
     return (
-        <div className="rv-page-surface min-h-screen overflow-hidden">
+        <div className="rv-page-surface rv-route-planner min-h-screen overflow-hidden">
             <main className="relative mx-auto max-w-[1680px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
                 <header className="rv-shell-card mb-5">
                     <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
@@ -515,7 +521,7 @@ const RoutePlanner: React.FC = () => {
                                     className="z-0"
                                 >
                                     <TileLayer
-                                        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                                        url={tileUrl}
                                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                                     />
                                     <MapPicker onPick={handlePickStart} />

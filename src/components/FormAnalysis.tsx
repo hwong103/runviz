@@ -365,7 +365,7 @@ export default function FormAnalysisPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#041723] text-[#F6F2F1] flex items-center justify-center">
+            <div className="rv-form-analysis min-h-screen bg-[#041723] text-[#F6F2F1] flex items-center justify-center">
                 <div className="flex flex-col items-center gap-5 rounded-[2rem] border border-white/10 bg-white/[0.04] px-8 py-10 shadow-2xl backdrop-blur-xl">
                     <div className="h-14 w-14 animate-spin rounded-full border-4 border-[#0093D6]/30 border-t-[#FFF917]" />
                     <div className="text-xl font-black italic tracking-tighter text-white">Loading form lab</div>
@@ -376,7 +376,7 @@ export default function FormAnalysisPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0f17] text-[#f5efe3]">
+        <div className="rv-form-analysis min-h-screen bg-[#0a0f17] text-[#f5efe3]">
             {/* Hidden file input */}
             <input
                 ref={fileInputRef}

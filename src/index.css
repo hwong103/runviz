@@ -843,6 +843,77 @@ textarea {
     background-color: rgba(255, 255, 255, 0.55);
 }
 
+[data-theme="light"] .rv-route-planner,
+[data-theme="light"] .rv-form-analysis {
+    color: var(--rv-text);
+}
+
+[data-theme="light"] .rv-route-planner .bg-black\/10,
+[data-theme="light"] .rv-route-planner .bg-black\/15,
+[data-theme="light"] .rv-route-planner .bg-black\/20,
+[data-theme="light"] .rv-route-planner .bg-black\/25,
+[data-theme="light"] .rv-route-planner .bg-black\/30,
+[data-theme="light"] .rv-form-analysis .bg-black\/10,
+[data-theme="light"] .rv-form-analysis .bg-black\/15,
+[data-theme="light"] .rv-form-analysis .bg-black\/20,
+[data-theme="light"] .rv-form-analysis .bg-black\/25,
+[data-theme="light"] .rv-form-analysis .bg-black\/30 {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .rv-route-planner .bg-white\/\[0\.03\],
+[data-theme="light"] .rv-route-planner .bg-white\/\[0\.04\],
+[data-theme="light"] .rv-route-planner .bg-white\/\[0\.05\],
+[data-theme="light"] .rv-route-planner .bg-white\/\[0\.06\],
+[data-theme="light"] .rv-route-planner .bg-white\/\[0\.08\],
+[data-theme="light"] .rv-route-planner .bg-white\/5,
+[data-theme="light"] .rv-form-analysis .bg-white\/\[0\.03\],
+[data-theme="light"] .rv-form-analysis .bg-white\/\[0\.04\],
+[data-theme="light"] .rv-form-analysis .bg-white\/\[0\.05\],
+[data-theme="light"] .rv-form-analysis .bg-white\/\[0\.06\],
+[data-theme="light"] .rv-form-analysis .bg-white\/\[0\.08\],
+[data-theme="light"] .rv-form-analysis .bg-white\/5 {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .rv-route-planner .border-white\/5,
+[data-theme="light"] .rv-route-planner .border-white\/8,
+[data-theme="light"] .rv-route-planner .border-white\/10,
+[data-theme="light"] .rv-route-planner .border-white\/12,
+[data-theme="light"] .rv-form-analysis .border-white\/5,
+[data-theme="light"] .rv-form-analysis .border-white\/8,
+[data-theme="light"] .rv-form-analysis .border-white\/10,
+[data-theme="light"] .rv-form-analysis .border-white\/12 {
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .rv-form-analysis .bg-\[\#0a0f17\],
+[data-theme="light"] .rv-form-analysis .bg-\[\#041723\] {
+    background: var(--rv-bg);
+}
+
+[data-theme="light"] .rv-form-analysis .bg-\[\#041723\]\/85 {
+    background: color-mix(in srgb, var(--rv-bg) 92%, transparent);
+}
+
+[data-theme="light"] .rv-form-analysis .bg-black\/15,
+[data-theme="light"] .rv-form-analysis .bg-black\/20,
+[data-theme="light"] .rv-form-analysis .bg-black\/25,
+[data-theme="light"] .rv-form-analysis .bg-black\/30 {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .rv-form-analysis .text-slate-600,
+[data-theme="light"] .rv-form-analysis .text-slate-500 {
+    color: var(--rv-text-faint);
+}
+
+[data-theme="light"] .rv-form-analysis .text-slate-400,
+[data-theme="light"] .rv-form-analysis .text-slate-300,
+[data-theme="light"] .rv-form-analysis .text-slate-200 {
+    color: var(--rv-text-dim);
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
