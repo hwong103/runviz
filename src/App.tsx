@@ -458,6 +458,8 @@ function App() {
     );
   }
 
+  const isExpandedCalendarLayout = viewPeriod.mode !== 'month';
+
   if (needsStravaConnect) {
     return (
       <SetupPage
@@ -671,7 +673,7 @@ function App() {
                   <FitnessChart activities={activities} period={viewPeriod} />
                 </Suspense>
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                  <section className="rv-panel px-5 py-5 sm:px-7 sm:py-6 lg:col-span-5">
+                  <section className={`rv-panel px-5 py-5 sm:px-7 sm:py-6 ${isExpandedCalendarLayout ? 'lg:col-span-12' : 'lg:col-span-5'}`}>
                     <div className="mb-6 flex items-center justify-between gap-3">
                       <div>
                         <p className="rv-kicker mb-2">Training Calendar</p>
@@ -688,7 +690,7 @@ function App() {
                     />
                   </section>
 
-                  <section className="rv-panel px-5 py-5 sm:px-7 sm:py-6 lg:col-span-7">
+                  <section className={`rv-panel px-5 py-5 sm:px-7 sm:py-6 ${isExpandedCalendarLayout ? 'lg:col-span-12' : 'lg:col-span-7'}`}>
                     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                       <div>
                         <p className="rv-kicker mb-2">Tools</p>
