@@ -2,37 +2,15 @@ import { useMemo, useState, useEffect } from 'react';
 import { Footprints } from 'lucide-react';
 import type { Activity, Gear } from '../types';
 import { gear as gearApi } from '../services/api';
-import { getBrandLogoUrl, getBrandFallbackEmoji } from '../services/logoService';
+import { Badge } from './ui/Badge';
+import { BrandLogo } from './ui/BrandLogo';
+import { SectionHeader } from './ui/SectionHeader';
 
 interface ShoeTrackerProps {
     activities: Activity[];
     shoes: Gear[];
     selectedShoeId?: string | null;
     onSelectShoe?: (id: string) => void;
-}
-
-// Brand logo component with fallback support
-function BrandLogo({ brandName, className }: { brandName?: string; className?: string }) {
-    const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
-    const logoUrl = getBrandLogoUrl(brandName, 48, 'dark');
-    const fallbackEmoji = getBrandFallbackEmoji(brandName);
-
-    if (!logoUrl || failedLogoUrl === logoUrl) {
-        return (
-            <span className={`${className} inline-flex items-center justify-center rounded-md bg-white/5 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--rv-text-faint)] leading-none`}>
-                {fallbackEmoji}
-            </span>
-        );
-    }
-
-    return (
-        <img
-            src={logoUrl}
-            alt={brandName || 'Brand'}
-            className={`${className} block object-contain`}
-            onError={() => setFailedLogoUrl(logoUrl)}
-        />
-    );
 }
 
 export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }: ShoeTrackerProps) {
@@ -124,15 +102,14 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
 
     return (
         <div className="rv-panel flex flex-col px-6 py-6 sm:px-7">
-            <div className="flex justify-between items-center mb-8">
-                <div>
-                    <p className="rv-kicker mb-2">Equipment Log</p>
-                    <h3 className="text-2xl font-bold tracking-tight text-[var(--rv-text)]">Shoe tracker</h3>
-                </div>
-                <span className="rounded-full border border-white/[0.08] bg-white/5 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">
-                    {shoeStats.length} pairs
-                </span>
-            </div>
+            <SectionHeader
+                className="mb-8"
+                kicker="Equipment Log"
+                title="Shoe tracker"
+                titleAs="h3"
+                titleClassName="text-2xl font-bold tracking-tight text-[var(--rv-text)]"
+                action={<Badge>{shoeStats.length} pairs</Badge>}
+            />
 
             <div className="flex-1 space-y-4">
                 {shoeStats.length > 0 ? (
@@ -168,7 +145,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
                                     {shoe.primary && (
-                                        <span className="rounded-full bg-[var(--rv-blue)]/20 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.22em] text-[var(--rv-blue)]">Primary</span>
+                                        <Badge tone="blue">Primary</Badge>
                                     )}
                                 </div>
                             </div>

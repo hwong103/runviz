@@ -3,8 +3,10 @@ import type { Activity, Gear } from '../types';
 import { formatDuration } from '../analytics/heartRateZones';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ChevronRight, Footprints, HeartPulse, Mountain, X } from 'lucide-react';
-import { getBrandLogoUrl } from '../services/logoService';
 import { parseActivityLocalDate } from '../utils/activityDate';
+import { Badge } from './ui/Badge';
+import { BrandLogo } from './ui/BrandLogo';
+import { SectionHeader } from './ui/SectionHeader';
 
 interface ActivityListProps {
     activities: Activity[];
@@ -14,14 +16,6 @@ interface ActivityListProps {
     selectedShoeName?: string;
     onClearShoeFilter?: () => void;
     shoes?: Gear[];
-}
-
-// Brand logo component for list view
-function BrandLogo({ brandName }: { brandName?: string }) {
-    const logoUrl = getBrandLogoUrl(brandName, 32, 'dark');
-    return logoUrl ? (
-        <img src={logoUrl} alt={brandName} className="block w-5 h-5 object-contain" />
-    ) : null;
 }
 
 export function ActivityList({
@@ -64,17 +58,15 @@ export function ActivityList({
 
     return (
         <div className="rv-panel rv-reveal-subtle px-5 py-5 sm:px-7 sm:py-6" style={reveal(120)}>
-            <div className="mb-6 flex flex-wrap items-center gap-3">
-                <div>
-                    <p className="rv-kicker mb-2">Activity Log</p>
-                    <h2 className="rv-section-title">Training log</h2>
-                </div>
-                {selectedShoeId && selectedShoeName && (
-                    <div className="flex items-center gap-2 sm:ml-auto">
-                        <span className="flex items-center gap-2 rounded-full border border-[var(--rv-blue)]/30 bg-[var(--rv-blue)]/15 px-3 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-blue)]">
-                            <Footprints className="h-3.5 w-3.5" />
-                            <span>{selectedShoeName}</span>
-                        </span>
+            <SectionHeader
+                className="mb-6"
+                kicker="Activity Log"
+                title="Training log"
+                action={selectedShoeId && selectedShoeName ? (
+                    <div className="flex items-center gap-2">
+                        <Badge tone="blue" icon={<Footprints className="h-3.5 w-3.5" />}>
+                            {selectedShoeName}
+                        </Badge>
                         <button
                             onClick={onClearShoeFilter}
                             className="rounded-full px-2 py-1 text-xs font-black text-[var(--rv-text-dim)] transition-colors hover:bg-white/10 hover:text-white"
@@ -83,8 +75,8 @@ export function ActivityList({
                             <X className="h-3.5 w-3.5" />
                         </button>
                     </div>
-                )}
-            </div>
+                ) : null}
+            />
 
             <div className="space-y-3">
                 {runs.length === 0 ? (
@@ -119,9 +111,9 @@ export function ActivityList({
                                             {activity.name}
                                         </h3>
                                         {activity.distance === maxDist && maxDist > 0 && (
-                                            <span className="shrink-0 rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/12 px-2 py-0.5 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-[var(--rv-yellow)]">
+                                            <Badge tone="gold" className="shrink-0">
                                                 Longest
-                                            </span>
+                                            </Badge>
                                         )}
                                     </div>
                                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-[var(--rv-text-faint)]">
@@ -142,7 +134,7 @@ export function ActivityList({
                                         if (!shoe) return null;
                                         return (
                                             <div className="group/shoe flex items-center gap-2 rounded-full border border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/10 px-3 py-1.5 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[var(--rv-blue)]/20">
-                                                <BrandLogo brandName={shoe.brand_name} />
+                                                <BrandLogo brandName={shoe.brand_name} fallbackMode="none" size={32} className="h-5 w-5" />
                                                 <span className="max-w-[160px] truncate text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[var(--rv-blue)]">
                                                     {shoe.name}
                                                 </span>

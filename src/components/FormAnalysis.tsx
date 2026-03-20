@@ -7,6 +7,8 @@ import type { Activity, FormAnalysis, FormVideo } from '../types';
 import { isRun } from '../types';
 import { parseActivityLocalDate } from '../utils/activityDate';
 import { format } from 'date-fns';
+import { Badge } from './ui/Badge';
+import { MetricCard } from './ui/MetricCard';
 
 // Pose Analysis Constants
 const SAMPLE_FPS = 15;
@@ -29,46 +31,21 @@ function SectionLabel({ index, title, subtitle }: { index: string; title: string
     );
 }
 
-function MetricTile({
-    label,
-    value,
-    unit,
-    accent = 'text-white',
-    hint,
-}: {
-    label: string;
-    value: string;
-    unit?: string;
-    accent?: string;
-    hint?: string;
-}) {
-    return (
-        <div className="rounded-[1.6rem] border border-white/8 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors hover:border-white/12">
-            <div className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">{label}</div>
-            <div className={`mt-4 flex items-end gap-2 ${accent}`}>
-                <div className="text-4xl font-black italic tracking-tighter">{value}</div>
-                {unit && <div className="pb-1 text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">{unit}</div>}
-            </div>
-            {hint && <div className="mt-3 text-[10px] font-medium leading-relaxed text-slate-500">{hint}</div>}
-        </div>
-    );
-}
-
 function StatPill({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'neutral' | 'cyan' | 'yellow' | 'emerald' | 'orange' | 'rose' }) {
-    const toneClass: Record<string, string> = {
-        neutral: 'border-white/8 bg-white/[0.04] text-slate-300',
-        cyan: 'border-sky-500/20 bg-sky-500/10 text-sky-300',
-        yellow: 'border-yellow-400/20 bg-yellow-400/10 text-yellow-200',
-        emerald: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
-        orange: 'border-orange-500/20 bg-orange-500/10 text-orange-300',
-        rose: 'border-rose-500/20 bg-rose-500/10 text-rose-300',
+    const toneMap: Record<string, 'neutral' | 'sky' | 'gold' | 'emerald' | 'orange' | 'rose'> = {
+        neutral: 'neutral',
+        cyan: 'sky',
+        yellow: 'gold',
+        emerald: 'emerald',
+        orange: 'orange',
+        rose: 'rose',
     };
 
     return (
-        <div className={`rounded-full border px-4 py-3 ${toneClass[tone]}`}>
-            <div className="text-[8px] font-black uppercase tracking-[0.34em] opacity-70">{label}</div>
-            <div className="mt-1 text-lg font-black italic tracking-tighter">{value}</div>
-        </div>
+        <Badge tone={toneMap[tone]} size="md" className="flex-col items-start gap-1 rounded-[1.2rem] px-4 py-3 tracking-[0.34em] normal-case">
+            <span className="text-[8px] opacity-70">{label}</span>
+            <span className="text-lg font-black italic tracking-tighter normal-case">{value}</span>
+        </Badge>
     );
 }
 
@@ -430,12 +407,12 @@ export default function FormAnalysisPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-                        <div className="rounded-full border border-[#4a7aff]/20 bg-[#4a7aff]/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.34em] text-[#cfd9ff]">
+                        <Badge tone="blue" size="md">
                             100% On-device
-                        </div>
-                        <div className="rounded-full border border-[#d9b36a]/20 bg-[#d9b36a]/10 px-4 py-3 text-[10px] font-black uppercase tracking-[0.34em] text-[#ecd3a7]">
+                        </Badge>
+                        <Badge tone="gold" size="md">
                             Analysis history saved locally
-                        </div>
+                        </Badge>
                     </div>
                 </header>
 
@@ -495,9 +472,9 @@ export default function FormAnalysisPage() {
                                     <div className="rv-subtle-card p-5">
                                         <div className="flex items-center justify-between gap-3">
                                             <label className="rv-quiet-label">Clip Length</label>
-                                        <span className="rounded-full border border-[#d9b36a]/20 bg-[#d9b36a]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.32em] text-[#ecd3a7]">
-                                            {clipRange[1] - clipRange[0]}s selected
-                                        </span>
+                                            <Badge tone="gold">
+                                                {clipRange[1] - clipRange[0]}s selected
+                                            </Badge>
                                         </div>
                                         <div className="mt-5 space-y-4">
                                             <input
@@ -700,9 +677,9 @@ export default function FormAnalysisPage() {
                                     <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
                                         <div className="max-w-3xl">
                                             <div className="flex flex-wrap items-center gap-3">
-                                                <span className="rounded-full border border-[#FFF917]/20 bg-[#FFF917]/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.34em] text-yellow-200">
+                                                <Badge tone="gold">
                                                     Lab session complete
-                                                </span>
+                                                </Badge>
                                                 <span className="text-[9px] font-black uppercase tracking-[0.34em] text-slate-500">
                                                     Confidence {(currentAnalysis.commentary.confidence * 100).toFixed(0)}%
                                                 </span>
@@ -720,13 +697,13 @@ export default function FormAnalysisPage() {
                                                 <button
                                                     onClick={handleWriteToStrava}
                                                     disabled={isWritingToStrava}
-                                                    className="inline-flex items-center gap-3 rounded-full border border-[#FC4C02]/40 bg-[#FC4C02] px-6 py-4 text-[11px] font-black uppercase tracking-[0.34em] text-white shadow-[0_18px_40px_rgba(252,76,2,0.2)] transition-all hover:translate-y-[-1px] hover:bg-[#ff5b14] disabled:cursor-not-allowed disabled:opacity-60"
+                                                    className="rv-badge rv-badge-strava rv-badge-md transition-all hover:-translate-y-[1px] hover:bg-[#ff5b14] disabled:cursor-not-allowed disabled:opacity-60"
                                                 >
                                                     {isWritingToStrava ? 'Syncing' : 'Write to Strava'}
                                                 </button>
                                             )}
                                             {currentAnalysis.lastWrittenAt && (
-                                                <div className="inline-flex items-center gap-3 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-5 py-4 text-[10px] font-black uppercase tracking-[0.34em] text-emerald-300">
+                                                <div className="rv-badge rv-badge-emerald rv-badge-md">
                                                     Written to activity
                                                 </div>
                                             )}
@@ -740,10 +717,10 @@ export default function FormAnalysisPage() {
                                     </div>
 
                                     <div className="relative z-10 mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                                        <MetricTile label="Cadence" value={String(currentAnalysis.metrics.cadence)} unit="spm" accent="text-white" />
-                                        <MetricTile label="Vertical Osc." value={currentAnalysis.metrics.verticalOscillation.toFixed(1)} unit="cm" accent="text-sky-300" />
-                                        <MetricTile label="Trunk Lean" value={currentAnalysis.metrics.trunkLean.toFixed(1)} unit="deg" accent="text-sky-300" />
-                                        <MetricTile label="Overstride" value={currentAnalysis.metrics.overstrideFlag ? 'Detected' : 'Neutral'} accent={currentAnalysis.metrics.overstrideFlag ? 'text-rose-300' : 'text-emerald-300'} />
+                                        <MetricCard label="Cadence" value={String(currentAnalysis.metrics.cadence)} unit="spm" />
+                                        <MetricCard label="Vertical Osc." value={currentAnalysis.metrics.verticalOscillation.toFixed(1)} unit="cm" accentClassName="text-sky-300" />
+                                        <MetricCard label="Trunk Lean" value={currentAnalysis.metrics.trunkLean.toFixed(1)} unit="deg" accentClassName="text-sky-300" />
+                                        <MetricCard label="Overstride" value={currentAnalysis.metrics.overstrideFlag ? 'Detected' : 'Neutral'} accentClassName={currentAnalysis.metrics.overstrideFlag ? 'text-rose-300' : 'text-emerald-300'} />
                                     </div>
 
                                     {currentAnalysis.metrics.strideLength && (

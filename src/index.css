@@ -148,6 +148,108 @@ textarea {
     box-shadow: 0 24px 72px rgba(0, 0, 0, 0.26);
 }
 
+.rv-badge {
+    align-items: center;
+    background: var(--rv-badge-bg, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--rv-badge-border, rgba(255, 255, 255, 0.1));
+    border-radius: 999px;
+    color: var(--rv-badge-text, var(--rv-text));
+    display: inline-flex;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.rv-badge-sm {
+    font-size: 0.64rem;
+    padding: 0.45rem 0.7rem;
+}
+
+.rv-badge-md {
+    font-size: 0.7rem;
+    padding: 0.78rem 1rem;
+}
+
+.rv-badge-neutral {
+    --rv-badge-bg: rgba(255, 255, 255, 0.04);
+    --rv-badge-border: rgba(255, 255, 255, 0.1);
+    --rv-badge-text: var(--rv-text-faint);
+}
+
+.rv-badge-blue {
+    --rv-badge-bg: color-mix(in srgb, var(--rv-blue) 15%, transparent);
+    --rv-badge-border: color-mix(in srgb, var(--rv-blue) 32%, transparent);
+    --rv-badge-text: color-mix(in srgb, var(--rv-blue) 26%, white);
+}
+
+.rv-badge-gold {
+    --rv-badge-bg: color-mix(in srgb, var(--rv-yellow) 13%, transparent);
+    --rv-badge-border: color-mix(in srgb, var(--rv-yellow) 28%, transparent);
+    --rv-badge-text: color-mix(in srgb, var(--rv-yellow) 46%, white);
+}
+
+.rv-badge-emerald {
+    --rv-badge-bg: rgba(16, 185, 129, 0.1);
+    --rv-badge-border: rgba(16, 185, 129, 0.22);
+    --rv-badge-text: rgb(167, 243, 208);
+}
+
+.rv-badge-sky {
+    --rv-badge-bg: rgba(14, 165, 233, 0.1);
+    --rv-badge-border: rgba(14, 165, 233, 0.22);
+    --rv-badge-text: rgb(186, 230, 253);
+}
+
+.rv-badge-orange {
+    --rv-badge-bg: rgba(249, 115, 22, 0.1);
+    --rv-badge-border: rgba(249, 115, 22, 0.22);
+    --rv-badge-text: rgb(254, 215, 170);
+}
+
+.rv-badge-rose {
+    --rv-badge-bg: rgba(244, 63, 94, 0.1);
+    --rv-badge-border: rgba(244, 63, 94, 0.22);
+    --rv-badge-text: rgb(254, 205, 211);
+}
+
+.rv-badge-strava {
+    --rv-badge-bg: #fc4c02;
+    --rv-badge-border: rgba(252, 76, 2, 0.4);
+    --rv-badge-text: #ffffff;
+    box-shadow: 0 18px 40px rgba(252, 76, 2, 0.2);
+}
+
+.rv-metric-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.6rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: border-color var(--rv-duration-base) var(--rv-ease-out-quart);
+}
+
+.rv-metric-card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.rv-metric-card-label {
+    color: rgb(100 116 139);
+    font-size: 0.56rem;
+    font-weight: 900;
+    letter-spacing: 0.34em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.rv-metric-card-unit {
+    color: rgb(100 116 139);
+    font-size: 0.64rem;
+    font-weight: 900;
+    letter-spacing: 0.28em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
 .rv-subtle-card {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
