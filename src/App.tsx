@@ -12,7 +12,7 @@ import type { Activity, Gear } from './types';
 import { isRun } from './types';
 import { gear as gearApi } from './services/api';
 import { parseActivityLocalDate } from './utils/activityDate';
-import { Clock3, Footprints, RefreshCw, Sparkles, Zap } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 const FitnessChart = lazy(() =>
   import('./components/FitnessChart').then((module) => ({ default: module.FitnessChart }))
@@ -663,13 +663,6 @@ function App() {
           )}
 
           <main className="mx-auto flex max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            <DashboardPulse
-              activities={filteredActivities}
-              period={viewPeriod}
-              syncing={syncing}
-              lastSync={lastSync}
-            />
-
             <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} />
 
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
@@ -791,153 +784,6 @@ function LabGlyph({ className = 'h-5 w-5 text-current' }: { className?: string }
   );
 }
 
-function DashboardPulse({
-  activities,
-  period,
-  syncing,
-  lastSync,
-}: {
-  activities: Activity[];
-  period: ViewPeriod;
-  syncing: boolean;
-  lastSync: Date | null;
-}) {
-  const runs = useMemo(
-    () => activities
-      .filter(isRun)
-      .sort((a, b) => new Date(b.start_date_local).getTime() - new Date(a.start_date_local).getTime()),
-    [activities]
-  );
-
-  const summary = useMemo(() => {
-    const now = new Date();
-    const recentWeek = new Array(7).fill(0).map((_, index) => {
-      const day = new Date(now);
-      day.setHours(0, 0, 0, 0);
-      day.setDate(now.getDate() - (6 - index));
-      const key = day.toISOString().slice(0, 10);
-      return runs
-        .filter((activity) => activity.start_date_local.startsWith(key))
-        .reduce((total, activity) => total + activity.distance / 1000, 0);
-    });
-    const recentWeekMax = Math.max(...recentWeek, 0);
-
-    return {
-      streak: calculateCurrentStreak(runs),
-      totalDistance: runs.reduce((total, activity) => total + activity.distance, 0) / 1000,
-      lastRun: runs[0] ?? null,
-      maxDistance: runs.reduce((max, activity) => Math.max(max, activity.distance / 1000), 0),
-      recentWeek,
-      recentWeekMax,
-    };
-  }, [runs]);
-
-  const headline = syncing
-    ? 'Pulling your latest training block into focus.'
-    : getDashboardHeadline(summary.streak, summary.totalDistance, summary.lastRun);
-
-  const subcopy = syncing
-    ? 'Fresh splits, route edits, and gear changes are being folded into the dashboard now.'
-    : getDashboardSubcopy(summary.lastRun, lastSync);
-
-  return (
-    <section className="rv-panel rv-pulse-band rv-reveal-subtle overflow-hidden px-5 py-5 sm:px-7 sm:py-6">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(19rem,1fr)] lg:items-end">
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rv-chip rv-chip-compact">
-              <Sparkles className="h-3.5 w-3.5 text-[var(--rv-yellow)]" />
-              Daily brief
-            </span>
-            <span className="rv-chip rv-chip-compact">
-              <Clock3 className="h-3.5 w-3.5 text-[var(--rv-blue)]" />
-              {formatPeriodLabel(period)}
-            </span>
-            <span className="rv-chip rv-chip-compact">
-              <Zap className={`h-3.5 w-3.5 ${syncing ? 'text-[var(--rv-yellow)]' : 'text-[var(--rv-green)]'}`} />
-              {syncing ? 'Syncing now' : formatLastSync(lastSync)}
-            </span>
-          </div>
-
-          <div>
-            <p className="rv-kicker mb-2">Runner Pulse</p>
-            <h2 className="rv-section-title max-w-3xl text-[1.8rem] sm:text-[2.2rem]">{headline}</h2>
-            <p className="rv-body-copy mt-3 max-w-2xl">{subcopy}</p>
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-          <PulseStat
-            icon={Footprints}
-            label="Block volume"
-            value={`${summary.totalDistance.toFixed(1)} km`}
-            detail={summary.totalDistance > 0 ? 'Distance in the current view' : 'Your next block starts with one run'}
-          />
-          <PulseStat
-            icon={Zap}
-            label="Current streak"
-            value={`${summary.streak} day${summary.streak === 1 ? '' : 's'}`}
-            detail={summary.streak > 0 ? 'Keep the rhythm gentle and repeatable' : 'A quiet day can still support the plan'}
-          />
-          <PulseStat
-            icon={Clock3}
-            label="Last run"
-            value={summary.lastRun ? `${formatKilometers(summary.lastRun.distance)} km` : '--'}
-            detail={summary.lastRun ? buildLastRunLabel(summary.lastRun) : 'No run recorded in this view yet'}
-          />
-        </div>
-      </div>
-
-      <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-        <div>
-          <p className="rv-mini-label mb-2">Last 7 days</p>
-          <div className="rv-pulse-track">
-            {summary.recentWeek.map((distance, index) => {
-              const height = summary.recentWeekMax === 0 ? 12 : Math.max(12, (distance / summary.recentWeekMax) * 44);
-              return (
-                <span
-                  key={`${index}-${distance}`}
-                  className="rv-pulse-bar"
-                  style={{ height: `${height}px`, opacity: distance === 0 ? 0.22 : 0.96 }}
-                  aria-hidden="true"
-                />
-              );
-            })}
-          </div>
-        </div>
-        <p className="rv-mini-label text-left sm:text-right">
-          {summary.maxDistance > 0
-            ? `Longest outing in view: ${summary.maxDistance.toFixed(1)} km`
-            : 'No standout effort yet in this slice'}
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function PulseStat({
-  icon: Icon,
-  label,
-  value,
-  detail,
-}: {
-  icon: typeof Footprints;
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <div className="rounded-[1.4rem] border border-white/8 bg-black/[0.18] px-4 py-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Icon className="h-4 w-4 text-[var(--rv-blue)]" />
-        <span className="rv-mini-label">{label}</span>
-      </div>
-      <div className="rv-data text-[1.45rem] text-[var(--rv-text)]">{value}</div>
-      <p className="rv-body-copy-sm mt-2">{detail}</p>
-    </div>
-  );
-}
-
 function formatLastSync(lastSync: Date | null) {
   if (!lastSync) return 'Never synced';
   const now = new Date();
@@ -951,71 +797,6 @@ function formatLastSync(lastSync: Date | null) {
   if (diffHrs < 24) return `${diffHrs}h ago`;
 
   return `${Math.floor(diffHrs / 24)}d ago`;
-}
-
-function calculateCurrentStreak(activities: Activity[]) {
-  const uniqueDates = Array.from(
-    new Set(activities.map((activity) => activity.start_date_local.slice(0, 10)))
-  ).sort((a, b) => b.localeCompare(a));
-
-  if (uniqueDates.length === 0) return 0;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  let streak = 0;
-  let cursor = new Date(today);
-
-  if (uniqueDates[0] !== cursor.toISOString().slice(0, 10)) {
-    cursor.setDate(cursor.getDate() - 1);
-    if (uniqueDates[0] !== cursor.toISOString().slice(0, 10)) {
-      return 0;
-    }
-  }
-
-  for (const dateKey of uniqueDates) {
-    if (dateKey !== cursor.toISOString().slice(0, 10)) {
-      break;
-    }
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-
-  return streak;
-}
-
-function getDashboardHeadline(streak: number, totalDistance: number, lastRun: Activity | null) {
-  if (streak >= 5) return `${streak}-day rhythm intact. The block is humming.`;
-  if (totalDistance >= 80) return 'Big volume is stacking up with real intent.';
-  if (totalDistance >= 35) return 'Solid work. Your recent training looks steady and usable.';
-  if (lastRun) return `Last session logged: ${lastRun.name}. Keep the thread going.`;
-  return 'A quieter block can still become a sharp rebuild.';
-}
-
-function getDashboardSubcopy(lastRun: Activity | null, lastSync: Date | null) {
-  if (!lastRun) {
-    return lastSync
-      ? `Your data is current as of ${formatLastSync(lastSync)}. Once a run lands, RunViz will start shaping the trend lines around it.`
-      : 'Connect a fresh run and the dashboard will start building a clearer story around load, rhythm, and readiness.';
-  }
-
-  const date = parseActivityLocalDate(lastRun.start_date_local);
-  const readableDate = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  return `Latest effort was ${formatKilometers(lastRun.distance)} km on ${readableDate}. Use this view to see whether the rest of the block is supporting that effort cleanly.`;
-}
-
-function buildLastRunLabel(activity: Activity) {
-  const date = parseActivityLocalDate(activity.start_date_local);
-  return `${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • ${activity.name}`;
-}
-
-function formatKilometers(distanceMeters: number) {
-  return (distanceMeters / 1000).toFixed(1);
-}
-
-function formatPeriodLabel(period: ViewPeriod) {
-  if (period.mode === 'all') return 'All time';
-  if (period.mode === 'year') return `${period.year} block`;
-  return `${MONTHS[period.month ?? 0]} ${period.year}`;
 }
 
 function PanelFallback({
