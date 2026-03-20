@@ -341,7 +341,7 @@ export function RaceTimePredictions({
                 {predictions.predictions.map(pred => (
                     <div
                         key={pred.name}
-                        className="rounded-[1.6rem] border border-white/[0.06] bg-black/[0.15] p-4"
+                        className="rounded-[1.6rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] p-4"
                     >
                         <div className="flex items-center justify-between mb-2">
                             <span className="rv-mini-label">
@@ -387,8 +387,8 @@ export function RaceTimePredictions({
                             <div className="text-sm font-normal normal-case leading-6 text-[var(--rv-text-dim)]">
                                 Difference between fitness (CTL) and fatigue (ATL).
                                 <br />
-                                <span className="mt-1 block text-emerald-500">+ Positive: Fresh & Ready</span>
-                                <span className="block text-red-400">- Negative: Fatigued & Building</span>
+                                <span className="mt-1 block text-emerald-600">+ Positive: Fresh & Ready</span>
+                                <span className="block text-red-500">- Negative: Fatigued & Building</span>
                             </div>
                         </>
                     ) : (
@@ -396,9 +396,9 @@ export function RaceTimePredictions({
                             <div className="mb-1 text-sm font-semibold text-emerald-400">Race Readiness Score (0-100)</div>
                             <div className="text-sm font-normal normal-case leading-6 text-[var(--rv-text-dim)]">
                                 Composite of fitness (CTL), freshness (TSB), quality sessions (28d), and long-run support (14d).
-                                <span className="mt-1 block text-emerald-500">75+: Ready to race</span>
-                                <span className="block text-yellow-400">55-74: Building fitness</span>
-                                <span className="block text-gray-300">&lt;55: Base phase</span>
+                                <span className="mt-1 block text-emerald-600">75+: Ready to race</span>
+                                <span className="block text-amber-500">55-74: Building fitness</span>
+                                <span className="block text-[var(--rv-text-dim)]">&lt;55: Base phase</span>
                                 <span className="mt-1 block text-[0.72rem] text-[var(--rv-text-faint)]">
                                     Quality runs: {predictions.qualityRuns} | Longest recent: {predictions.longestRecentRunKm.toFixed(1)} km
                                 </span>

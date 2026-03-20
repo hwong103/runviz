@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { getBrandFallbackEmoji, getBrandLogoUrl } from '../../services/logoService';
+import { useTheme } from '../../hooks/useTheme';
 
 interface BrandLogoProps {
     brandName?: string;
@@ -14,10 +15,11 @@ export function BrandLogo({
     className,
     fallbackMode = 'emoji',
     size = 48,
-    theme = 'dark',
+    theme,
 }: BrandLogoProps) {
+    const { resolved } = useTheme();
     const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
-    const logoUrl = getBrandLogoUrl(brandName, size, theme);
+    const logoUrl = getBrandLogoUrl(brandName, size, theme ?? resolved);
 
     if (!logoUrl || failedLogoUrl === logoUrl) {
         if (fallbackMode === 'none') return null;

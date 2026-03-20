@@ -123,15 +123,15 @@ export function CalendarHeatmap({
     }, [activities, year, month, isMonthView]);
 
     const getColor = (distance: number, isActive: boolean, isSelected: boolean): string => {
-        if (isSelected) return 'bg-white ring-2 ring-emerald-400';
-        if (!isActive) return 'bg-white/[0.02]';
-        if (distance === 0) return 'bg-white/5';
+        if (isSelected) return 'bg-[var(--rv-blue)] ring-2 ring-[var(--rv-blue)]/35';
+        if (!isActive) return 'bg-[var(--rv-bg-elevated)]';
+        if (distance === 0) return 'bg-[var(--rv-bg-panel)]';
         const intensity = Math.min(distance / maxDistance, 1);
 
-        if (intensity < 0.25) return 'bg-emerald-900/60';
-        if (intensity < 0.5) return 'bg-emerald-700/70';
-        if (intensity < 0.75) return 'bg-emerald-500/80';
-        return 'bg-emerald-400';
+        if (intensity < 0.25) return 'bg-[var(--rv-green)]/30';
+        if (intensity < 0.5) return 'bg-[var(--rv-green)]/45';
+        if (intensity < 0.75) return 'bg-[var(--rv-green)]/65';
+        return 'bg-[var(--rv-green)]';
     };
 
     const getDayStory = (distance: number) => {
@@ -144,7 +144,7 @@ export function CalendarHeatmap({
     };
 
     return (
-        <div className="rounded-[1.6rem] border border-white/[0.06] bg-black/10 p-4 overflow-x-auto sm:p-5">
+        <div className="rv-subtle-card overflow-x-auto p-4 sm:p-5">
             <div className="min-w-[300px]">
                 {/* Month labels */}
                 <div className="relative mb-2 ml-8 flex h-5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-text-faint)]">
@@ -199,7 +199,7 @@ export function CalendarHeatmap({
                                                 }
                                             }}
                                             onMouseLeave={() => setHoveredDay(null)}
-                                            className={`${isMonthView ? 'h-5 w-5 rounded-[3px]' : 'h-3 w-3 rounded-[2px]'} transition-all duration-200 focus-visible:scale-125 focus-visible:ring-2 focus-visible:ring-white/40 ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'bg-transparent'
+                                            className={`${isMonthView ? 'h-5 w-5 rounded-[3px]' : 'h-3 w-3 rounded-[2px]'} transition-all duration-200 focus-visible:scale-125 focus-visible:ring-2 focus-visible:ring-[var(--rv-border-strong)] ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'bg-transparent'
                                                 } ${isInteractive ? 'cursor-pointer hover:scale-110 hover:ring-2 hover:ring-white/30' : ''}`}
                                             disabled={!isInteractive}
                                             aria-label={day ? `${format(parseISO(day.date), 'MMMM d, yyyy')}, ${day.distance.toFixed(2)} kilometers, ${getDayStory(day.distance)}` : 'Empty day'}
@@ -215,11 +215,11 @@ export function CalendarHeatmap({
                 <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-6">
                         <div className="flex items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-text-faint)]">
                         <span>Less</span>
-                        <div className="w-3 h-3 rounded-[2px] bg-white/5" />
-                        <div className="w-3 h-3 rounded-[2px] bg-emerald-900/60" />
-                        <div className="w-3 h-3 rounded-[2px] bg-emerald-700/70" />
-                        <div className="w-3 h-3 rounded-[2px] bg-emerald-500/80" />
-                        <div className="w-3 h-3 rounded-[2px] bg-emerald-400" />
+                        <div className="h-3 w-3 rounded-[2px] bg-[var(--rv-bg-elevated)]" />
+                        <div className="h-3 w-3 rounded-[2px] bg-[var(--rv-green)]/30" />
+                        <div className="h-3 w-3 rounded-[2px] bg-[var(--rv-green)]/45" />
+                        <div className="h-3 w-3 rounded-[2px] bg-[var(--rv-green)]/65" />
+                        <div className="h-3 w-3 rounded-[2px] bg-[var(--rv-green)]" />
                         <span>More</span>
                     </div>
                     {onSelectDay && (
@@ -239,7 +239,7 @@ export function CalendarHeatmap({
                     <div className="mb-0.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-blue)]">
                         {format(parseISO(hoveredDay.date), 'MMM d, yyyy')}
                     </div>
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-sm font-semibold text-[var(--rv-text)]">
                         {hoveredDay.distance.toFixed(2)} km
                     </div>
                     <div className="mt-1 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--rv-text-faint)]">

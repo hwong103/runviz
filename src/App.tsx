@@ -491,7 +491,7 @@ function App() {
 
       <div className="min-h-screen">
         <div className="min-w-0">
-          <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#070f1a]/90 backdrop-blur-2xl">
+          <header className="sticky top-0 z-40 border-b border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_88%,transparent)] backdrop-blur-2xl">
             <div className="mx-auto flex min-h-[60px] max-w-[1720px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:flex-nowrap sm:px-6 sm:py-0 lg:px-8">
               <div className="flex shrink-0 items-center gap-2.5">
                 <LabGlyph className="h-6 w-6 text-[var(--rv-blue)]" />
@@ -500,10 +500,10 @@ function App() {
                 </span>
               </div>
 
-              <div className="hidden h-5 w-px shrink-0 bg-white/[0.08] sm:block" />
+              <div className="hidden h-5 w-px shrink-0 bg-[var(--rv-border)] sm:block" />
 
               <div className="order-3 flex w-full min-w-0 flex-wrap items-center gap-2 sm:order-none sm:w-auto sm:flex-1">
-                <div className="flex flex-wrap items-center gap-0.5 rounded-full border border-white/[0.07] bg-white/[0.03] p-0.5">
+                <div className="flex flex-wrap items-center gap-0.5 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] p-0.5">
                   {([
                     { mode: 'all', label: 'All' },
                     { mode: 'year', label: 'Year' },
@@ -516,6 +516,7 @@ function App() {
                         ? 'bg-[var(--rv-blue)] text-white shadow-[0_4px_12px_rgba(74,122,255,0.35)]'
                         : 'text-[var(--rv-text-faint)] hover:-translate-y-0.5 hover:text-[var(--rv-text-dim)]'
                         }`}
+                      style={viewPeriod.mode === mode ? { color: '#fff' } : undefined}
                     >
                       {label}
                     </button>
@@ -526,7 +527,7 @@ function App() {
                   <select
                     value={viewPeriod.year}
                     onChange={(e) => setViewPeriod(prev => ({ ...prev, year: parseInt(e.target.value, 10) }))}
-                    className="rv-pill-label min-w-0 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
+                    className="rv-pill-label min-w-0 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-2.5 py-1 text-[var(--rv-text-dim)] outline-none transition hover:border-[var(--rv-border-strong)] focus:border-[var(--rv-blue)]/60"
                   >
                     {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
@@ -536,7 +537,7 @@ function App() {
                   <select
                     value={viewPeriod.month || 0}
                     onChange={(e) => setViewPeriod(prev => ({ ...prev, month: parseInt(e.target.value, 10) }))}
-                    className="rv-pill-label min-w-0 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[var(--rv-text-dim)] outline-none transition hover:border-white/15 focus:border-[var(--rv-blue)]/60"
+                    className="rv-pill-label min-w-0 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-2.5 py-1 text-[var(--rv-text-dim)] outline-none transition hover:border-[var(--rv-border-strong)] focus:border-[var(--rv-blue)]/60"
                   >
                     {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
                   </select>
@@ -551,7 +552,7 @@ function App() {
                   type="button"
                   title={syncing ? 'Syncing...' : 'Sync Data'}
                   data-syncing={syncing}
-                  className="rv-sync-button flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.03] text-[var(--rv-text-faint)] transition hover:border-white/15 hover:text-[var(--rv-text-dim)] disabled:cursor-wait disabled:opacity-40"
+                  className="rv-sync-button flex h-8 w-8 items-center justify-center rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[var(--rv-text-faint)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text-dim)] disabled:cursor-wait disabled:opacity-40"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
                 </button>
@@ -571,7 +572,7 @@ function App() {
                     }}
                     aria-haspopup="menu"
                     aria-expanded={isMenuOpen}
-                    className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-white/[0.10] bg-white/[0.05] transition hover:border-white/25"
+                    className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] transition hover:border-[var(--rv-border-strong)]"
                   >
                     {athlete?.profile ? (
                       <img src={athlete.profile} className="h-full w-full object-cover" alt="Profile" />
@@ -593,7 +594,7 @@ function App() {
                 style={{ top: menuPos.top, right: menuPos.right }}
                 onClick={(event) => event.stopPropagation()}
               >
-                <div className="border-b border-white/5 px-4 py-3">
+                <div className="border-b border-[var(--rv-border)] px-4 py-3">
                   <div className="flex items-center gap-3">
                     {athlete?.profile ? (
                       <img src={athlete.profile} className="h-8 w-8 rounded-full object-cover" alt="Profile" />
@@ -609,11 +610,11 @@ function App() {
                   </div>
                 </div>
 
-                <div className="border-b border-white/5 px-2 py-2">
+                <div className="border-b border-[var(--rv-border)] px-2 py-2">
                   <Link
                     to="/plan-route"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition hover:bg-white/5"
+                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition hover:bg-[var(--rv-bg-elevated)]"
                   >
                     <MapGlyph className="h-4 w-4 text-[var(--rv-blue)]" />
                     <span className="rv-mini-label text-[var(--rv-text)]">Route Planner</span>
@@ -621,14 +622,14 @@ function App() {
                   <Link
                     to="/form-analysis"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition hover:bg-white/5"
+                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition hover:bg-[var(--rv-bg-elevated)]"
                   >
                     <LabGlyph className="h-4 w-4 text-[var(--rv-yellow)]" />
                     <span className="rv-mini-label text-[var(--rv-text)]">Form Lab</span>
                   </Link>
                 </div>
 
-                <div className="border-b border-white/5 px-2 py-2">
+                <div className="border-b border-[var(--rv-border)] px-2 py-2">
                   <div className="flex items-center justify-between rounded-2xl px-4 py-2.5">
                     <div className="flex items-center gap-2">
                       <span className={`h-1.5 w-1.5 rounded-full ${syncing ? 'animate-pulse bg-[var(--rv-yellow)]' : 'bg-[var(--rv-green)]'}`} />
@@ -643,7 +644,7 @@ function App() {
                       setIsMenuOpen(false);
                     }}
                     disabled={syncing}
-                    className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-left transition hover:bg-white/5 disabled:opacity-50"
+                    className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-left transition hover:bg-[var(--rv-bg-elevated)] disabled:opacity-50"
                   >
                     <span className="rv-mini-label text-[var(--rv-text)]">Full Sync</span>
                     <span className="rv-mini-label text-[var(--rv-blue)]">{syncing ? 'Running' : 'Start'}</span>
@@ -739,7 +740,7 @@ function App() {
             />
           </main>
 
-          <footer className="border-t border-white/5 px-4 py-8 sm:px-6 lg:px-8">
+          <footer className="border-t border-[var(--rv-border)] px-4 py-8 sm:px-6 lg:px-8">
             <div className="rv-mini-label mx-auto flex max-w-[1720px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <span>RunViz analytics v4.2</span>
               <span>Synced with the Strava API</span>
@@ -816,7 +817,7 @@ function PanelFallback({
         <p className="rv-kicker mb-2">{title}</p>
         <p className="rv-body-copy-sm">{subtitle}</p>
       </div>
-      <div className={`${heightClassName} animate-pulse rounded-[1.5rem] border border-white/6 bg-white/[0.03]`} />
+      <div className={`${heightClassName} animate-pulse rounded-[1.5rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)]`} />
     </div>
   );
 }

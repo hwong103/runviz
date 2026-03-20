@@ -17,6 +17,7 @@ import { format, subDays, startOfDay, eachDayOfInterval, startOfMonth, endOfMont
 import { TrendingUp } from 'lucide-react';
 import type { Activity } from '../types';
 import { parseActivityLocalDate } from '../utils/activityDate';
+import { useChartTheme } from '../hooks/useChartTheme';
 
 ChartJS.register(
     CategoryScale,
@@ -41,6 +42,8 @@ interface MileageTrendChartProps {
 }
 
 export function MileageTrendChart({ activities, period }: MileageTrendChartProps) {
+    const chartTheme = useChartTheme();
+
     const data = useMemo(() => {
         let startDate: Date;
         let endDate: Date;
@@ -103,25 +106,25 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
                     type: 'line' as const,
                     label: `Trailing ${trailingDays}d (km)`,
                     data: trailingData,
-                    borderColor: 'rgba(52, 211, 153, 1)',
+                    borderColor: chartTheme.primaryLine,
                     borderWidth: 2,
                     pointRadius: 0,
                     tension: 0.4,
                     fill: true,
-                    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                    backgroundColor: chartTheme.primaryFill,
                     yAxisID: 'y1',
                 },
                 {
                     type: 'bar' as const,
                     label: 'Daily (km)',
                     data: dailyData,
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    backgroundColor: chartTheme.accentBg,
                     borderRadius: 4,
                     yAxisID: 'y',
                 },
             ],
         };
-    }, [activities, period]);
+    }, [activities, period, chartTheme]);
 
     const options = {
         responsive: true,
@@ -135,14 +138,16 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
                 display: true,
                 position: 'top' as const,
                 labels: {
-                    color: 'rgba(255, 255, 255, 0.7)',
+                    color: chartTheme.legendColor,
                     usePointStyle: true,
                 },
             },
             tooltip: {
-                backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                titleColor: '#fff',
-                bodyColor: '#fff',
+                backgroundColor: chartTheme.tooltipBg,
+                titleColor: chartTheme.tooltipTitle,
+                bodyColor: chartTheme.tooltipBody,
+                borderColor: chartTheme.tooltipBorder,
+                borderWidth: 1,
                 padding: 12,
                 cornerRadius: 8,
             },
@@ -153,7 +158,7 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
                     display: false,
                 },
                 ticks: {
-                    color: 'rgba(255, 255, 255, 0.5)',
+                    color: chartTheme.tickColor,
                     maxRotation: 0,
                     autoSkip: true,
                     maxTicksLimit: period.mode === 'month' ? 31 : 12,
@@ -164,13 +169,13 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
                 title: {
                     display: true,
                     text: 'Daily km',
-                    color: 'rgba(255, 255, 255, 0.5)',
+                    color: chartTheme.axisColor,
                 },
                 grid: {
-                    color: 'rgba(255, 255, 255, 0.05)',
+                    color: chartTheme.gridColor,
                 },
                 ticks: {
-                    color: 'rgba(255, 255, 255, 0.5)',
+                    color: chartTheme.tickColor,
                 },
             },
             y1: {
@@ -179,22 +184,22 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
                 title: {
                     display: true,
                     text: 'Trailing km',
-                    color: 'rgba(52, 211, 153, 0.7)',
+                    color: chartTheme.primaryLine,
                 },
                 grid: {
                     display: false,
                 },
                 ticks: {
-                    color: 'rgba(52, 211, 153, 0.7)',
+                    color: chartTheme.primaryLine,
                 },
             },
         },
     };
 
     return (
-        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10 h-[400px]">
-            <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2">
-                <TrendingUp className="h-[18px] w-[18px] text-emerald-400" />
+        <div className="rv-panel rv-panel-strong h-[400px] p-6">
+            <h3 className="mb-6 flex items-center gap-2 text-lg font-medium text-[var(--rv-text)]">
+                <TrendingUp className="h-[18px] w-[18px] text-[var(--rv-green)]" />
                 Mileage Trends ({period.mode === 'all' ? 'Overall' : period.mode === 'year' ? period.year : format(new Date(period.year, period.month!), 'MMMM yyyy')})
             </h3>
             <div className="h-[300px]">

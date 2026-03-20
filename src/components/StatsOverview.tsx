@@ -355,7 +355,7 @@ function StatCard({
     value,
     unit,
     icon: Icon,
-    color = "text-white",
+    color = "text-[var(--rv-text)]",
     detail,
     style,
     helpMetric,
@@ -394,7 +394,7 @@ function StatCard({
             ref={cardRef}
             style={style}
             data-tone={tone}
-            className={`rv-panel rv-stat-card rv-reveal-subtle rv-spotlight relative overflow-hidden transition-all duration-300 group hover:-translate-y-1 hover:border-white/20 ${isCompact ? 'p-3 sm:p-4' : 'p-4 sm:p-5'}`}
+            className={`rv-panel rv-stat-card rv-reveal-subtle rv-spotlight relative overflow-hidden transition-all duration-300 group hover:-translate-y-1 hover:border-[var(--rv-border-strong)] ${isCompact ? 'p-3 sm:p-4' : 'p-4 sm:p-5'}`}
         >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
             <div className={`mb-3 flex items-center gap-2 ${isCompact ? 'pr-3' : 'pr-6'}`}>
@@ -408,7 +408,7 @@ function StatCard({
                             e.stopPropagation();
                             onToggleHelp(showHelp ? null : helpMetric);
                         }}
-                        className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[10px] text-[var(--rv-text-faint)] transition-colors hover:bg-white/10 hover:text-white"
+                        className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[10px] text-[var(--rv-text-faint)] transition-colors hover:bg-[var(--rv-bg-elevated)] hover:text-[var(--rv-text)]"
                         aria-label={`Help for ${label}`}
                         title={`Help for ${label}`}
                     >

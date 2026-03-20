@@ -69,7 +69,7 @@ export function ActivityList({
                         </Badge>
                         <button
                             onClick={onClearShoeFilter}
-                            className="rounded-full px-2 py-1 text-xs font-black text-[var(--rv-text-dim)] transition-colors hover:bg-white/10 hover:text-white"
+                            className="rounded-full px-2 py-1 text-xs font-black text-[var(--rv-text-dim)] transition-colors hover:bg-[var(--rv-bg-elevated)] hover:text-[var(--rv-text)]"
                             title="Clear filter"
                         >
                             <X className="h-3.5 w-3.5" />
@@ -94,20 +94,20 @@ export function ActivityList({
                                 type="button"
                                 onClick={() => onSelect?.(activity)}
                                 style={reveal(160 + index * 40)}
-                                className="rv-reveal-subtle rv-spotlight group flex w-full cursor-pointer flex-col gap-3 rounded-[1.7rem] border border-white/[0.06] bg-black/[0.15] p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-white/5 focus-visible:border-[var(--rv-blue)] focus-visible:bg-white/5 sm:flex-row sm:items-center sm:gap-4"
+                                className="rv-reveal-subtle rv-spotlight group flex w-full cursor-pointer flex-col gap-3 rounded-[1.7rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--rv-border-strong)] hover:bg-[var(--rv-bg-elevated)] focus-visible:border-[var(--rv-blue)] focus-visible:bg-[var(--rv-bg-elevated)] sm:flex-row sm:items-center sm:gap-4"
                                 aria-label={`Open run details for ${activity.name} on ${dateParts.month} ${dateParts.day}`}
                             >
                                 {/* Date */}
                                 <div className="w-full sm:w-16 flex items-center gap-2 sm:block sm:text-center">
                                     <div className="rv-mini-label">{dateParts.weekday}</div>
-                                    <div className="text-[1.35rem] font-bold leading-none text-white">{dateParts.day}</div>
+                                    <div className="text-[1.35rem] font-bold leading-none text-[var(--rv-text)]">{dateParts.day}</div>
                                     <div className="rv-mini-label">{dateParts.month}</div>
                                 </div>
 
                                 {/* Activity info */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <h3 className="truncate text-base font-semibold tracking-[-0.02em] text-white transition-colors group-hover:text-[var(--rv-blue)]">
+                                        <h3 className="truncate text-base font-semibold tracking-[-0.02em] text-[var(--rv-text)] transition-colors group-hover:text-[var(--rv-blue)]">
                                             {activity.name}
                                         </h3>
                                         {activity.distance === maxDist && maxDist > 0 && (
@@ -165,7 +165,7 @@ export function ActivityList({
                                         )}
                                     </div>
 
-                                    <ChevronRight className="h-4 w-4 text-[var(--rv-text-faint)] transition-all group-hover:translate-x-1 group-hover:text-white" />
+                                    <ChevronRight className="h-4 w-4 text-[var(--rv-text-faint)] transition-all group-hover:translate-x-1 group-hover:text-[var(--rv-text)]" />
                                 </div>
                             </button>
                         );

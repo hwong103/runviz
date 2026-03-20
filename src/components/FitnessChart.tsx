@@ -18,6 +18,7 @@ import {
     calculateTrainingLoadHistory,
     interpretTSB,
 } from '../analytics/trainingLoad';
+import { useChartTheme } from '../hooks/useChartTheme';
 
 ChartJS.register(
     CategoryScale,
@@ -42,6 +43,8 @@ interface FitnessChartProps {
 }
 
 export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: FitnessChartProps) {
+    const chartTheme = useChartTheme();
+
     const metrics = useMemo(() => {
         if (activities.length === 0) return [];
 
@@ -89,8 +92,8 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             {
                 label: 'Fitness (CTL)',
                 data: metrics.map((m) => m.ctl),
-                borderColor: '#13C38B',
-                backgroundColor: 'rgba(19, 195, 139, 0.12)',
+                borderColor: chartTheme.primaryLine,
+                backgroundColor: chartTheme.primaryFill,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 0,
@@ -98,8 +101,8 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             {
                 label: 'Fatigue (ATL)',
                 data: metrics.map((m) => m.atl),
-                borderColor: '#FF8E2B',
-                backgroundColor: 'rgba(255, 142, 43, 0.12)',
+                borderColor: chartTheme.secondaryLine,
+                backgroundColor: chartTheme.secondaryFill,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 0,
@@ -107,8 +110,8 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             {
                 label: 'Form (TSB)',
                 data: metrics.map((m) => m.tsb),
-                borderColor: '#FFF917',
-                backgroundColor: 'rgba(255, 249, 23, 0.09)',
+                borderColor: chartTheme.tertiaryLine,
+                backgroundColor: chartTheme.tertiaryFill,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 0,
@@ -124,35 +127,35 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             intersect: false,
         },
         plugins: {
-            legend: {
-                display: true,
-                position: 'top' as const,
-                labels: {
-                    color: 'rgba(246, 242, 241, 0.64)',
-                    usePointStyle: true,
-                    padding: 20,
-                    boxWidth: 8,
+                legend: {
+                    display: true,
+                    position: 'top' as const,
+                    labels: {
+                        color: chartTheme.legendColor,
+                        usePointStyle: true,
+                        padding: 20,
+                        boxWidth: 8,
+                    },
+                },
+                tooltip: {
+                    backgroundColor: chartTheme.tooltipBg,
+                    titleColor: chartTheme.tooltipTitle,
+                    bodyColor: chartTheme.tooltipBody,
+                    borderColor: chartTheme.tooltipBorder,
+                    borderWidth: 1,
                 },
             },
-            tooltip: {
-                backgroundColor: 'rgba(6, 21, 31, 0.95)',
-                titleColor: '#F6F2F1',
-                bodyColor: 'rgba(246, 242, 241, 0.72)',
-                borderColor: 'rgba(246, 242, 241, 0.08)',
-                borderWidth: 1,
+            scales: {
+                x: {
+                    grid: { color: chartTheme.gridColor },
+                    ticks: { color: chartTheme.tickColor, maxTicksLimit: 10 },
+                },
+                y: {
+                    grid: { color: chartTheme.gridColor },
+                    ticks: { color: chartTheme.tickColor },
+                },
             },
-        },
-        scales: {
-            x: {
-                grid: { color: 'rgba(246, 242, 241, 0.05)' },
-                ticks: { color: 'rgba(246, 242, 241, 0.34)', maxTicksLimit: 10 },
-            },
-            y: {
-                grid: { color: 'rgba(246, 242, 241, 0.05)' },
-                ticks: { color: 'rgba(246, 242, 241, 0.34)' },
-            },
-        },
-    };
+        };
 
     return (
         <div className="rv-panel rv-panel-strong px-5 py-5 sm:px-7 sm:py-6">
@@ -183,20 +186,20 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             </div>
 
             {/* Current values */}
-            <div className="mt-6 grid grid-cols-1 gap-3 border-t border-white/5 pt-6 min-[420px]:grid-cols-3">
-                <div className="rounded-[1.4rem] border border-white/[0.06] bg-black/[0.15] px-3 py-4 text-center">
+            <div className="mt-6 grid grid-cols-1 gap-3 border-t border-[color-mix(in_srgb,var(--rv-text)_8%,transparent)] pt-6 min-[420px]:grid-cols-3">
+                <div className="rounded-[1.4rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-4 text-center">
                     <div className="rv-metric text-3xl text-[#13C38B]">
                         {displayMetric ? displayMetric.ctl.toFixed(0) : '-'}
                     </div>
                     <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fitness</div>
                 </div>
-                <div className="rounded-[1.4rem] border border-white/[0.06] bg-black/[0.15] px-3 py-4 text-center">
+                <div className="rounded-[1.4rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-4 text-center">
                     <div className="rv-metric text-3xl text-[#FF8E2B]">
                         {displayMetric ? displayMetric.atl.toFixed(0) : '-'}
                     </div>
                     <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fatigue</div>
                 </div>
-                <div className="rounded-[1.4rem] border border-white/[0.06] bg-black/[0.15] px-3 py-4 text-center">
+                <div className="rounded-[1.4rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-4 text-center">
                     <div className="rv-metric text-3xl text-[var(--rv-yellow)]">
                         {displayMetric ? displayMetric.tsb.toFixed(0) : '-'}
                     </div>

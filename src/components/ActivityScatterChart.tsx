@@ -11,6 +11,7 @@ import {
 import { Scatter } from 'react-chartjs-2';
 import { Footprints } from 'lucide-react';
 import type { Activity } from '../types';
+import { useChartTheme } from '../hooks/useChartTheme';
 
 ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, ScatterController);
 
@@ -19,6 +20,8 @@ interface ActivityScatterChartProps {
 }
 
 export function ActivityScatterChart({ activities }: ActivityScatterChartProps) {
+    const chartTheme = useChartTheme();
+
     const data = useMemo(() => {
         const runs = activities.filter(a => a.type === 'Run' || a.sport_type === 'Run');
 
@@ -30,15 +33,15 @@ export function ActivityScatterChart({ activities }: ActivityScatterChartProps) 
                         x: a.distance / 1000, // Distance in km
                         y: (a.moving_time / a.distance) * 1000 / 60, // Pace in min/km
                     })),
-                    backgroundColor: 'rgba(16, 185, 129, 0.6)',
-                    borderColor: 'rgba(16, 185, 129, 1)',
+                    backgroundColor: chartTheme.primaryLine,
+                    borderColor: chartTheme.primaryLine,
                     borderWidth: 1,
                     pointRadius: 5,
                     pointHoverRadius: 8,
                 },
             ],
         };
-    }, [activities]);
+    }, [activities, chartTheme]);
 
     const options = {
         responsive: true,
@@ -65,13 +68,13 @@ export function ActivityScatterChart({ activities }: ActivityScatterChartProps) 
                 title: {
                     display: true,
                     text: 'Distance (km)',
-                    color: 'rgba(255, 255, 255, 0.7)',
+                    color: chartTheme.axisColor,
                 },
                 grid: {
-                    color: 'rgba(255, 255, 255, 0.1)',
+                    color: chartTheme.gridColor,
                 },
                 ticks: {
-                    color: 'rgba(255, 255, 255, 0.7)',
+                    color: chartTheme.tickColor,
                 },
             },
             y: {
@@ -79,13 +82,13 @@ export function ActivityScatterChart({ activities }: ActivityScatterChartProps) 
                 title: {
                     display: true,
                     text: 'Pace (min/km)',
-                    color: 'rgba(255, 255, 255, 0.7)',
+                    color: chartTheme.axisColor,
                 },
                 grid: {
-                    color: 'rgba(255, 255, 255, 0.1)',
+                    color: chartTheme.gridColor,
                 },
                 ticks: {
-                    color: 'rgba(255, 255, 255, 0.7)',
+                    color: chartTheme.tickColor,
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     callback: (value: any) => {
                         const mins = Math.floor(value);
@@ -98,9 +101,9 @@ export function ActivityScatterChart({ activities }: ActivityScatterChartProps) 
     };
 
     return (
-        <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-6 border border-white/10 h-[400px]">
-            <h3 className="text-lg font-medium text-white mb-6 flex items-center gap-2">
-                <Footprints className="h-[18px] w-[18px] text-emerald-400" />
+        <div className="rv-panel rv-panel-strong h-[400px] p-6">
+            <h3 className="mb-6 flex items-center gap-2 text-lg font-medium text-[var(--rv-text)]">
+                <Footprints className="h-[18px] w-[18px] text-[var(--rv-green)]" />
                 Pace vs. Distance
             </h3>
             <div className="h-[300px]">

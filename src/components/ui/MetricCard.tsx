@@ -12,7 +12,7 @@ export function MetricCard({
     value,
     unit,
     hint,
-    accentClassName = 'text-white',
+    accentClassName = 'text-[var(--rv-text)]',
     className,
 }: MetricCardProps) {
     return (
@@ -22,7 +22,7 @@ export function MetricCard({
                 <div className="text-4xl font-black italic tracking-tighter">{value}</div>
                 {unit && <div className="rv-metric-card-unit pb-1">{unit}</div>}
             </div>
-            {hint && <div className="mt-3 text-[10px] font-medium leading-relaxed text-slate-500">{hint}</div>}
+            {hint && <div className="mt-3 text-[10px] font-medium leading-relaxed text-[var(--rv-text-faint)]">{hint}</div>}
         </div>
     );
 }
