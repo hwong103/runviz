@@ -12,7 +12,7 @@ export function ThemeToggle() {
 
     return (
         <div
-            className="flex items-center gap-0.5 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] backdrop-blur-xl"
+            className="inline-flex items-center gap-0.5 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)] backdrop-blur-xl"
             role="group"
             aria-label="Theme"
         >

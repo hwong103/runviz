@@ -611,14 +611,8 @@ function App() {
                   </div>
                 </div>
 
-                <div className="border-b border-[var(--rv-border)] px-2 py-2">
-                  <div className="px-4 py-2.5">
-                    <div className="mb-3">
-                      <div className="rv-mini-label text-[var(--rv-text)]">Theme</div>
-                      <div className="mt-1 text-[0.72rem] leading-5 text-[var(--rv-text-faint)]">
-                        Match the interface to your environment.
-                      </div>
-                    </div>
+                <div className="border-b border-[var(--rv-border)] px-2 py-3">
+                  <div className="flex justify-center px-4">
                     <ThemeToggle />
                   </div>
                 </div>
