@@ -13,15 +13,11 @@ interface ShoeTrackerProps {
 
 // Brand logo component with fallback support
 function BrandLogo({ brandName, className }: { brandName?: string; className?: string }) {
-    const [hasError, setHasError] = useState(false);
+    const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
     const logoUrl = getBrandLogoUrl(brandName, 48, 'dark');
     const fallbackEmoji = getBrandFallbackEmoji(brandName);
 
-    useEffect(() => {
-        setHasError(false);
-    }, [brandName]);
-
-    if (!logoUrl || hasError) {
+    if (!logoUrl || failedLogoUrl === logoUrl) {
         return (
             <span className={`${className} inline-flex items-center justify-center rounded-md bg-white/5 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--rv-text-faint)] leading-none`}>
                 {fallbackEmoji}
@@ -34,7 +30,7 @@ function BrandLogo({ brandName, className }: { brandName?: string; className?: s
             src={logoUrl}
             alt={brandName || 'Brand'}
             className={`${className} block object-contain`}
-            onError={() => setHasError(true)}
+            onError={() => setFailedLogoUrl(logoUrl)}
         />
     );
 }

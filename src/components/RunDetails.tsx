@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -11,6 +12,16 @@ import {
     Filler,
 } from 'chart.js';
 import { Bar, Chart } from 'react-chartjs-2';
+import {
+    ArrowLeft,
+    ArrowRight,
+    BarChart3,
+    Flame,
+    Gauge,
+    HeartPulse,
+    Mountain,
+    X,
+} from 'lucide-react';
 import type { Activity, ActivityStreams, Gear } from '../types';
 import { isRun } from '../types';
 import { format } from 'date-fns';
@@ -20,15 +31,11 @@ import { parseActivityLocalDate } from '../utils/activityDate';
 
 // Brand logo component with fallback support
 function BrandLogo({ brandName, className }: { brandName?: string; className?: string }) {
-    const [hasError, setHasError] = useState(false);
+    const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
     const logoUrl = getBrandLogoUrl(brandName, 48, 'dark');
     const fallbackEmoji = getBrandFallbackEmoji(brandName);
 
-    useEffect(() => {
-        setHasError(false);
-    }, [brandName]);
-
-    if (!logoUrl || hasError) {
+    if (!logoUrl || failedLogoUrl === logoUrl) {
         return (
             <span className={`${className} inline-flex items-center justify-center rounded-md bg-white/5 px-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--rv-text-faint)] leading-none`}>
                 {fallbackEmoji}
@@ -41,7 +48,7 @@ function BrandLogo({ brandName, className }: { brandName?: string; className?: s
             src={logoUrl}
             alt={brandName || 'Brand'}
             className={`${className} block w-5 h-5 object-contain`}
-            onError={() => setHasError(true)}
+            onError={() => setFailedLogoUrl(logoUrl)}
         />
     );
 }
@@ -85,6 +92,22 @@ function formatPace(paceMinKm: number) {
     const min = Math.floor(paceMinKm);
     const sec = Math.round((paceMinKm - min) * 60);
     return `${min}:${sec.toString().padStart(2, '0')}`;
+}
+
+function formatDuration(seconds: number) {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hrs > 0) {
+        return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function formatDistanceKm(meters: number) {
+    return (meters / 1000).toFixed(2);
 }
 
 export function RunDetails({ activity: initialActivity, allActivities, shoes, onClose, onSelect }: RunDetailsProps) {
@@ -199,10 +222,10 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
         const myPaceBin = Math.min(Math.floor((myPace - minPace) / paceBinSize), paceBinCount - 1);
 
         const sortedByDistance = [...runs].sort((a, b) => b.distance - a.distance);
-        const distanceRank = sortedByDistance.findIndex(a => a.id === activity.id) + 1;
+        const distanceRank = Math.max(sortedByDistance.findIndex(a => a.id === activity.id) + 1, 1);
 
         const similarSortedByPace = [...similarRuns].sort((a, b) => (a.moving_time / a.distance) - (b.moving_time / b.distance));
-        const paceRank = similarSortedByPace.findIndex(a => a.id === activity.id) + 1;
+        const paceRank = Math.max(similarSortedByPace.findIndex(a => a.id === activity.id) + 1, 1);
 
         const calories = activity.calories || (activity.kilojoules ? Math.round(activity.kilojoules) : Math.round((activity.distance / 1000) * 70)); // 70 is a rough default for kcal/km
         // Use activity.id as a seed to keep food choice consistent for the same run
@@ -255,6 +278,10 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
         };
     }, [activity, runs, shoes, fetchedShoe]);
 
+    const distancePeak = Math.max(...stats.distBins, 1);
+    const pacePeak = Math.max(...stats.paceBins, 1);
+    const averageHeartrate = activity.average_heartrate ? Math.round(activity.average_heartrate) : null;
+
     const chartData = useMemo(() => {
         if (!streams?.velocity_smooth?.data || !streams.distance?.data) return null;
 
@@ -302,8 +329,11 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                         type: 'bar' as const,
                         label: 'Pace',
                         data: splits.map(s => s.pace),
-                        backgroundColor: '#065f46',
-                        borderRadius: 4,
+                        backgroundColor: 'rgba(74, 122, 255, 0.46)',
+                        hoverBackgroundColor: 'rgba(74, 122, 255, 0.62)',
+                        borderColor: 'rgba(74, 122, 255, 0.8)',
+                        borderWidth: 1,
+                        borderRadius: 10,
                         yAxisID: 'y',
                         base: Math.ceil(Math.max(...splits.map(s => s.pace), 8)) + 1,
                     },
@@ -311,12 +341,12 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                         type: 'line' as const,
                         label: 'Heart Rate',
                         data: splits.map(s => s.hr),
-                        borderColor: '#ffffff',
+                        borderColor: '#d9b36a',
                         backgroundColor: 'transparent',
                         fill: false,
-                        tension: 0,
+                        tension: 0.28,
                         pointRadius: 4,
-                        pointBackgroundColor: '#ffffff',
+                        pointBackgroundColor: '#d9b36a',
                         borderWidth: 2,
                         yAxisID: 'y1',
                     }
@@ -351,9 +381,11 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                         type: 'bar' as const,
                         label: 'Pace',
                         data: velocityData,
-                        backgroundColor: '#064e3b',
-                        hoverBackgroundColor: '#065f46',
-                        borderRadius: 0,
+                        backgroundColor: 'rgba(74, 122, 255, 0.34)',
+                        hoverBackgroundColor: 'rgba(74, 122, 255, 0.52)',
+                        borderColor: 'rgba(74, 122, 255, 0.7)',
+                        borderWidth: 1,
+                        borderRadius: 6,
                         barPercentage: 1.0,
                         categoryPercentage: 1.0,
                         yAxisID: 'y',
@@ -363,7 +395,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                         type: 'line' as const,
                         label: 'Heart Rate',
                         data: hrData,
-                        borderColor: '#ffffff',
+                        borderColor: '#d9b36a',
                         backgroundColor: 'transparent',
                         fill: false,
                         tension: 0.4,
@@ -387,13 +419,15 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
 
         return {
             maintainAspectRatio: false,
-            layout: { padding: { left: 20, right: 20, top: 20, bottom: 0 } },
+            layout: { padding: { left: 12, right: 12, top: 16, bottom: 0 } },
             interaction: { mode: 'index' as const, intersect: false },
             plugins: {
                 legend: { display: false },
                 tooltip: {
                     enabled: true,
-                    backgroundColor: 'rgba(0,0,0,0.9)',
+                    backgroundColor: 'rgba(4, 23, 35, 0.94)',
+                    borderColor: 'rgba(217, 179, 106, 0.16)',
+                    borderWidth: 1,
                     titleFont: { size: 11, weight: 'bold' },
                     bodyFont: { size: 11 },
                     padding: 12,
@@ -413,21 +447,21 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                 x: {
                     type: viewMode === 'stream' ? 'linear' : 'category',
                     display: true,
-                    grid: { display: false },
+                    grid: { color: 'rgba(245, 239, 227, 0.05)' },
                     border: { display: false },
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' }, maxTicksLimit: 12, callback: (value: any) => viewMode === 'stream' ? Math.round(value) : value },
-                    title: { display: true, text: 'KILOMETERS', color: '#4b5563', font: { size: 10, weight: 'black' }, padding: { top: 10 } }
+                    ticks: { color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' }, maxTicksLimit: 12, callback: (value: any) => viewMode === 'stream' ? Math.round(value) : value },
+                    title: { display: true, text: 'KILOMETERS', color: 'rgba(245, 239, 227, 0.52)', font: { size: 10, weight: 'bold' }, padding: { top: 10 } }
                 },
                 y: {
                     reverse: true,
                     position: 'left' as const,
                     min: paceMin,
                     max: paceMax,
-                    grid: { color: 'rgba(255,255,255,0.03)', drawTicks: false },
+                    grid: { color: 'rgba(245, 239, 227, 0.05)', drawTicks: false },
                     border: { display: false },
-                    ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' }, padding: 10, callback: (value: number | string) => formatPace(typeof value === 'string' ? parseFloat(value) : value) },
-                    title: { display: true, text: 'PACE', color: '#4b5563', font: { size: 10, weight: 'black' }, padding: { bottom: 10 } }
+                    ticks: { color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' }, padding: 10, callback: (value: number | string) => formatPace(typeof value === 'string' ? parseFloat(value) : value) },
+                    title: { display: true, text: 'PACE', color: 'rgba(245, 239, 227, 0.52)', font: { size: 10, weight: 'bold' }, padding: { bottom: 10 } }
                 },
                 y1: {
                     position: 'right' as const,
@@ -435,157 +469,399 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                     min: 80,
                     max: 200,
                     border: { display: false },
-                    ticks: { color: '#4b5563', font: { size: 10, weight: 'bold' }, padding: 10 },
-                    title: { display: true, text: 'HEART RATE', color: '#4b5563', font: { size: 10, weight: 'black' }, padding: { bottom: 10 } }
+                    ticks: { color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' }, padding: 10 },
+                    title: { display: true, text: 'HEART RATE', color: 'rgba(245, 239, 227, 0.52)', font: { size: 10, weight: 'bold' }, padding: { bottom: 10 } }
                 }
             }
         };
     }, [chartData, viewMode]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0c10]/95 backdrop-blur-xl p-4 overflow-y-auto">
-            <div className="bg-[#0e1117] w-full max-w-6xl rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[95vh]">
-                <div className="flex items-center justify-between px-8 py-3 border-b border-white/5 bg-black/20">
-                    <div className="flex items-center gap-4">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Run Details Analysis</div>
-                        {/* Navigation Controls */}
-                        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-0.5 ml-4 border border-white/10">
+        <div className="fixed inset-0 z-[100] overflow-y-auto bg-[color-mix(in_srgb,var(--rv-bg)_90%,transparent)] p-4 backdrop-blur-xl">
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="run-details-title"
+                className="rv-shell-card mx-auto my-4 flex min-h-[calc(100dvh-2rem)] w-full max-w-7xl flex-col overflow-hidden"
+            >
+                <div className="border-b border-white/6 bg-black/10 px-5 py-4 sm:px-7">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                            <div className="mb-3 flex flex-wrap items-center gap-2">
+                                <span className="rv-kicker">Run Details</span>
+                                <span className="rv-chip rv-chip-micro border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/10 text-[var(--rv-blue)]">
+                                    {format(activityDate, 'eeee, d MMM y')}
+                                </span>
+                                {stats.currentShoe && (
+                                    <span className="rv-chip rv-chip-micro max-w-full border-[var(--rv-green)]/20 bg-[var(--rv-green)]/10 text-[var(--rv-green)]">
+                                        <BrandLogo key={stats.currentShoe.brand_name} brandName={stats.currentShoe.brand_name} className="shrink-0" />
+                                        <span className="truncate">{stats.currentShoe.name}</span>
+                                    </span>
+                                )}
+                            </div>
+                            <h1 id="run-details-title" className="rv-metric max-w-4xl text-[clamp(2.7rem,5vw,4.4rem)] text-[var(--rv-text)]">
+                                {activity.name}
+                            </h1>
+                            <p className="rv-body-copy-sm mt-3 max-w-2xl">
+                                A calmer view of this session with pacing, ranking, and nearby efforts from the same training block.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                            <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => prevActivity && onSelect?.(prevActivity)}
+                                    disabled={!prevActivity}
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--rv-text-dim)] transition hover:bg-white/8 hover:text-[var(--rv-text)] disabled:cursor-not-allowed disabled:opacity-35"
+                                    aria-label="Open older run"
+                                    title="Older run"
+                                >
+                                    <ArrowLeft className="h-4 w-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => nextActivity && onSelect?.(nextActivity)}
+                                    disabled={!nextActivity}
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--rv-text-dim)] transition hover:bg-white/8 hover:text-[var(--rv-text)] disabled:cursor-not-allowed disabled:opacity-35"
+                                    aria-label="Open newer run"
+                                    title="Newer run"
+                                >
+                                    <ArrowRight className="h-4 w-4" />
+                                </button>
+                            </div>
                             <button
-                                onClick={() => prevActivity && onSelect?.(prevActivity)}
-                                disabled={!prevActivity}
-                                className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent transition-colors text-sm"
-                                title="Previous Run (Older)"
+                                type="button"
+                                onClick={onClose}
+                                className="rv-button-secondary inline-flex h-11 w-11 items-center justify-center"
+                                aria-label="Close run details"
                             >
-                                ←
-                            </button>
-                            <div className="w-px h-3 bg-white/10 mx-0.5"></div>
-                            <button
-                                onClick={() => nextActivity && onSelect?.(nextActivity)}
-                                disabled={!nextActivity}
-                                className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent transition-colors text-sm"
-                                title="Next Run (Newer)"
-                            >
-                                →
+                                <X className="h-4 w-4" />
                             </button>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => console.log('DEBUG ACTIVITY JSON:', activity)}
-                            className="text-[9px] font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 text-gray-400 px-3 py-1 rounded transition-colors"
-                        >
-                            Log JSON
-                        </button>
-                        <button onClick={onClose} className="text-gray-400 hover:text-white font-black text-xl px-4 py-2 transition-colors">✕</button>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-10 space-y-10">
-                    {/* Header: Compact Row */}
-                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-8 items-end border-b border-white/5 pb-10">
-                        <div className="lg:col-span-2 self-start">
-                            <h1 className="text-4xl font-black text-white/90 tracking-tighter italic mb-2 leading-tight">{activity.name}</h1>
-                            <div className="text-gray-500 text-xs font-black uppercase tracking-widest">{format(activityDate, 'eeee, d MMM y').toUpperCase()}</div>
-                            {stats.currentShoe && (
-                                <div className="text-emerald-400 mt-3 flex items-center gap-2 bg-emerald-500/10 w-fit max-w-full px-3 py-1.5 rounded-lg border border-emerald-500/20">
-                                    <BrandLogo key={stats.currentShoe.brand_name} brandName={stats.currentShoe.brand_name} className="text-sm shrink-0" />
-                                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.12em] leading-tight break-words">
-                                        {stats.currentShoe.name}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                        <div>
-                            <div className="text-gray-600 text-[9px] font-black uppercase tracking-widest mb-1">Distance</div>
-                            <div className="text-2xl font-black text-white">{(activity.distance / 1000).toFixed(2)}<span className="text-gray-500 text-sm font-medium ml-1">km</span></div>
-                        </div>
-                        <div>
-                            <div className="text-gray-600 text-[9px] font-black uppercase tracking-widest mb-1">Avg Pace</div>
-                            <div className="text-2xl font-black text-white">{stats.avgPaceLabel}<span className="text-gray-500 text-sm font-medium ml-1">/km</span></div>
-                        </div>
-                        <div className="relative">
-                            <div className="text-gray-600 text-[9px] font-black uppercase tracking-widest mb-1">Calories</div>
-                            <div className="text-2xl font-black text-white">{stats.calories}</div>
-                            <div className="absolute top-full left-0 text-emerald-500/80 text-[10px] font-bold truncate mt-1 whitespace-nowrap">{stats.foodCount} {stats.food.name}</div>
-                        </div>
+                <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
+                        <div className="space-y-4">
+                            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                                <MetricTile
+                                    icon={<Gauge className="h-4 w-4" />}
+                                    label="Distance"
+                                    value={formatDistanceKm(activity.distance)}
+                                    unit="km"
+                                    accentClassName="text-[var(--rv-blue)]"
+                                />
+                                <MetricTile
+                                    icon={<BarChart3 className="h-4 w-4" />}
+                                    label="Avg pace"
+                                    value={stats.avgPaceLabel}
+                                    unit="/km"
+                                    accentClassName="text-[var(--rv-text)]"
+                                />
+                                <MetricTile
+                                    icon={<Flame className="h-4 w-4" />}
+                                    label="Calories"
+                                    value={stats.calories.toString()}
+                                    unit="kcal"
+                                    accentClassName="text-[var(--rv-yellow)]"
+                                    detail={`${stats.foodCount} ${stats.food.name}`}
+                                />
+                                <MetricTile
+                                    icon={<HeartPulse className="h-4 w-4" />}
+                                    label="Avg heart rate"
+                                    value={averageHeartrate ? averageHeartrate.toString() : 'N/A'}
+                                    unit={averageHeartrate ? 'bpm' : undefined}
+                                    accentClassName="text-[var(--rv-green)]"
+                                    detail={activity.total_elevation_gain > 0 ? `${Math.round(activity.total_elevation_gain)}m climbed` : undefined}
+                                />
+                            </section>
 
-                    </div>
+                            <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6">
+                                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                                    <div>
+                                        <p className="rv-kicker mb-2">Performance Trace</p>
+                                        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">
+                                            Pacing and effort
+                                        </h2>
+                                        <p className="rv-body-copy-sm mt-2 max-w-2xl">
+                                            Switch between the smoothed pace trace and the split view to see how the run settled across distance.
+                                        </p>
+                                    </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                        {/* Primary Content Column */}
-                        <div className="lg:col-span-8 space-y-12">
-                            {/* Performance Chart */}
-                            <div>
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Performance Analysis</h3>
                                     <button
+                                        type="button"
                                         onClick={() => setViewMode(v => v === 'stream' ? 'splits' : 'stream')}
-                                        className={`rounded px-3 py-1 text-[9px] font-black uppercase tracking-widest transition-colors ${viewMode === 'splits' ? 'bg-emerald-500 text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+                                        className={`rv-chip rv-chip-compact transition ${viewMode === 'splits'
+                                            ? 'border-[var(--rv-yellow)]/26 bg-[var(--rv-yellow)]/12 text-[var(--rv-yellow)]'
+                                            : 'border-[var(--rv-blue)]/24 bg-[var(--rv-blue)]/10 text-[var(--rv-blue)]'
+                                            }`}
                                     >
-                                        {viewMode === 'splits' ? 'Splits View' : 'Live Stream'}
+                                        {viewMode === 'splits' ? 'Split View' : 'Live Trace'}
                                     </button>
                                 </div>
-                                <div className="h-64 bg-black/40 rounded-3xl border border-white/5 p-4 relative">
-                                    {loadingStreams ? (
-                                        <div className="flex items-center justify-center h-full"><div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>
-                                    ) : chartData ? (
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        <Chart type='bar' data={chartData as any} options={chartOptions as any} />
-                                    ) : <div className="flex items-center justify-center h-full text-gray-600 text-[10px] font-black uppercase tracking-widest">Performance data not available</div>}
-                                </div>
-                            </div>
 
-                            {/* Histograms: Side by Side */}
-                            <div className="grid grid-cols-2 gap-8">
-                                <div>
-                                    <h3 className="text-[9px] text-gray-600 font-black uppercase tracking-widest border-b border-white/5 pb-2 mb-6">Nth longest run</h3>
-                                    <div className="h-40 relative">
+                                <div className="rounded-[1.6rem] border border-white/[0.06] bg-black/[0.16] p-3 sm:p-4">
+                                    <div className="h-72 sm:h-80">
+                                        {loadingStreams ? (
+                                            <div className="flex h-full items-center justify-center">
+                                                <div className="h-10 w-10 animate-spin rounded-full border-4 border-[var(--rv-blue)]/25 border-t-[var(--rv-yellow)]" />
+                                            </div>
+                                        ) : chartData ? (
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                            <Chart type="bar" data={chartData as any} options={chartOptions as any} />
+                                        ) : (
+                                            <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                                                <BarChart3 className="h-8 w-8 text-[var(--rv-text-faint)]" />
+                                                <p className="rv-mini-label text-[var(--rv-text)]">Performance data unavailable</p>
+                                                <p className="rv-body-copy-sm max-w-sm">
+                                                    Strava did not return enough stream detail for this run, so the trace view is hidden for now.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="grid gap-4 xl:grid-cols-2">
+                                <InsightCard
+                                    kicker="Distance Rank"
+                                    title={`${stats.distanceRankText} longest run`}
+                                    description="Your place in the full run history by distance. The marker sits on the matching distance bucket."
+                                >
+                                    <div className="relative h-44">
                                         <Bar
                                             data={{
                                                 labels: stats.distLabels,
-                                                datasets: [{ data: stats.distBins, backgroundColor: '#065f46', borderRadius: 2, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }]
+                                                datasets: [{
+                                                    data: stats.distBins,
+                                                    backgroundColor: 'rgba(74, 122, 255, 0.42)',
+                                                    borderRadius: 8,
+                                                    borderWidth: 1,
+                                                    borderColor: 'rgba(74, 122, 255, 0.7)'
+                                                }]
                                             }}
-                                            options={{ maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { y: { display: false }, x: { display: true, ticks: { color: '#4b5563', font: { size: 9, weight: 'bold' } }, grid: { display: false } } } }}
+                                            options={{
+                                                maintainAspectRatio: false,
+                                                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                                                scales: {
+                                                    y: { display: false },
+                                                    x: {
+                                                        display: true,
+                                                        ticks: { color: 'rgba(245, 239, 227, 0.42)', font: { size: 9, weight: 'bold' } },
+                                                        grid: { display: false },
+                                                        border: { display: false }
+                                                    }
+                                                }
+                                            }}
                                         />
-                                        <div className="absolute pointer-events-none" style={{ left: `${(stats.myDistBin / 10) * 100 + 5}%`, bottom: `${(stats.distBins[stats.myDistBin] / Math.max(...stats.distBins)) * 100}%` }}>
-                                            <div className="text-2xl font-black text-emerald-400 -mt-8 -ml-4 drop-shadow-2xl">{stats.distanceRankText}</div>
+                                        <div
+                                            className="pointer-events-none absolute"
+                                            style={{
+                                                left: `${(stats.myDistBin / 10) * 100 + 5}%`,
+                                                bottom: `${(stats.distBins[stats.myDistBin] / distancePeak) * 100}%`
+                                            }}
+                                        >
+                                            <div className="-ml-5 -mt-10 rounded-full border border-[var(--rv-yellow)]/25 bg-[var(--rv-yellow)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-yellow)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+                                                {stats.distanceRankText}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="border-l border-white/5 pl-8">
-                                    <h3 className="text-[9px] text-gray-600 font-black uppercase tracking-widest border-b border-white/5 pb-2 mb-6">Nth fastest (similar dist)</h3>
-                                    <div className="h-40 relative">
+                                </InsightCard>
+
+                                <InsightCard
+                                    kicker="Pace Rank"
+                                    title={`${stats.paceRankText} fastest at ${stats.clusterLabel}km`}
+                                    description="Compared against runs within roughly two kilometers of this session."
+                                >
+                                    <div className="relative h-44">
                                         <Bar
                                             data={{
                                                 labels: stats.paceLabels,
-                                                datasets: [{ data: stats.paceBins, backgroundColor: '#065f46', borderRadius: 2, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }]
+                                                datasets: [{
+                                                    data: stats.paceBins,
+                                                    backgroundColor: 'rgba(217, 179, 106, 0.36)',
+                                                    borderRadius: 8,
+                                                    borderWidth: 1,
+                                                    borderColor: 'rgba(217, 179, 106, 0.65)'
+                                                }]
                                             }}
-                                            options={{ maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { y: { display: false }, x: { display: true, ticks: { color: '#4b5563', font: { size: 8, weight: 'bold' } }, grid: { display: false } } } }}
+                                            options={{
+                                                maintainAspectRatio: false,
+                                                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                                                scales: {
+                                                    y: { display: false },
+                                                    x: {
+                                                        display: true,
+                                                        ticks: { color: 'rgba(245, 239, 227, 0.42)', font: { size: 9, weight: 'bold' } },
+                                                        grid: { display: false },
+                                                        border: { display: false }
+                                                    }
+                                                }
+                                            }}
                                         />
-                                        <div className="absolute pointer-events-none" style={{ left: `${(stats.myPaceBin / 6) * 100 + 8}%`, bottom: `${(stats.paceBins[stats.myPaceBin] / Math.max(...stats.paceBins)) * 100}%` }}>
-                                            <div className="text-2xl font-black text-emerald-400 -mt-8 -ml-4 drop-shadow-2xl">{stats.paceRankText}</div>
+                                        <div
+                                            className="pointer-events-none absolute"
+                                            style={{
+                                                left: `${(stats.myPaceBin / 6) * 100 + 8}%`,
+                                                bottom: `${(stats.paceBins[stats.myPaceBin] / pacePeak) * 100}%`
+                                            }}
+                                        >
+                                            <div className="-ml-5 -mt-10 rounded-full border border-[var(--rv-blue)]/22 bg-[var(--rv-blue)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-blue)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+                                                {stats.paceRankText}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                </InsightCard>
+                            </section>
                         </div>
 
-                        {/* Similar Runs Column */}
-                        <div className="lg:col-span-4 border-l border-white/5 pl-8">
-                            <h3 className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-6">Comparison: {stats.clusterLabel}km runs</h3>
-                            <div className="space-y-1">
-                                {stats.top10.map(r => (
-                                    <div key={r.id} className={`flex items-center gap-4 py-2 px-3 rounded-lg transition-all ${r.isCurrent ? 'bg-emerald-500/10 border border-emerald-500/20' : 'hover:bg-white/[0.03] border border-transparent'}`}>
-                                        <div className="w-8 shrink-0"><div className="h-1 w-full bg-gray-800 relative overflow-hidden rounded-full"><div className={`absolute inset-y-0 left-0 ${r.recencyColor === 'bg-white' ? 'bg-emerald-400' : r.recencyColor}`} style={{ width: `${Math.max(20, 100 - (r.rawPace / 10 * 100))}%` }} /></div></div>
-                                        <div className="flex-1 text-sm font-black text-white/90">{r.pace}<span className="text-[9px] text-gray-600 font-bold ml-1">/km</span></div>
-                                        <div className="text-[10px] font-black text-gray-500 font-mono">{r.date}</div>
-                                        <div className={`h-1 w-3 rounded-full ${r.recencyColor}`} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        <aside className="space-y-4">
+                            <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6">
+                                <div className="mb-5">
+                                    <p className="rv-kicker mb-2">Nearby Efforts</p>
+                                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">
+                                        Similar runs
+                                    </h2>
+                                    <p className="rv-body-copy-sm mt-2">
+                                        The fastest recent efforts around {stats.clusterLabel} km, with this run highlighted in the stack.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2.5">
+                                    {stats.top10.length > 0 ? (
+                                        stats.top10.map((r) => (
+                                            <div
+                                                key={r.id}
+                                                className={`rounded-[1.4rem] border px-4 py-3 transition ${r.isCurrent
+                                                    ? 'border-[var(--rv-blue)]/28 bg-[var(--rv-blue)]/12'
+                                                    : 'border-white/[0.06] bg-black/[0.12]'
+                                                    }`}
+                                            >
+                                                <div className="mb-3 flex items-start justify-between gap-3">
+                                                    <div>
+                                                        <div className="rv-data text-xl text-[var(--rv-text)]">
+                                                            {r.pace}
+                                                            <span className="ml-1 text-[0.8rem] font-medium text-[var(--rv-text-faint)]">/km</span>
+                                                        </div>
+                                                        <div className="rv-mini-label mt-1 text-[var(--rv-text-faint)]">{r.date}</div>
+                                                    </div>
+                                                    <span className={`h-2.5 w-2.5 rounded-full ${r.recencyColor === 'bg-white' ? 'bg-[var(--rv-text)]' : r.recencyColor}`} />
+                                                </div>
+
+                                                <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                                                    <div
+                                                        className={`h-full rounded-full ${r.recencyColor === 'bg-white' ? 'bg-[var(--rv-text)]' : r.recencyColor}`}
+                                                        style={{ width: `${Math.max(20, 100 - (r.rawPace / 10 * 100))}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="rounded-[1.5rem] border border-white/[0.06] bg-black/[0.12] px-5 py-6 text-center">
+                                            <Mountain className="mx-auto h-8 w-8 text-[var(--rv-text-faint)]" />
+                                            <p className="rv-mini-label mt-3 text-[var(--rv-text)]">Not enough comparable runs yet</p>
+                                            <p className="rv-body-copy-sm mt-2">
+                                                Once you have more efforts at this distance, this panel will start ranking them for you.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+
+                            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                                <SummaryTile
+                                    label="Moving time"
+                                    value={formatDuration(activity.moving_time)}
+                                    icon={<ArrowRight className="h-4 w-4" />}
+                                />
+                                <SummaryTile
+                                    label="Elevation gain"
+                                    value={activity.total_elevation_gain > 0 ? `${Math.round(activity.total_elevation_gain)}m` : 'Flat route'}
+                                    icon={<Mountain className="h-4 w-4" />}
+                                />
+                            </section>
+                        </aside>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+}
+
+function MetricTile({
+    icon,
+    label,
+    value,
+    unit,
+    accentClassName,
+    detail,
+}: {
+    icon: ReactNode;
+    label: string;
+    value: string;
+    unit?: string;
+    accentClassName?: string;
+    detail?: string;
+}) {
+    return (
+        <div className="rv-subtle-card px-4 py-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <span className="rv-mini-label text-[var(--rv-text-faint)]">{label}</span>
+                <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] ${accentClassName || 'text-[var(--rv-text-dim)]'}`}>
+                    {icon}
+                </span>
+            </div>
+            <div className={`rv-data text-[2rem] ${accentClassName || 'text-[var(--rv-text)]'}`}>
+                {value}
+                {unit && <span className="ml-1 text-sm font-semibold text-[var(--rv-text-faint)]">{unit}</span>}
+            </div>
+            {detail && <p className="rv-body-copy-sm mt-2">{detail}</p>}
+        </div>
+    );
+}
+
+function InsightCard({
+    kicker,
+    title,
+    description,
+    children,
+}: {
+    kicker: string;
+    title: string;
+    description: string;
+    children: ReactNode;
+}) {
+    return (
+        <section className="rv-panel px-5 py-5 sm:px-6">
+            <p className="rv-kicker mb-2">{kicker}</p>
+            <h2 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">{title}</h2>
+            <p className="rv-body-copy-sm mt-2 mb-4 max-w-xl">{description}</p>
+            <div className="rounded-[1.5rem] border border-white/[0.06] bg-black/[0.12] p-3 sm:p-4">
+                {children}
+            </div>
+        </section>
+    );
+}
+
+function SummaryTile({
+    label,
+    value,
+    icon,
+}: {
+    label: string;
+    value: string;
+    icon: ReactNode;
+}) {
+    return (
+        <div className="rv-subtle-card flex items-center gap-4 px-4 py-4">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-[var(--rv-yellow)]">
+                {icon}
+            </span>
+            <div>
+                <div className="rv-mini-label text-[var(--rv-text-faint)]">{label}</div>
+                <div className="mt-1 text-base font-semibold tracking-[-0.02em] text-[var(--rv-text)]">{value}</div>
             </div>
         </div>
     );
