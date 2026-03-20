@@ -415,6 +415,78 @@ textarea {
     overflow: hidden;
 }
 
+.rv-sync-button {
+    position: relative;
+}
+
+.rv-sync-button::after {
+    background: radial-gradient(circle, color-mix(in srgb, var(--rv-blue) 46%, transparent) 0%, transparent 72%);
+    content: "";
+    inset: -10px;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    transition: opacity var(--rv-duration-base) var(--rv-ease-out-quart);
+}
+
+.rv-sync-button[data-syncing="true"]::after,
+.rv-sync-button:hover::after {
+    opacity: 1;
+}
+
+.rv-pulse-band::before {
+    background:
+        radial-gradient(circle at top left, rgba(74, 122, 255, 0.18), transparent 34%),
+        linear-gradient(90deg, rgba(217, 179, 106, 0.08), transparent 36%);
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+}
+
+.rv-pulse-track {
+    align-items: end;
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    min-height: 3rem;
+}
+
+.rv-pulse-bar {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--rv-yellow) 52%, white) 0%, var(--rv-blue) 100%);
+    border-radius: 999px;
+    box-shadow: 0 10px 22px rgba(74, 122, 255, 0.2);
+    display: block;
+    min-height: 0.75rem;
+    position: relative;
+    transform-origin: bottom;
+}
+
+.rv-pulse-bar::after {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 70%);
+    border-radius: inherit;
+    content: "";
+    inset: 0;
+    opacity: 0.55;
+    position: absolute;
+}
+
+.rv-stat-card[data-tone="blue"] {
+    background: linear-gradient(180deg, rgba(74, 122, 255, 0.09), rgba(18, 24, 34, 0.92));
+}
+
+.rv-stat-card[data-tone="green"] {
+    background: linear-gradient(180deg, rgba(87, 198, 154, 0.08), rgba(18, 24, 34, 0.92));
+}
+
+.rv-stat-card[data-tone="gold"] {
+    background: linear-gradient(180deg, rgba(217, 179, 106, 0.09), rgba(18, 24, 34, 0.92));
+}
+
+.rv-stat-card[data-tone="orange"] {
+    background: linear-gradient(180deg, rgba(215, 122, 67, 0.1), rgba(18, 24, 34, 0.92));
+}
+
 .rv-glow-orb::before {
     background: radial-gradient(circle at center, color-mix(in srgb, var(--rv-blue) 18%, transparent) 0%, transparent 68%);
     content: "";
@@ -478,6 +550,10 @@ textarea {
 
     .rv-glow-orb::before {
         animation: rv-float-orb 12s var(--rv-ease-out-quart) infinite;
+    }
+
+    .rv-pulse-bar {
+        animation: rv-fade-up 560ms var(--rv-ease-out-quart) both;
     }
 }
 

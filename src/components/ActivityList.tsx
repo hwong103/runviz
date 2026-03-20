@@ -90,8 +90,8 @@ export function ActivityList({
                 {runs.length === 0 ? (
                     <div className="space-y-3 py-12 text-center">
                         <Footprints className="mx-auto h-10 w-10 text-[var(--rv-text-faint)]" />
-                        <p className="rv-mini-label text-[var(--rv-text-dim)]">No activities found</p>
-                        <p className="mx-auto max-w-[26ch] text-sm leading-6 text-[var(--rv-text-faint)]">Try adjusting your filters or sync your latest Strava data.</p>
+                        <p className="rv-mini-label text-[var(--rv-text-dim)]">This log is resting</p>
+                        <p className="mx-auto max-w-[30ch] text-sm leading-6 text-[var(--rv-text-faint)]">Try easing the filters or pull a fresh sync. Once a run lands here, RunViz will turn it into a cleaner training story.</p>
                     </div>
                 ) : (
                     runs.map((activity, index) => {

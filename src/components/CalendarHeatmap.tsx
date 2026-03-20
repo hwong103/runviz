@@ -134,6 +134,15 @@ export function CalendarHeatmap({
         return 'bg-emerald-400';
     };
 
+    const getDayStory = (distance: number) => {
+        if (distance === 0) return 'Recovery day';
+        const intensity = maxDistance === 0 ? 0 : distance / maxDistance;
+        if (intensity >= 0.9) return 'Peak mileage day';
+        if (intensity >= 0.55) return 'Strong session';
+        if (intensity >= 0.25) return 'Steady mileage';
+        return 'Light touch';
+    };
+
     return (
         <div className="rounded-[1.6rem] border border-white/[0.06] bg-black/10 p-4 overflow-x-auto sm:p-5">
             <div className="min-w-[300px]">
@@ -193,7 +202,7 @@ export function CalendarHeatmap({
                                             className={`${isMonthView ? 'h-5 w-5 rounded-[3px]' : 'h-3 w-3 rounded-[2px]'} transition-all duration-200 focus-visible:scale-125 focus-visible:ring-2 focus-visible:ring-white/40 ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'bg-transparent'
                                                 } ${isInteractive ? 'cursor-pointer hover:scale-110 hover:ring-2 hover:ring-white/30' : ''}`}
                                             disabled={!isInteractive}
-                                            aria-label={day ? `${format(parseISO(day.date), 'MMMM d, yyyy')}, ${day.distance.toFixed(2)} kilometers` : 'Empty day'}
+                                            aria-label={day ? `${format(parseISO(day.date), 'MMMM d, yyyy')}, ${day.distance.toFixed(2)} kilometers, ${getDayStory(day.distance)}` : 'Empty day'}
                                         />
                                     );
                                 })}
@@ -215,7 +224,7 @@ export function CalendarHeatmap({
                     </div>
                     {onSelectDay && (
                         <div className="text-[0.78rem] italic text-[var(--rv-blue)]/80">
-                            Click a day to view run details
+                            Click a square to open that day&apos;s run story
                         </div>
                     )}
                 </div>
@@ -232,6 +241,9 @@ export function CalendarHeatmap({
                     </div>
                     <div className="text-sm font-semibold text-white">
                         {hoveredDay.distance.toFixed(2)} km
+                    </div>
+                    <div className="mt-1 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--rv-text-faint)]">
+                        {getDayStory(hoveredDay.distance)}
                     </div>
                 </div>
             )}
