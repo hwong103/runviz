@@ -9,7 +9,6 @@ import { GoogleSignInComplete } from './components/GoogleSignInComplete.tsx'
 import { MagicLinkVerify } from './components/MagicLinkVerify.tsx'
 import { SetupRoute } from './components/SetupRoute.tsx'
 import { StravaAuthStart } from './components/StravaAuthStart.tsx'
-import { ThemeToggle } from './components/ThemeToggle.tsx'
 
 const RoutePlanner = lazy(() => import('./components/RoutePlanner.tsx'))
 const FormAnalysis = lazy(() => import('./components/FormAnalysis.tsx'))
@@ -35,9 +34,6 @@ const routerBase = import.meta.env.BASE_URL.endsWith('/')
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={routerBase}>
-      <div className="fixed right-4 top-4 z-[200] sm:right-6 sm:top-6">
-        <ThemeToggle />
-      </div>
       <Suspense fallback={<div className="min-h-screen bg-[#0a0c10]" />}>
         <Routes>
           <Route path="/" element={<App />} />

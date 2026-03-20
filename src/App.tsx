@@ -8,6 +8,7 @@ import { SetupPage } from './components/SetupPage';
 import { StatsOverview } from './components/StatsOverview';
 import { CalendarHeatmap } from './components/CalendarHeatmap';
 import { ActivityList } from './components/ActivityList';
+import { ThemeToggle } from './components/ThemeToggle';
 import type { Activity, Gear } from './types';
 import { isRun } from './types';
 import { gear as gearApi } from './services/api';
@@ -607,6 +608,18 @@ function App() {
                       <div className="text-sm font-semibold text-[var(--rv-text)]">{athleteLabel}</div>
                       <div className="rv-mini-label">RunViz account</div>
                     </div>
+                  </div>
+                </div>
+
+                <div className="border-b border-[var(--rv-border)] px-2 py-2">
+                  <div className="px-4 py-2.5">
+                    <div className="mb-3">
+                      <div className="rv-mini-label text-[var(--rv-text)]">Theme</div>
+                      <div className="mt-1 text-[0.72rem] leading-5 text-[var(--rv-text-faint)]">
+                        Match the interface to your environment.
+                      </div>
+                    </div>
+                    <ThemeToggle />
                   </div>
                 </div>
 
