@@ -48,13 +48,15 @@ cd runviz
 
 ### 2. Create Auth Providers
 
-1. Create a Google OAuth client for Better Auth sign-in.
-2. Create a Resend API key for magic-link delivery.
-3. Create a Strava API application for activity data.
+1. Create a Resend API key for magic-link delivery.
+2. Create a Strava API application for activity data.
+3. Optional: create a Google OAuth client if you want Google sign-in.
 
 For Strava, go to [Strava API Settings](https://www.strava.com/settings/api), create a new application, set **Authorization Callback Domain** to your frontend host, for example `runviz-stats.pages.dev`, and note your **Client ID** and **Client Secret**.
 
-### 3. Deploy The Unified Cloudflare Worker
+### 3. Configure Cloudflare Resources
+
+RunViz now deploys as a single Cloudflare Worker from the repo root. The React app is built into `dist`, and Cloudflare serves those static assets directly from the Worker using the `assets` block in [`wrangler.jsonc`](./wrangler.jsonc).
 
 ```bash
 # Install dependencies
@@ -68,10 +70,16 @@ npx wrangler kv:namespace create TOKENS
 npx wrangler d1 create runviz-db
 # Copy the database_id into wrangler.jsonc
 
-# Set secrets
+# Apply D1 migrations
+npx wrangler d1 migrations apply runviz-db --local
+npx wrangler d1 migrations apply runviz-db --remote
+
+# Required secrets
 npx wrangler secret put BETTER_AUTH_SECRET
 npx wrangler secret put RESEND_API_KEY
 npx wrangler secret put ORS_API_KEY
+
+# Optional: only if you want Google sign-in or the Google Drive callback flow
 npx wrangler secret put GOOGLE_CLIENT_ID
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 npx wrangler secret put GOOGLE_REDIRECT_URI
@@ -85,11 +93,15 @@ npx wrangler secret put GOOGLE_REDIRECT_URI
 # Update vars in wrangler.jsonc
 # FRONTEND_URL=https://runviz.hwong103.work
 # FRONTEND_PREVIEW_HOST=runviz.runviz-stats.workers.dev
+```
 
+### 4. Deploy
+
+```bash
 npm run deploy
 ```
 
-### 4. Frontend Config
+### 5. Frontend Config
 
 Create `.env` in the root directory:
 
@@ -98,7 +110,7 @@ Create `.env` in the root directory:
 # VITE_BASE_PATH=/
 ```
 
-The app and API now deploy together through the root [`wrangler.jsonc`](./wrangler.jsonc). The Worker script handles `/api/*` and Better Auth routes, and Cloudflare serves the React app from `dist` for all other routes.
+The app and API deploy together through the root [`wrangler.jsonc`](./wrangler.jsonc). The Worker handles `/api/*`, `/api/auth/*`, `/auth/*`, `/setup/strava-key`, and Google callback routes, and Cloudflare serves the React app from `dist` for everything else.
 
 Each signed-in user now saves their own Strava Client ID and Client Secret during setup before connecting Strava. Those credentials are stored per account and are no longer configured as global Worker secrets.
 
@@ -121,6 +133,68 @@ npm run preview:worker
 # Deploy the unified Worker and static assets
 npm run deploy
 ```
+
+## ☁️ Cloudflare Configuration
+
+### Runtime shape
+
+- Cloudflare Workers powers both the API and static app delivery.
+- The entrypoint is `workers/src/index.ts`.
+- [`wrangler.jsonc`](./wrangler.jsonc) points `main` to the Worker and serves `./dist` as static assets.
+- SPA routing is enabled with `assets.not_found_handling = "single-page-application"`.
+- There is no separate Cloudflare Pages project in the current setup.
+
+### Current bindings
+
+| Binding | Type | Purpose |
+|---------|------|---------|
+| `ASSETS` | Static asset binding | Serves the built React app from `dist` |
+| `DB` | D1 | Better Auth tables plus per-user `strava_keys` storage |
+| `TOKENS` | KV | OAuth state, Google session tokens, and legacy token/session storage |
+
+### Worker vars
+
+These are configured in [`wrangler.jsonc`](./wrangler.jsonc):
+
+| Var | Current role |
+|-----|--------------|
+| `FRONTEND_URL` | Canonical production origin used for redirects, CORS fallback, and trusted origins |
+| `FRONTEND_PREVIEW_HOST` | Allows preview/branch hosts that should pass CORS checks |
+| `ADDITIONAL_FRONTEND_URLS` | Optional comma-separated allowlist of extra frontend origins |
+
+### Worker secrets
+
+These are read by the Worker at runtime:
+
+| Secret | Required | Purpose |
+|--------|----------|---------|
+| `BETTER_AUTH_SECRET` | Yes | Signs Better Auth sessions and encrypts saved Strava client secrets |
+| `RESEND_API_KEY` | Yes | Sends magic-link emails through Resend |
+| `ORS_API_KEY` | Yes | Route generation via OpenRouteService |
+| `GOOGLE_CLIENT_ID` | No | Enables Google sign-in and Google callback flow |
+| `GOOGLE_CLIENT_SECRET` | No | Enables Google sign-in and Google callback flow |
+| `GOOGLE_REDIRECT_URI` | No | Redirect URI for `/auth/google/callback` |
+
+### Database migrations
+
+The Worker expects these D1 tables:
+
+- Better Auth tables from [`workers/migrations/0001_better_auth.sql`](./workers/migrations/0001_better_auth.sql)
+- Per-user encrypted Strava app credentials from [`workers/migrations/0002_strava_keys.sql`](./workers/migrations/0002_strava_keys.sql)
+
+Apply them after creating the D1 database:
+
+```bash
+npx wrangler d1 migrations apply runviz-db --local
+npx wrangler d1 migrations apply runviz-db --remote
+```
+
+### Local and production flow
+
+- `npm run dev` runs the Vite frontend locally.
+- `npm run preview:worker` builds the app and starts `wrangler dev` against the unified Worker config.
+- `npm run deploy` builds the frontend, copies `dist/index.html` to `dist/404.html`, and deploys the Worker plus static assets together.
+- Local development origins `http://localhost:5173` and `http://127.0.0.1:5173` are already trusted by the Worker.
 
 ## 📁 Project Structure
 
@@ -164,9 +238,7 @@ runviz/
 
 | Var | Description |
 |-----|-------------|
-| `DB` | D1 database binding used by Better Auth |
-| `TOKENS` | KV namespace used for legacy session and OAuth state storage |
-| `FRONTEND_URL` | Exact production Pages origin allowed for CORS and OAuth fallback redirects |
+| `FRONTEND_URL` | Exact production app origin allowed for CORS and OAuth fallback redirects |
 | `FRONTEND_PREVIEW_HOST` | Preview host suffix for branch deploys, for example `runviz.runviz-stats.workers.dev` |
 | `ADDITIONAL_FRONTEND_URLS` | Optional comma-separated list of extra allowed frontend origins |
 
