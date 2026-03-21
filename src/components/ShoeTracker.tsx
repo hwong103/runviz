@@ -100,6 +100,8 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
             });
     }, [activities, shoes, fetchedGear]);
 
+    const pairLabel = `${shoeStats.length} ${shoeStats.length === 1 ? 'pair' : 'pairs'}`;
+
     return (
         <div className="rv-panel flex flex-col px-6 py-6 sm:px-7">
             <SectionHeader
@@ -108,7 +110,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                 title="Shoe tracker"
                 titleAs="h3"
                 titleClassName="text-2xl font-bold tracking-tight text-[var(--rv-text)]"
-                action={<Badge>{shoeStats.length} pairs</Badge>}
+                action={<Badge>{pairLabel}</Badge>}
             />
 
             <div className="flex-1 space-y-4">

@@ -25,7 +25,7 @@ export function SectionHeader({
                     {title}
                 </TitleTag>
             </div>
-            {action ? <div className="sm:ml-auto">{action}</div> : null}
+            {action ? <div className="ml-auto self-start">{action}</div> : null}
         </div>
     );
 }
