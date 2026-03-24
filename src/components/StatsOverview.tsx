@@ -13,6 +13,8 @@ import {
     calculateLongRunRatio,
     calculateEfficiencyIndex,
     calculateGapTrend,
+    calculateMonotony,
+    calculateStrainScore,
     acwrColorClass,
     rampColorClass,
     consistencyColorClass,
@@ -20,6 +22,7 @@ import {
     efficiencyColorClass,
     gapTrendColorClass,
 } from '../analytics/trainingHealth';
+import { monotonyColorClass, strainColorClass } from '../analytics/monotony';
 import { activityLocalDateKey, parseActivityLocalDate } from '../utils/activityDate';
 
 interface StatsOverviewProps {
@@ -32,7 +35,7 @@ interface StatsOverviewProps {
     };
 }
 
-type HelpMetric = 'acwr' | 'ramp' | 'consistency' | 'longRunRatio' | 'efficiency' | 'gapTrend';
+type HelpMetric = 'acwr' | 'ramp' | 'consistency' | 'longRunRatio' | 'efficiency' | 'gapTrend' | 'monotony' | 'strain';
 
 export function StatsOverview({ activities, allActivities, period }: StatsOverviewProps) {
     const [activeHelp, setActiveHelp] = useState<HelpMetric | null>(null);
@@ -103,6 +106,8 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
         const longRunRatio = calculateLongRunRatio(allActivities, selectedPeriodEnd);
         const efficiencyIndex = calculateEfficiencyIndex(allActivities, selectedPeriodEnd);
         const gapTrendSecPerKm = calculateGapTrend(allActivities, selectedPeriodEnd);
+        const monotony = calculateMonotony(allActivities, selectedPeriodEnd);
+        const strain = calculateStrainScore(allActivities, selectedPeriodEnd);
 
         return {
             runCount: filteredActivities.length,
@@ -118,6 +123,8 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
             longRunRatio: longRunRatio.ratio,
             efficiencyIndex,
             gapTrendSecPerKm,
+            monotony,
+            strain,
             ...streakData,
         };
     }, [activities, allActivities, period]);
@@ -198,7 +205,7 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
 
             <div>
                 <p className="rv-kicker mb-2 px-1">Training Health</p>
-                <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3 lg:grid-cols-6">
+                <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3 lg:grid-cols-8">
                     <StatCard
                         label="ACWR"
                         value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
@@ -286,6 +293,34 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
                         detail={getGapTrendDetail(stats.gapTrendSecPerKm)}
                         tone="blue"
                         style={reveal(320)}
+                    />
+                    <StatCard
+                        label="Monotony"
+                        value={stats.monotony > 0 ? stats.monotony.toFixed(2) : '--'}
+                        unit=""
+                        icon={Target}
+                        color={monotonyColorClass(stats.monotony)}
+                        helpMetric="monotony"
+                        helpText="Mean daily TRIMP divided by standard deviation over the trailing 7 days. Up to 1.5 suggests good variety, 1.5-2.0 is moderate, and above 2.0 can signal insufficient variation."
+                        activeHelp={activeHelp}
+                        onToggleHelp={setActiveHelp}
+                        detail={getMonotonyDetail(stats.monotony)}
+                        tone="orange"
+                        style={reveal(360)}
+                    />
+                    <StatCard
+                        label="Strain"
+                        value={stats.strain > 0 ? stats.strain.toFixed(0) : '--'}
+                        unit=""
+                        icon={TrendingUp}
+                        color={strainColorClass(stats.strain)}
+                        helpMetric="strain"
+                        helpText="7-day total TRIMP multiplied by monotony. Up to 3000 is usually manageable, 3000-6000 is high, and above 6000 with high monotony is a strong overreaching flag."
+                        activeHelp={activeHelp}
+                        onToggleHelp={setActiveHelp}
+                        detail={getStrainDetail(stats.strain)}
+                        tone="orange"
+                        style={reveal(400)}
                     />
                 </div>
             </div>
@@ -484,4 +519,18 @@ function getGapTrendDetail(gapTrend: number | null) {
     if (gapTrend < -5) return 'Climbing pace is improving';
     if (gapTrend <= 5) return 'Effort is holding steady';
     return 'Recent runs look a touch slower uphill';
+}
+
+function getMonotonyDetail(monotony: number) {
+    if (monotony <= 0) return 'Waiting for a full week of training load';
+    if (monotony > 2.0) return 'Recent load has been very repetitive';
+    if (monotony > 1.5) return 'Variation is a little limited';
+    return 'Training variety looks healthy';
+}
+
+function getStrainDetail(strain: number) {
+    if (strain <= 0) return 'Need more recent TRIMP data to score strain';
+    if (strain > 6000) return 'Load and repetition are both running hot';
+    if (strain > 3000) return 'This block is carrying notable stress';
+    return 'Overall stress looks manageable';
 }

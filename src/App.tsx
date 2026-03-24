@@ -18,6 +18,9 @@ import { RefreshCw } from 'lucide-react';
 const FitnessChart = lazy(() =>
   import('./components/FitnessChart').then((module) => ({ default: module.FitnessChart }))
 );
+const MileageTrendChart = lazy(() =>
+  import('./components/MileageTrendChart').then((module) => ({ default: module.MileageTrendChart }))
+);
 const RunDetails = lazy(() =>
   import('./components/RunDetails').then((module) => ({ default: module.RunDetails }))
 );
@@ -26,6 +29,15 @@ const ShoeTracker = lazy(() =>
 );
 const RaceTimePredictions = lazy(() =>
   import('./components/RaceTimePredictions').then((module) => ({ default: module.RaceTimePredictions }))
+);
+const VDOTPanel = lazy(() =>
+  import('./components/VDOTPanel').then((module) => ({ default: module.VDOTPanel }))
+);
+const WeeklyRampChart = lazy(() =>
+  import('./components/WeeklyRampChart').then((module) => ({ default: module.WeeklyRampChart }))
+);
+const CadenceTrendChart = lazy(() =>
+  import('./components/CadenceTrendChart').then((module) => ({ default: module.CadenceTrendChart }))
 );
 
 interface ViewPeriod {
@@ -680,6 +692,15 @@ function App() {
                 <Suspense fallback={<PanelFallback title="Performance Lab" subtitle="Loading fitness metrics" heightClassName="h-72" />}>
                   <FitnessChart activities={activities} period={viewPeriod} />
                 </Suspense>
+                <Suspense fallback={<PanelFallback title="Mileage Trends" subtitle="Loading volume history" heightClassName="h-[400px]" />}>
+                  <MileageTrendChart activities={activities} period={viewPeriod} />
+                </Suspense>
+                <Suspense fallback={<PanelFallback title="Weekly Volume" subtitle="Loading weekly ramp history" heightClassName="h-[320px]" />}>
+                  <WeeklyRampChart activities={activities} />
+                </Suspense>
+                <Suspense fallback={<PanelFallback title="Cadence Trend" subtitle="Loading cadence history" />}>
+                  <CadenceTrendChart activities={activities} />
+                </Suspense>
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                   <section className={`rv-panel px-5 py-5 sm:px-7 sm:py-6 ${isExpandedCalendarLayout ? 'lg:col-span-12' : 'lg:col-span-5'}`}>
                     <div className="mb-6 flex items-center justify-between gap-3">
@@ -724,6 +745,9 @@ function App() {
               <div className="space-y-6 xl:col-span-4">
                 <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
                   <RaceTimePredictions activities={activities} period={viewPeriod} />
+                </Suspense>
+                <Suspense fallback={<PanelFallback title="VDOT Guidance" subtitle="Loading training pace zones" />}>
+                  <VDOTPanel activities={activities} />
                 </Suspense>
                 <Suspense fallback={<PanelFallback title="Equipment Log" subtitle="Loading shoe usage" />}>
                   <ShoeTracker

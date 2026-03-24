@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { Activity, Gear } from '../types';
 import { formatDuration } from '../analytics/heartRateZones';
+import { calculateActivityTRIMP } from '../analytics/trainingLoad';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ChevronRight, Footprints, HeartPulse, Mountain, X } from 'lucide-react';
 import { parseActivityLocalDate } from '../utils/activityDate';
@@ -16,6 +17,8 @@ interface ActivityListProps {
     selectedShoeName?: string;
     onClearShoeFilter?: () => void;
     shoes?: Gear[];
+    maxHR?: number;
+    restHR?: number;
 }
 
 export function ActivityList({
@@ -25,7 +28,9 @@ export function ActivityList({
     selectedShoeId,
     selectedShoeName,
     onClearShoeFilter,
-    shoes = []
+    shoes = [],
+    maxHR = 185,
+    restHR = 60,
 }: ActivityListProps) {
     const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
     const runs = activities
@@ -88,6 +93,12 @@ export function ActivityList({
                 ) : (
                     runs.map((activity, index) => {
                         const dateParts = formatDate(activity.start_date_local);
+                        const trimp = calculateActivityTRIMP(activity, maxHR, restHR);
+                        const trimpColor =
+                            trimp >= 150 ? 'text-red-400' :
+                            trimp >= 100 ? 'text-orange-400' :
+                            'text-emerald-400';
+
                         return (
                             <button
                                 key={activity.id}
@@ -161,6 +172,18 @@ export function ActivityList({
                                                     <Mountain className="h-3.5 w-3.5" />
                                                     <span>{Math.round(activity.total_elevation_gain)}m</span>
                                                 </div>
+                                            </div>
+                                        )}
+
+                                        {trimp > 0 && (
+                                            <div className={`hidden sm:flex items-center justify-end gap-1 text-[0.72rem] font-semibold ${trimpColor}`}>
+                                                <span>TRIMP {trimp}</span>
+                                            </div>
+                                        )}
+
+                                        {activity.suffer_score != null && (
+                                            <div className="hidden sm:block text-right text-[0.72rem] font-semibold text-[var(--rv-text-faint)]">
+                                                SS {activity.suffer_score}
                                             </div>
                                         )}
                                     </div>

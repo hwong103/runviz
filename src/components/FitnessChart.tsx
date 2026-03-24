@@ -143,6 +143,14 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
                     bodyColor: chartTheme.tooltipBody,
                     borderColor: chartTheme.tooltipBorder,
                     borderWidth: 1,
+                    callbacks: {
+                        afterBody: (items: Array<{ dataIndex: number }>) => {
+                            const first = items[0];
+                            if (!first) return [];
+                            const payload = metrics[first.dataIndex];
+                            return payload ? [`TRIMP: ${payload.trimp}`] : [];
+                        },
+                    },
                 },
             },
             scales: {

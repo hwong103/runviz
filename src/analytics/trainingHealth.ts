@@ -1,7 +1,8 @@
 import type { Activity } from '../types';
 import { isRun } from '../types';
-import { activitiesToDailyLoads, calculateTrainingLoadHistory } from './trainingLoad';
+import { activitiesToDailyLoads, calculateActivityTRIMP, calculateTrainingLoadHistory } from './trainingLoad';
 import { gapAdjustmentFactor } from './gapCalculator';
+import { computeMonotony, computeStrain } from './monotony';
 import { parseActivityLocalDate } from '../utils/activityDate';
 
 interface WeeklyDistanceWindow {
@@ -269,4 +270,59 @@ export function gapTrendColorClass(deltaSecPerKm: number | null): string {
     if (deltaSecPerKm <= -8) return 'text-emerald-400';
     if (deltaSecPerKm <= 5) return 'text-yellow-400';
     return 'text-orange-400';
+}
+
+export function calculateMonotony(
+    activities: Activity[],
+    anchorDate: Date,
+    maxHR = 185,
+    restHR = 60
+): number {
+    const end = new Date(anchorDate);
+    end.setHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setDate(end.getDate() - 6);
+    start.setHours(0, 0, 0, 0);
+
+    const windowRuns = activities.filter((activity) => {
+        if (!isRun(activity)) return false;
+        const date = parseActivityLocalDate(activity.start_date_local);
+        return date >= start && date <= end;
+    });
+
+    const dailyLoads = activitiesToDailyLoads(windowRuns, maxHR, restHR);
+    const values: number[] = [];
+    const cursor = new Date(start);
+
+    while (cursor <= end) {
+        const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
+        values.push(dailyLoads.get(key) ?? 0);
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return computeMonotony(values);
+}
+
+export function calculateStrainScore(
+    activities: Activity[],
+    anchorDate: Date,
+    maxHR = 185,
+    restHR = 60
+): number {
+    const monotony = calculateMonotony(activities, anchorDate, maxHR, restHR);
+    const end = new Date(anchorDate);
+    end.setHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setDate(end.getDate() - 6);
+    start.setHours(0, 0, 0, 0);
+
+    const weeklyTrimp = activities
+        .filter((activity) => {
+            if (!isRun(activity)) return false;
+            const date = parseActivityLocalDate(activity.start_date_local);
+            return date >= start && date <= end;
+        })
+        .reduce((sum, activity) => sum + calculateActivityTRIMP(activity, maxHR, restHR), 0);
+
+    return computeStrain(weeklyTrimp, monotony);
 }
