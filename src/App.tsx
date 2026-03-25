@@ -10,7 +10,6 @@ import {
   DashboardIcon,
   ExitIcon,
   GearIcon,
-  LightningBoltIcon,
   ReloadIcon,
   RocketIcon,
 } from '@radix-ui/react-icons';
@@ -505,22 +504,17 @@ function App() {
       )}
 
       <div className="mx-auto max-w-[1720px] px-4 py-4 sm:px-6 lg:px-8">
-        <div className="grid gap-4 lg:grid-cols-[252px_minmax(0,1fr)]">
-          <aside className="hidden lg:flex lg:sticky lg:top-4 lg:h-[calc(100dvh-2rem)] lg:flex-col lg:justify-between rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_82%,transparent)] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.14)] backdrop-blur-xl">
-            <div className="space-y-6">
-              <div className="rounded-[1.5rem] border border-[var(--rv-border)]/70 bg-[var(--rv-bg-panel)] px-4 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-blue)_20%,transparent)] text-[var(--rv-blue)]">
-                    <DashboardIcon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold tracking-[-0.04em] text-[var(--rv-text)]">RunViz</p>
-                    <p className="rv-mini-label">Training workspace</p>
-                  </div>
-                </div>
+        <div className="grid gap-0 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <aside className="hidden lg:flex lg:sticky lg:top-4 lg:min-h-[calc(100dvh-2rem)] lg:flex-col lg:justify-between lg:border-r lg:border-[var(--rv-border)] lg:pr-6">
+            <div className="space-y-8">
+              <div className="pt-2">
+                <p className="text-[1.1rem] font-semibold tracking-[-0.06em] text-[var(--rv-text)]">
+                  RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
+                </p>
+                <p className="mt-1 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Training Workspace</p>
               </div>
 
-              <nav className="space-y-1">
+              <nav className="space-y-1.5">
                 <SidebarNavButton
                   label="Overview"
                   detail="KPI view"
@@ -557,63 +551,51 @@ function App() {
                   onClick={() => setDashboardWorkspace('tools')}
                 />
               </nav>
-
-              <div className="rounded-[1.5rem] border border-[var(--rv-border)]/70 bg-[var(--rv-bg-panel)] px-4 py-4">
-                <p className="rv-kicker mb-3">Session</p>
-                <dl className="space-y-3 text-sm">
-                  <SummaryRow label="Range" value={describeViewPeriod(viewPeriod)} />
-                  <SummaryRow label="Runs" value={String(currentSummary.runCount)} />
-                  <SummaryRow label="Distance" value={`${currentSummary.totalDistanceKm.toFixed(1)} km`} />
-                  <SummaryRow label="Longest" value={`${currentSummary.longestRunKm.toFixed(1)} km`} />
-                </dl>
-              </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="rounded-[1.5rem] border border-[var(--rv-border)]/70 bg-[var(--rv-bg-panel)] px-4 py-4">
-                <div className="flex items-center gap-3">
-                  {athlete?.profile ? (
-                    <img src={athlete.profile} className="h-11 w-11 rounded-2xl object-cover" alt="Profile" />
-                  ) : (
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-text)_12%,transparent)] text-[var(--rv-text-faint)]">
-                      <AvatarIcon className="h-5 w-5" />
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[var(--rv-text)]">{athleteLabel}</p>
-                    <p className="rv-mini-label">{syncing ? 'Syncing now' : formatLastSync(lastSync)}</p>
+            <div className="space-y-4 pb-2">
+              <div className="flex items-center gap-3">
+                {athlete?.profile ? (
+                  <img src={athlete.profile} className="h-10 w-10 rounded-2xl object-cover" alt="Profile" />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-text)_10%,transparent)] text-[var(--rv-text-faint)]">
+                    <AvatarIcon className="h-4 w-4" />
                   </div>
+                )}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[var(--rv-text)]">{athleteLabel}</p>
+                  <p className="text-xs text-[var(--rv-text-faint)]">{syncing ? 'Syncing now' : formatLastSync(lastSync)}</p>
                 </div>
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <ThemeToggle />
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className="inline-flex items-center gap-2 rounded-full border border-[var(--rv-border)] px-3 py-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)] active:translate-y-px"
-                  >
-                    <ExitIcon className="h-4 w-4" />
-                    Logout
-                  </button>
-                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <ThemeToggle />
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:text-[var(--rv-text)] active:translate-y-px"
+                >
+                  <ExitIcon className="h-4 w-4" />
+                  Logout
+                </button>
               </div>
             </div>
           </aside>
 
-          <div className="min-w-0 space-y-4">
-            <header className="sticky top-4 z-30 rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_84%,transparent)] px-4 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.14)] backdrop-blur-xl sm:px-5">
+          <div className="min-w-0 space-y-5 lg:pl-6">
+            <header className="sticky top-0 z-30 border-b border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg)_92%,transparent)] py-4 backdrop-blur-xl">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-3 lg:hidden">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-blue)_18%,transparent)] text-[var(--rv-blue)]">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-blue)_14%,transparent)] text-[var(--rv-blue)]">
                       <DashboardIcon className="h-5 w-5" />
                     </div>
                     <div>
                       <p className="text-sm font-semibold tracking-[-0.04em] text-[var(--rv-text)]">RunViz</p>
-                      <p className="rv-mini-label">Training workspace</p>
+                      <p className="text-xs uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">Training Workspace</p>
                     </div>
                   </div>
-                  <p className="rv-kicker mt-4 mb-2 lg:mt-0">{activeMeta.kicker}</p>
-                  <h1 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--rv-text)] sm:text-3xl">
+                  <p className="mt-4 mb-2 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)] lg:mt-0">{activeMeta.kicker}</p>
+                  <h1 className="text-[1.85rem] font-semibold tracking-[-0.05em] text-[var(--rv-text)] sm:text-[2.2rem]">
                     {activeMeta.title}
                   </h1>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--rv-text-dim)]">
@@ -661,13 +643,19 @@ function App() {
               </div>
 
               <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div className="flex flex-wrap gap-2">
-                  <InfoPill label="Range" value={describeViewPeriod(viewPeriod)} />
-                  <InfoPill label="Runs" value={String(currentSummary.runCount)} />
-                  <InfoPill label="Distance" value={`${currentSummary.totalDistanceKm.toFixed(1)} km`} />
-                  <InfoPill label="Filter" value={selectedShoeName ?? 'All gear'} />
+                <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--rv-text-dim)]">
+                  <span>{describeViewPeriod(viewPeriod)}</span>
+                  <span className="text-[var(--rv-text-faint)]">/</span>
+                  <span>{currentSummary.runCount} runs</span>
+                  <span className="text-[var(--rv-text-faint)]">/</span>
+                  <span>{currentSummary.totalDistanceKm.toFixed(1)} km</span>
+                  {selectedShoeName && (
+                    <>
+                      <span className="text-[var(--rv-text-faint)]">/</span>
+                      <span>{selectedShoeName}</span>
+                    </>
+                  )}
                 </div>
-
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="flex flex-wrap items-center gap-1 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] p-1">
                     {([
@@ -750,15 +738,12 @@ function App() {
             {dashboardWorkspace === 'overview' && (
               <section className="space-y-4">
                 <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} />
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
+                <div className="grid gap-4">
                   <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
                     <FitnessChart activities={activities} period={viewPeriod} />
                   </Suspense>
-                  <Suspense fallback={<PanelFallback title="Race" subtitle="Loading prediction view" />}>
-                    <RaceTimePredictions activities={activities} period={viewPeriod} />
-                  </Suspense>
                 </div>
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.85fr)]">
+                <div className="grid gap-4">
                   <ActivityList
                     activities={filteredActivities}
                     limit={8}
@@ -768,9 +753,6 @@ function App() {
                     onClearShoeFilter={() => setSelectedShoeId(null)}
                     shoes={allShoes}
                   />
-                  <Suspense fallback={<PanelFallback title="VDOT" subtitle="Loading pacing guidance" />}>
-                    <VDOTPanel activities={activities} />
-                  </Suspense>
                 </div>
               </section>
             )}
@@ -780,20 +762,9 @@ function App() {
                 <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
                   <FitnessChart activities={activities} period={viewPeriod} />
                 </Suspense>
-                <div className="space-y-4">
-                  <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
-                    <WeeklyRampChart activities={activities} />
-                  </Suspense>
-                  <section className="rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_86%,transparent)] px-5 py-5">
-                    <p className="rv-kicker mb-3">Reading</p>
-                    <dl className="space-y-3 text-sm">
-                      <SummaryRow label="Visible runs" value={String(currentSummary.runCount)} />
-                      <SummaryRow label="Distance" value={`${currentSummary.totalDistanceKm.toFixed(1)} km`} />
-                      <SummaryRow label="Longest run" value={`${currentSummary.longestRunKm.toFixed(1)} km`} />
-                      <SummaryRow label="Last sync" value={formatLastSync(lastSync)} />
-                    </dl>
-                  </section>
-                </div>
+                <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
+                  <WeeklyRampChart activities={activities} />
+                </Suspense>
               </section>
             )}
 
@@ -825,31 +796,16 @@ function App() {
             )}
 
             {dashboardWorkspace === 'race' && (
-              <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.75fr)]">
-                <div className="min-w-0">
-                  {raceWorkspace === 'predictions' ? (
-                    <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
-                      <RaceTimePredictions activities={activities} period={viewPeriod} />
-                    </Suspense>
-                  ) : (
-                    <Suspense fallback={<PanelFallback title="VDOT" subtitle="Loading training pace zones" />}>
-                      <VDOTPanel activities={activities} />
-                    </Suspense>
-                  )}
-                </div>
-                <section className="rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_86%,transparent)] px-5 py-5">
-                  <div className="mb-4 flex items-center gap-2">
-                    <LightningBoltIcon className="h-4 w-4 text-[var(--rv-blue)]" />
-                    <p className="rv-kicker">Context</p>
-                  </div>
-                  <dl className="space-y-3 text-sm">
-                    <SummaryRow label="Selected range" value={describeViewPeriod(viewPeriod)} />
-                    <SummaryRow label="Visible runs" value={String(currentSummary.runCount)} />
-                    <SummaryRow label="Distance" value={`${currentSummary.totalDistanceKm.toFixed(1)} km`} />
-                    <SummaryRow label="Longest run" value={`${currentSummary.longestRunKm.toFixed(1)} km`} />
-                    <SummaryRow label="Last sync" value={formatLastSync(lastSync)} />
-                  </dl>
-                </section>
+              <section className="min-w-0">
+                {raceWorkspace === 'predictions' ? (
+                  <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
+                    <RaceTimePredictions activities={activities} period={viewPeriod} />
+                  </Suspense>
+                ) : (
+                  <Suspense fallback={<PanelFallback title="VDOT" subtitle="Loading training pace zones" />}>
+                    <VDOTPanel activities={activities} />
+                  </Suspense>
+                )}
               </section>
             )}
 
@@ -891,79 +847,46 @@ function App() {
             )}
 
             {dashboardWorkspace === 'tools' && (
-              <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-                <div className="space-y-4">
-                  <Link
-                    to="/plan-route"
-                    className="block rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_86%,transparent)] px-5 py-5 transition hover:border-[var(--rv-border-strong)] hover:bg-[color-mix(in_srgb,var(--rv-bg-panel)_96%,transparent)]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-blue)_18%,transparent)] text-[var(--rv-blue)]">
-                        <BackpackIcon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="rv-kicker mb-1">Route Planner</p>
-                        <h3 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">Build the next route</h3>
-                      </div>
+              <section className="space-y-4">
+                <Link
+                  to="/plan-route"
+                  className="block rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_86%,transparent)] px-5 py-5 transition hover:border-[var(--rv-border-strong)] hover:bg-[color-mix(in_srgb,var(--rv-bg-panel)_96%,transparent)]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-blue)_18%,transparent)] text-[var(--rv-blue)]">
+                      <BackpackIcon className="h-5 w-5" />
                     </div>
-                    <p className="mt-4 max-w-[52ch] text-sm leading-6 text-[var(--rv-text-dim)]">
-                      Choose a start point, set a target distance, and export a route without carrying this tool inside the daily dashboard.
-                    </p>
-                  </Link>
-
-                  <Link
-                    to="/form-analysis"
-                    className="block rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_86%,transparent)] px-5 py-5 transition hover:border-[var(--rv-border-strong)] hover:bg-[color-mix(in_srgb,var(--rv-bg-panel)_96%,transparent)]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-yellow)_18%,transparent)] text-[var(--rv-yellow)]">
-                        <RocketIcon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="rv-kicker mb-1">Form Lab</p>
-                        <h3 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">Review running form</h3>
-                      </div>
+                    <div>
+                      <p className="rv-kicker mb-1">Route Planner</p>
+                      <h3 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">Build the next route</h3>
                     </div>
-                    <p className="mt-4 max-w-[52ch] text-sm leading-6 text-[var(--rv-text-dim)]">
-                      Upload a clip, link it to a run, and keep technical feedback in a dedicated review flow.
-                    </p>
-                  </Link>
-                </div>
-
-                <section className="rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_86%,transparent)] px-5 py-5">
-                  <div className="mb-4 flex items-center gap-2">
-                    <GearIcon className="h-4 w-4 text-[var(--rv-blue)]" />
-                    <p className="rv-kicker">Preferences</p>
                   </div>
-                  <div className="space-y-4">
-                    <div className="rounded-[1.4rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-4">
-                      <p className="text-sm font-semibold text-[var(--rv-text)]">{athleteLabel}</p>
-                      <p className="mt-1 text-sm text-[var(--rv-text-dim)]">{formatLastSync(lastSync)}</p>
+                  <p className="mt-4 max-w-[52ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                    Choose a start point, set a target distance, and export a route without carrying this tool inside the daily dashboard.
+                  </p>
+                </Link>
+
+                <Link
+                  to="/form-analysis"
+                  className="block rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_86%,transparent)] px-5 py-5 transition hover:border-[var(--rv-border-strong)] hover:bg-[color-mix(in_srgb,var(--rv-bg-panel)_96%,transparent)]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-yellow)_18%,transparent)] text-[var(--rv-yellow)]">
+                      <RocketIcon className="h-5 w-5" />
                     </div>
-                    <ThemeToggle />
-                    <button
-                      type="button"
-                      onClick={() => sync({ forceFull: true })}
-                      disabled={syncing}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)] disabled:cursor-wait disabled:opacity-50 active:translate-y-px"
-                    >
-                      <ReloadIcon className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-                      {syncing ? 'Syncing now' : 'Run full sync'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={logout}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)] active:translate-y-px"
-                    >
-                      <ExitIcon className="h-4 w-4" />
-                      Logout
-                    </button>
+                    <div>
+                      <p className="rv-kicker mb-1">Form Lab</p>
+                      <h3 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">Review running form</h3>
+                    </div>
                   </div>
-                </section>
+                  <p className="mt-4 max-w-[52ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                    Upload a clip, link it to a run, and keep technical feedback in a dedicated review flow.
+                  </p>
+                </Link>
               </section>
             )}
 
-            <footer className="rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_72%,transparent)] px-4 py-4">
+            <footer className="border-t border-[var(--rv-border)] px-1 py-4">
               <div className="rv-mini-label flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span>RunViz analytics v4.2</span>
                 <span>Synced with the Strava API</span>
@@ -1033,24 +956,6 @@ function InlineTabButton({
     >
       {children}
     </button>
-  );
-}
-
-function InfoPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-2 text-sm">
-      <span className="rv-mini-label">{label}</span>
-      <span className="font-semibold text-[var(--rv-text-dim)]">{value}</span>
-    </div>
-  );
-}
-
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <dt className="text-[var(--rv-text-faint)]">{label}</dt>
-      <dd className="text-right font-semibold text-[var(--rv-text)]">{value}</dd>
-    </div>
   );
 }
 
