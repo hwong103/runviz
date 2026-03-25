@@ -46,6 +46,9 @@ interface ViewPeriod {
   month: number | null;
 }
 
+type DashboardWorkspace = 'overview' | 'metrics' | 'logbook';
+type MetricsWorkspace = 'load' | 'race' | 'mechanics';
+
 const MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
@@ -124,6 +127,8 @@ function App() {
     year: new Date().getFullYear(),
     month: new Date().getMonth(),
   });
+  const [dashboardWorkspace, setDashboardWorkspace] = useState<DashboardWorkspace>('overview');
+  const [metricsWorkspace, setMetricsWorkspace] = useState<MetricsWorkspace>('load');
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
@@ -471,8 +476,6 @@ function App() {
     );
   }
 
-  const isExpandedCalendarLayout = viewPeriod.mode !== 'month';
-
   if (needsStravaConnect) {
     return (
       <SetupPage
@@ -685,30 +688,240 @@ function App() {
           )}
 
           <main className="mx-auto flex max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <section className="rv-panel rv-panel-strong overflow-hidden px-5 py-5 sm:px-7 sm:py-6">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                <div className="max-w-3xl">
+                  <p className="rv-kicker mb-2">Workspace</p>
+                  <h1 className="text-[clamp(2rem,4vw,3.2rem)] font-semibold tracking-[-0.05em] text-[var(--rv-text)]">
+                    A shorter dashboard with one clear mode at a time.
+                  </h1>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--rv-text-dim)] sm:text-base">
+                    Keep the top KPIs visible, then move between overview, deep metrics, and the training log without carrying every panel on the same page.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[520px]">
+                  <div className="rounded-[1.4rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3">
+                    <div className="rv-mini-label">Visible Runs</div>
+                    <div className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--rv-text)]">{filteredActivities.length}</div>
+                  </div>
+                  <div className="rounded-[1.4rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3">
+                    <div className="rv-mini-label">Last Sync</div>
+                    <div className="mt-2 text-sm font-semibold text-[var(--rv-text)]">{formatLastSync(lastSync)}</div>
+                  </div>
+                  <div className="rounded-[1.4rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3">
+                    <div className="rv-mini-label">Shoe Filter</div>
+                    <div className="mt-2 text-sm font-semibold text-[var(--rv-text)]">{selectedShoeName ?? 'All gear'}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-4 border-t border-[var(--rv-border)] pt-5 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    { key: 'overview', label: 'Overview' },
+                    { key: 'metrics', label: 'Metrics Lab' },
+                    { key: 'logbook', label: 'Logbook' },
+                  ] as const).map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setDashboardWorkspace(key)}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold tracking-[-0.02em] transition ${dashboardWorkspace === key
+                        ? 'bg-[var(--rv-text)] text-[var(--rv-bg)]'
+                        : 'border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[var(--rv-text-dim)] hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)]'
+                        }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Link to="/plan-route" className="rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)]">
+                    Route Planner
+                  </Link>
+                  <Link to="/form-analysis" className="rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)]">
+                    Form Lab
+                  </Link>
+                </div>
+              </div>
+            </section>
+
             <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} />
 
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-              <div className="space-y-6 xl:col-span-8">
-                <Suspense fallback={<PanelFallback title="Performance Lab" subtitle="Loading fitness metrics" heightClassName="h-72" />}>
-                  <FitnessChart activities={activities} period={viewPeriod} />
-                </Suspense>
-                <Suspense fallback={<PanelFallback title="Mileage Trends" subtitle="Loading volume history" heightClassName="h-[400px]" />}>
-                  <MileageTrendChart activities={activities} period={viewPeriod} />
-                </Suspense>
-                <Suspense fallback={<PanelFallback title="Weekly Volume" subtitle="Loading weekly ramp history" heightClassName="h-[320px]" />}>
-                  <WeeklyRampChart activities={activities} />
-                </Suspense>
-                <Suspense fallback={<PanelFallback title="Cadence Trend" subtitle="Loading cadence history" />}>
-                  <CadenceTrendChart activities={activities} />
-                </Suspense>
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                  <section className={`rv-panel px-5 py-5 sm:px-7 sm:py-6 ${isExpandedCalendarLayout ? 'lg:col-span-12' : 'lg:col-span-5'}`}>
+            {dashboardWorkspace === 'overview' && (
+              <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                <div className="space-y-6 xl:col-span-8">
+                  <Suspense fallback={<PanelFallback title="Performance Lab" subtitle="Loading fitness metrics" heightClassName="h-72" />}>
+                    <FitnessChart activities={activities} period={viewPeriod} />
+                  </Suspense>
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                    <section className="rv-panel px-5 py-5 sm:px-7 sm:py-6 lg:col-span-7">
+                      <div className="mb-6 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="rv-kicker mb-2">Training Calendar</p>
+                          <h2 className="rv-section-title text-[1.55rem]">Runs by day</h2>
+                        </div>
+                        <span className="rv-mini-label hidden sm:inline">Click a day to inspect a run</span>
+                      </div>
+                      <CalendarHeatmap
+                        activities={activities}
+                        year={viewPeriod.mode !== 'all' ? viewPeriod.year : undefined}
+                        month={viewPeriod.mode === 'month' ? (viewPeriod.month ?? undefined) : undefined}
+                        onSelectDay={handleSelectDay}
+                        selectedDate={selectedActivity?.start_date_local.split('T')[0]}
+                      />
+                    </section>
+
+                    <section className="rv-panel px-5 py-5 sm:px-7 sm:py-6 lg:col-span-5">
+                      <div className="mb-6">
+                        <p className="rv-kicker mb-2">Utilities</p>
+                        <h2 className="rv-section-title text-[1.55rem]">Quick actions</h2>
+                      </div>
+                      <div className="space-y-3">
+                        <Link to="/plan-route" className="rv-panel rv-panel-accent block px-5 py-5 transition hover:-translate-y-1">
+                          <p className="rv-kicker mb-3">Route Planner</p>
+                          <h3 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">Plan the next route</h3>
+                          <p className="rv-body-copy-sm mt-2">Set a target distance and export a route as GPX.</p>
+                        </Link>
+                        <Link to="/form-analysis" className="rv-panel block px-5 py-5 transition hover:-translate-y-1 hover:border-[var(--rv-blue)]/40">
+                          <p className="rv-kicker mb-3">Form Lab</p>
+                          <h3 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">Review running form</h3>
+                          <p className="rv-body-copy-sm mt-2">Upload a clip and keep your analysis linked to a run.</p>
+                        </Link>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+
+                <div className="space-y-6 xl:col-span-4">
+                  <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
+                    <RaceTimePredictions activities={activities} period={viewPeriod} />
+                  </Suspense>
+                  <Suspense fallback={<PanelFallback title="VDOT Guidance" subtitle="Loading training pace zones" />}>
+                    <VDOTPanel activities={activities} />
+                  </Suspense>
+                </div>
+              </section>
+            )}
+
+            {dashboardWorkspace === 'metrics' && (
+              <section className="space-y-6">
+                <div className="rv-panel px-5 py-5 sm:px-7 sm:py-6">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <p className="rv-kicker mb-2">Metrics Lab</p>
+                      <h2 className="rv-section-title text-[1.55rem]">Focus one lens at a time</h2>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {([
+                        { key: 'load', label: 'Load' },
+                        { key: 'race', label: 'Race' },
+                        { key: 'mechanics', label: 'Mechanics' },
+                      ] as const).map(({ key, label }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setMetricsWorkspace(key)}
+                          className={`rounded-full px-4 py-2 text-sm font-semibold transition ${metricsWorkspace === key
+                            ? 'bg-[var(--rv-blue)] text-white shadow-[0_10px_30px_rgba(74,122,255,0.2)]'
+                            : 'border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[var(--rv-text-dim)] hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)]'
+                            }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {metricsWorkspace === 'load' && (
+                  <section className="space-y-6">
+                    <Suspense fallback={<PanelFallback title="Performance Lab" subtitle="Loading fitness metrics" heightClassName="h-72" />}>
+                      <FitnessChart activities={activities} period={viewPeriod} />
+                    </Suspense>
+                    <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                      <div className="xl:col-span-8">
+                        <Suspense fallback={<PanelFallback title="Mileage Trends" subtitle="Loading volume history" heightClassName="h-[400px]" />}>
+                          <MileageTrendChart activities={activities} period={viewPeriod} />
+                        </Suspense>
+                      </div>
+                      <div className="xl:col-span-4">
+                        <Suspense fallback={<PanelFallback title="Weekly Volume" subtitle="Loading weekly ramp history" heightClassName="h-[320px]" />}>
+                          <WeeklyRampChart activities={activities} />
+                        </Suspense>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {metricsWorkspace === 'race' && (
+                  <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                    <div className="xl:col-span-6">
+                      <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
+                        <RaceTimePredictions activities={activities} period={viewPeriod} />
+                      </Suspense>
+                    </div>
+                    <div className="xl:col-span-6">
+                      <Suspense fallback={<PanelFallback title="VDOT Guidance" subtitle="Loading training pace zones" />}>
+                        <VDOTPanel activities={activities} />
+                      </Suspense>
+                    </div>
+                  </section>
+                )}
+
+                {metricsWorkspace === 'mechanics' && (
+                  <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                    <div className="xl:col-span-8">
+                      <Suspense fallback={<PanelFallback title="Cadence Trend" subtitle="Loading cadence history" />}>
+                        <CadenceTrendChart activities={activities} />
+                      </Suspense>
+                    </div>
+                    <div className="xl:col-span-4">
+                      <Suspense fallback={<PanelFallback title="Equipment Log" subtitle="Loading shoe usage" />}>
+                        <ShoeTracker
+                          activities={filteredActivities}
+                          shoes={allShoes}
+                          selectedShoeId={selectedShoeId}
+                          onSelectShoe={(id) => setSelectedShoeId(prev => prev === id ? null : id)}
+                        />
+                      </Suspense>
+                    </div>
+                  </section>
+                )}
+              </section>
+            )}
+
+            {dashboardWorkspace === 'logbook' && (
+              <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                <div className="xl:col-span-8">
+                  <ActivityList
+                    activities={filteredActivities}
+                    limit={50}
+                    onSelect={setSelectedActivity}
+                    selectedShoeId={selectedShoeId}
+                    selectedShoeName={selectedShoeName}
+                    onClearShoeFilter={() => setSelectedShoeId(null)}
+                    shoes={allShoes}
+                  />
+                </div>
+
+                <div className="space-y-6 xl:col-span-4">
+                  <Suspense fallback={<PanelFallback title="Equipment Log" subtitle="Loading shoe usage" />}>
+                    <ShoeTracker
+                      activities={filteredActivities}
+                      shoes={allShoes}
+                      selectedShoeId={selectedShoeId}
+                      onSelectShoe={(id) => setSelectedShoeId(prev => prev === id ? null : id)}
+                    />
+                  </Suspense>
+                  <section className="rv-panel px-5 py-5 sm:px-7 sm:py-6">
                     <div className="mb-6 flex items-center justify-between gap-3">
                       <div>
-                        <p className="rv-kicker mb-2">Training Calendar</p>
-                        <h2 className="rv-section-title text-[1.55rem]">Runs by day</h2>
+                        <p className="rv-kicker mb-2">Calendar</p>
+                        <h2 className="rv-section-title text-[1.55rem]">Training map</h2>
                       </div>
-                      <span className="rv-mini-label hidden sm:inline">Click a day to inspect a run</span>
                     </div>
                     <CalendarHeatmap
                       activities={activities}
@@ -718,57 +931,9 @@ function App() {
                       selectedDate={selectedActivity?.start_date_local.split('T')[0]}
                     />
                   </section>
-
-                  <section className={`rv-panel px-5 py-5 sm:px-7 sm:py-6 ${isExpandedCalendarLayout ? 'lg:col-span-12' : 'lg:col-span-7'}`}>
-                    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <p className="rv-kicker mb-2">Tools</p>
-                        <h2 className="rv-section-title text-[1.55rem]">Planner and form lab</h2>
-                      </div>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <Link to="/plan-route" className="rv-panel rv-panel-accent block px-5 py-5 transition hover:-translate-y-1">
-                        <p className="rv-kicker mb-3">Route Planner</p>
-                        <h3 className="mb-3 text-2xl font-semibold italic tracking-[-0.03em] text-[var(--rv-text)]">Plan your next route</h3>
-                        <p className="rv-body-copy-sm">Choose a starting point, set a distance target, and export a route as GPX.</p>
-                      </Link>
-                      <Link to="/form-analysis" className="rv-panel block px-5 py-5 transition hover:-translate-y-1 hover:border-[var(--rv-blue)]/40">
-                        <p className="rv-kicker mb-3">Form Lab</p>
-                        <h3 className="mb-3 text-2xl font-semibold italic tracking-[-0.03em] text-[var(--rv-text)]">Review running form</h3>
-                        <p className="rv-body-copy-sm">Upload a video, match it to a run, and save a form analysis you can revisit later.</p>
-                      </Link>
-                    </div>
-                  </section>
                 </div>
-              </div>
-
-              <div className="space-y-6 xl:col-span-4">
-                <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
-                  <RaceTimePredictions activities={activities} period={viewPeriod} />
-                </Suspense>
-                <Suspense fallback={<PanelFallback title="VDOT Guidance" subtitle="Loading training pace zones" />}>
-                  <VDOTPanel activities={activities} />
-                </Suspense>
-                <Suspense fallback={<PanelFallback title="Equipment Log" subtitle="Loading shoe usage" />}>
-                  <ShoeTracker
-                    activities={filteredActivities}
-                    shoes={allShoes}
-                    selectedShoeId={selectedShoeId}
-                    onSelectShoe={(id) => setSelectedShoeId(prev => prev === id ? null : id)}
-                  />
-                </Suspense>
-              </div>
-            </section>
-
-            <ActivityList
-              activities={filteredActivities}
-              limit={50}
-              onSelect={setSelectedActivity}
-              selectedShoeId={selectedShoeId}
-              selectedShoeName={selectedShoeName}
-              onClearShoeFilter={() => setSelectedShoeId(null)}
-              shoes={allShoes}
-            />
+              </section>
+            )}
           </main>
 
           <footer className="border-t border-[var(--rv-border)] px-4 py-8 sm:px-6 lg:px-8">
