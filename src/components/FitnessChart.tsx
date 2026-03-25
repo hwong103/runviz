@@ -169,17 +169,20 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
         <div className="rv-panel rv-panel-strong px-5 py-5 sm:px-7 sm:py-6">
             <div className="mb-6 flex flex-wrap items-center gap-3">
                 <div>
-                    <p className="rv-kicker mb-2">Performance Lab</p>
+                    <p className="rv-kicker mb-2">Training Load</p>
                     <h2 className="text-2xl font-bold tracking-tight text-[var(--rv-text)]">
-                        Fitness metrics
+                        Fitness, fatigue, and form
                     </h2>
+                    <p className="mt-2 max-w-[52ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                        CTL tracks longer-term fitness, ATL captures recent fatigue, and TSB shows how fresh you are heading into the next session.
+                    </p>
                 </div>
 
                 <div
-                    className="sm:ml-auto rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.24em]"
+                    className="sm:ml-auto rounded-full border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.24em]"
                     style={{ backgroundColor: `${interpretation.color}20`, color: interpretation.color, border: `1px solid ${interpretation.color}40` }}
                 >
-                    {interpretation.description}
+                    Form status: {interpretation.description}
                 </div>
             </div>
 
@@ -194,24 +197,24 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             </div>
 
             {/* Current values */}
-            <div className="mt-6 grid grid-cols-1 gap-3 border-t border-[color-mix(in_srgb,var(--rv-text)_8%,transparent)] pt-6 min-[420px]:grid-cols-3">
-                <div className="rounded-[1.4rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-4 text-center">
+            <div className="mt-6 grid grid-cols-1 gap-0 border-t border-[color-mix(in_srgb,var(--rv-text)_8%,transparent)] pt-6 min-[420px]:grid-cols-3">
+                <div className="border-b border-[var(--rv-border)] px-1 py-4 text-center min-[420px]:border-b-0 min-[420px]:border-r">
                     <div className="rv-metric text-3xl text-[#13C38B]">
                         {displayMetric ? displayMetric.ctl.toFixed(0) : '-'}
                     </div>
-                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fitness</div>
+                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fitness (CTL)</div>
                 </div>
-                <div className="rounded-[1.4rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-4 text-center">
+                <div className="border-b border-[var(--rv-border)] px-1 py-4 text-center min-[420px]:border-b-0 min-[420px]:border-r">
                     <div className="rv-metric text-3xl text-[#FF8E2B]">
                         {displayMetric ? displayMetric.atl.toFixed(0) : '-'}
                     </div>
-                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fatigue</div>
+                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fatigue (ATL)</div>
                 </div>
-                <div className="rounded-[1.4rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-4 text-center">
+                <div className="px-1 py-4 text-center">
                     <div className="rv-metric text-3xl text-[var(--rv-yellow)]">
                         {displayMetric ? displayMetric.tsb.toFixed(0) : '-'}
                     </div>
-                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Form</div>
+                    <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Form (TSB)</div>
                 </div>
             </div>
         </div>

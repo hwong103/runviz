@@ -12,6 +12,8 @@ import { SectionHeader } from './ui/SectionHeader';
 interface ActivityListProps {
     activities: Activity[];
     limit?: number;
+    kicker?: string;
+    title?: string;
     onSelect?: (activity: Activity) => void;
     selectedShoeId?: string | null;
     selectedShoeName?: string;
@@ -24,6 +26,8 @@ interface ActivityListProps {
 export function ActivityList({
     activities,
     limit = 10,
+    kicker = 'Activity Log',
+    title = 'Training log',
     onSelect,
     selectedShoeId,
     selectedShoeName,
@@ -65,8 +69,8 @@ export function ActivityList({
         <div className="rv-panel rv-reveal-subtle px-5 py-5 sm:px-7 sm:py-6" style={reveal(120)}>
             <SectionHeader
                 className="mb-6"
-                kicker="Activity Log"
-                title="Training log"
+                kicker={kicker}
+                title={title}
                 action={selectedShoeId && selectedShoeName ? (
                     <div className="flex items-center gap-2">
                         <Badge tone="blue" icon={<Footprints className="h-3.5 w-3.5" />}>
@@ -83,7 +87,7 @@ export function ActivityList({
                 ) : null}
             />
 
-            <div className="space-y-3">
+            <div className="space-y-1">
                 {runs.length === 0 ? (
                     <div className="space-y-3 py-12 text-center">
                         <Footprints className="mx-auto h-10 w-10 text-[var(--rv-text-faint)]" />
@@ -91,7 +95,8 @@ export function ActivityList({
                         <p className="mx-auto max-w-[30ch] text-sm leading-6 text-[var(--rv-text-faint)]">Try easing the filters or pull a fresh sync. Once a run lands here, RunViz will turn it into a cleaner training story.</p>
                     </div>
                 ) : (
-                    runs.map((activity, index) => {
+                    <div className="divide-y divide-[var(--rv-border)]">
+                        {runs.map((activity, index) => {
                         const dateParts = formatDate(activity.start_date_local);
                         const trimp = calculateActivityTRIMP(activity, maxHR, restHR);
                         const trimpColor =
@@ -105,11 +110,11 @@ export function ActivityList({
                                 type="button"
                                 onClick={() => onSelect?.(activity)}
                                 style={reveal(160 + index * 40)}
-                                className="rv-reveal-subtle rv-spotlight group flex w-full cursor-pointer flex-col gap-3 rounded-[1.7rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--rv-border-strong)] hover:bg-[var(--rv-bg-elevated)] focus-visible:border-[var(--rv-blue)] focus-visible:bg-[var(--rv-bg-elevated)] sm:flex-row sm:items-center sm:gap-4"
+                                className="rv-reveal-subtle group -mx-2 flex w-[calc(100%+1rem)] cursor-pointer flex-col gap-3 rounded-[1.25rem] px-2 py-4 text-left transition-all duration-300 hover:bg-[color-mix(in_srgb,var(--rv-bg-elevated)_72%,transparent)] focus-visible:bg-[var(--rv-bg-elevated)] sm:flex-row sm:items-center sm:gap-4"
                                 aria-label={`Open run details for ${activity.name} on ${dateParts.month} ${dateParts.day}`}
                             >
                                 {/* Date */}
-                                <div className="w-full sm:w-16 flex items-center gap-2 sm:block sm:text-center">
+                                <div className="flex w-full items-center gap-3 sm:block sm:w-16 sm:text-center">
                                     <div className="rv-mini-label">{dateParts.weekday}</div>
                                     <div className="text-[1.35rem] font-bold leading-none text-[var(--rv-text)]">{dateParts.day}</div>
                                     <div className="rv-mini-label">{dateParts.month}</div>
@@ -138,7 +143,7 @@ export function ActivityList({
                                 </div>
 
                                 {/* Shoe (Always Visible) */}
-                                <div className="hidden sm:flex flex-col items-end min-w-[150px] max-w-[220px] ml-4 shrink-0">
+                                <div className="hidden min-w-[150px] max-w-[220px] shrink-0 sm:ml-4 sm:flex sm:flex-col sm:items-end">
                                     {(() => {
                                         // Try to find shoe in the provided shoes array, or use the one on the activity if available
                                         const shoe = (activity.gear_id ? shoes.find(s => s.id === activity.gear_id) : null) || activity.gear;
@@ -155,35 +160,31 @@ export function ActivityList({
                                 </div>
 
                                 {/* Metrics */}
-                                <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-4">
-                                    <div className="flex flex-col items-end gap-1">
+                                <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end">
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.72rem] font-semibold sm:flex-col sm:items-end sm:gap-1">
                                         {activity.average_heartrate && (
-                                            <div className="text-right hidden sm:block">
-                                                <div className="flex items-center justify-end gap-1 text-[0.72rem] font-semibold text-red-400/80">
-                                                    <HeartPulse className="h-3.5 w-3.5" />
-                                                    <span>{Math.round(activity.average_heartrate)}</span>
-                                                </div>
+                                            <div className="flex items-center justify-end gap-1 text-red-400/80">
+                                                <HeartPulse className="h-3.5 w-3.5" />
+                                                <span>{Math.round(activity.average_heartrate)} bpm</span>
                                             </div>
                                         )}
 
                                         {activity.total_elevation_gain > 0 && (
-                                            <div className="text-right hidden sm:block">
-                                                <div className="flex items-center justify-end gap-1 text-[0.72rem] font-semibold text-[var(--rv-text-faint)]">
-                                                    <Mountain className="h-3.5 w-3.5" />
-                                                    <span>{Math.round(activity.total_elevation_gain)}m</span>
-                                                </div>
+                                            <div className="flex items-center justify-end gap-1 text-[var(--rv-text-faint)]">
+                                                <Mountain className="h-3.5 w-3.5" />
+                                                <span>{Math.round(activity.total_elevation_gain)} m</span>
                                             </div>
                                         )}
 
                                         {trimp > 0 && (
-                                            <div className={`hidden sm:flex items-center justify-end gap-1 text-[0.72rem] font-semibold ${trimpColor}`}>
+                                            <div className={`flex items-center justify-end gap-1 ${trimpColor}`}>
                                                 <span>TRIMP {trimp}</span>
                                             </div>
                                         )}
 
                                         {activity.suffer_score != null && (
-                                            <div className="hidden sm:block text-right text-[0.72rem] font-semibold text-[var(--rv-text-faint)]">
-                                                SS {activity.suffer_score}
+                                            <div className="text-[var(--rv-text-faint)]">
+                                                Stress {activity.suffer_score}
                                             </div>
                                         )}
                                     </div>
@@ -192,7 +193,8 @@ export function ActivityList({
                                 </div>
                             </button>
                         );
-                    })
+                    })}
+                    </div>
                 )}
             </div>
         </div>

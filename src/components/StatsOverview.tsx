@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type { LucideIcon } from 'lucide-react';
-import { Clock3, Flame, Footprints, Gauge, HeartPulse, Mountain, PieChart, Ruler, Scale, Target, TrendingUp, Trophy } from 'lucide-react';
+import { Flame, Gauge, HeartPulse, Mountain, PieChart, Ruler, Scale, Target, TrendingUp, Trophy } from 'lucide-react';
 import type { Activity } from '../types';
 import { isRun } from '../types';
 import {
@@ -33,11 +33,12 @@ interface StatsOverviewProps {
         year: number;
         month: number | null;
     };
+    variant?: 'overview' | 'training';
 }
 
 type HelpMetric = 'acwr' | 'ramp' | 'consistency' | 'longRunRatio' | 'efficiency' | 'gapTrend' | 'monotony' | 'strain';
 
-export function StatsOverview({ activities, allActivities, period }: StatsOverviewProps) {
+export function StatsOverview({ activities, allActivities, period, variant = 'overview' }: StatsOverviewProps) {
     const [activeHelp, setActiveHelp] = useState<HelpMetric | null>(null);
     const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
 
@@ -142,188 +143,219 @@ export function StatsOverview({ activities, allActivities, period }: StatsOvervi
         return `${sign}${abs.toFixed(0)}`;
     };
 
+    const isOverview = variant === 'overview';
+
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3 sm:grid-cols-6">
-                <StatCard
-                    label="Runs"
-                    value={stats.runCount.toString()}
-                    unit=""
-                    icon={Footprints}
-                    detail={stats.runCount > 0 ? `${stats.avgDistance.toFixed(1)} km average outing` : 'No runs in this slice yet'}
-                    tone="blue"
-                    style={reveal(40)}
-                />
-                <StatCard
-                    label="Distance"
-                    value={stats.totalDistance.toFixed(1)}
-                    unit="km"
-                    icon={Ruler}
-                    detail={stats.totalDistance > 0 ? 'Total distance in the current view' : 'Mileage will appear after your next run'}
-                    tone="blue"
-                    style={reveal(80)}
-                />
-                <StatCard
-                    label="Avg Duration"
-                    value={stats.avgDurationMins > 0 ? stats.avgDurationMins.toFixed(0) : '--'}
-                    unit="min"
-                    icon={Clock3}
-                    color="text-cyan-400"
-                    detail={stats.avgDurationMins > 0 ? 'Time on feet per run' : 'Waiting for enough activity to average'}
-                    tone="blue"
-                    style={reveal(120)}
-                />
-                <StatCard
-                    label="Avg Pace"
-                    value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'}
-                    unit="/km"
-                    icon={Gauge}
-                    detail={stats.avgPace > 0 ? 'Average moving pace across this block' : 'Pace comes through once a run is logged'}
-                    tone="blue"
-                    style={reveal(160)}
-                />
-                <StatCard
-                    label="Longest"
-                    value={stats.longestRun.toFixed(1)}
-                    unit="km"
-                    icon={Trophy}
-                    detail={stats.longestRun > 0 ? 'Biggest single outing in this view' : 'No long run recorded here yet'}
-                    tone="gold"
-                    style={reveal(200)}
-                />
-                <StatCard
-                    label="Max Streak"
-                    value={stats.longestStreak.toString()}
-                    unit="days"
-                    icon={Flame}
-                    color="text-orange-400"
-                    detail={stats.longestStreak >= 5 ? 'Rhythm like this compounds nicely' : 'Consistency is built one repeat day at a time'}
-                    tone="orange"
-                    style={reveal(240)}
-                />
-            </div>
+            {isOverview ? (
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.8fr)]">
+                    <div className="grid grid-cols-2 gap-3">
+                        <StatCard
+                            label="Distance"
+                            value={stats.totalDistance.toFixed(1)}
+                            unit="km"
+                            icon={Ruler}
+                            detail={stats.totalDistance > 0 ? 'Total distance in the current view' : 'Mileage will appear after your next run'}
+                            tone="blue"
+                            style={reveal(60)}
+                        />
+                        <StatCard
+                            label="Avg Pace"
+                            value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'}
+                            unit="/km"
+                            icon={Gauge}
+                            detail={stats.avgPace > 0 ? 'Average moving pace across this block' : 'Pace comes through once a run is logged'}
+                            tone="blue"
+                            style={reveal(100)}
+                        />
+                        <StatCard
+                            label="Longest"
+                            value={stats.longestRun.toFixed(1)}
+                            unit="km"
+                            icon={Trophy}
+                            detail={stats.longestRun > 0 ? 'Biggest single outing in this view' : 'No long run recorded here yet'}
+                            tone="gold"
+                            style={reveal(140)}
+                        />
+                        <StatCard
+                            label="Streak"
+                            value={stats.longestStreak.toString()}
+                            unit="days"
+                            icon={Flame}
+                            color="text-orange-400"
+                            detail={stats.longestStreak >= 5 ? 'Rhythm like this compounds nicely' : 'Consistency is built one repeat day at a time'}
+                            tone="orange"
+                            style={reveal(180)}
+                        />
+                    </div>
 
-            <div>
-                <p className="rv-kicker mb-2 px-1">Training Health</p>
-                <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3 lg:grid-cols-8">
-                    <StatCard
-                        label="ACWR"
-                        value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
-                        unit=""
-                        icon={Scale}
-                        color={acwrColorClass(stats.acwr)}
-                        helpMetric="acwr"
-                        helpText="Acute:Chronic Workload Ratio (ATL/CTL), anchored to the selected period end date. 0.8-1.3 is generally balanced, >1.5 means a sharp load spike."
-                        activeHelp={activeHelp}
-                        onToggleHelp={setActiveHelp}
-                        detail={getAcwrDetail(stats.acwr)}
-                        tone="green"
-                        style={reveal(120)}
-                    />
-                    <StatCard
-                        label="Ramp"
-                        value={
-                            stats.weeklyRampPercent !== null
-                                ? `${stats.weeklyRampPercent >= 0 ? '+' : ''}${stats.weeklyRampPercent.toFixed(0)}`
-                                : `${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)}`
-                        }
-                        unit={stats.weeklyRampPercent !== null ? '%' : 'km/wk'}
-                        icon={TrendingUp}
-                        color={rampColorClass(stats.weeklyRampPercent)}
-                        helpMetric="ramp"
-                        helpText="Week-over-week distance change (7 days vs prior 7), anchored to the selected period end date. Displayed as % when prior-week distance exists; otherwise km/wk."
-                        activeHelp={activeHelp}
-                        onToggleHelp={setActiveHelp}
-                        detail={getRampDetail(stats.weeklyRampPercent, stats.weeklyRampKm)}
-                        tone="blue"
-                        style={reveal(160)}
-                    />
-                    <StatCard
-                        label="Consistency"
-                        value={stats.consistencyScore.toString()}
-                        unit="%"
-                        icon={Target}
-                        color={consistencyColorClass(stats.consistencyScore)}
-                        helpMetric="consistency"
-                        helpText="Score from recent weekly run frequency and stability, anchored to the selected period end date. 75+ strong routine, 50-74 building, below 50 inconsistent."
-                        activeHelp={activeHelp}
-                        onToggleHelp={setActiveHelp}
-                        detail={getConsistencyDetail(stats.consistencyScore)}
-                        tone="green"
-                        style={reveal(200)}
-                    />
-                    <StatCard
-                        label="Long Run %"
-                        value={stats.longRunRatio !== null ? stats.longRunRatio.toFixed(0) : '--'}
-                        unit="%"
-                        icon={PieChart}
-                        color={longRunRatioColorClass(stats.longRunRatio)}
-                        helpMetric="longRunRatio"
-                        helpText="Longest run as a % of that anchored week's total distance. Around 20-35% is common; very high values may indicate imbalance."
-                        activeHelp={activeHelp}
-                        onToggleHelp={setActiveHelp}
-                        detail={getLongRunDetail(stats.longRunRatio)}
-                        tone="gold"
-                        style={reveal(240)}
-                    />
-                    <StatCard
-                        label="Efficiency"
-                        value={stats.efficiencyIndex !== null ? stats.efficiencyIndex.toFixed(2) : '--'}
-                        unit="m/beat"
-                        icon={HeartPulse}
-                        color={efficiencyColorClass(stats.efficiencyIndex)}
-                        helpMetric="efficiency"
-                        helpText="Distance per heartbeat over trailing 28 days (anchored). Higher is better. Rough guide: <1.00 low, 1.00-1.19 moderate, >=1.20 strong. Example: 0.94 means ~0.94m per heartbeat and suggests room to improve aerobic efficiency."
-                        activeHelp={activeHelp}
-                        onToggleHelp={setActiveHelp}
-                        detail={getEfficiencyDetail(stats.efficiencyIndex)}
-                        tone="green"
-                        style={reveal(280)}
-                    />
-                    <StatCard
-                        label="GAP Trend"
-                        value={formatSignedSeconds(stats.gapTrendSecPerKm)}
-                        unit="s/km"
-                        icon={Mountain}
-                        color={gapTrendColorClass(stats.gapTrendSecPerKm)}
-                        helpMetric="gapTrend"
-                        helpText="Change in estimated GAP pace: latest 14 days vs prior 14 (anchored). Negative is improving (faster), positive is slowing."
-                        activeHelp={activeHelp}
-                        onToggleHelp={setActiveHelp}
-                        detail={getGapTrendDetail(stats.gapTrendSecPerKm)}
-                        tone="blue"
-                        style={reveal(320)}
-                    />
-                    <StatCard
-                        label="Monotony"
-                        value={stats.monotony > 0 ? stats.monotony.toFixed(2) : '--'}
-                        unit=""
-                        icon={Target}
-                        color={monotonyColorClass(stats.monotony)}
-                        helpMetric="monotony"
-                        helpText="Mean daily TRIMP divided by standard deviation over the trailing 7 days. Up to 1.5 suggests good variety, 1.5-2.0 is moderate, and above 2.0 can signal insufficient variation."
-                        activeHelp={activeHelp}
-                        onToggleHelp={setActiveHelp}
-                        detail={getMonotonyDetail(stats.monotony)}
-                        tone="orange"
-                        style={reveal(360)}
-                    />
-                    <StatCard
-                        label="Strain"
-                        value={stats.strain > 0 ? stats.strain.toFixed(0) : '--'}
-                        unit=""
-                        icon={TrendingUp}
-                        color={strainColorClass(stats.strain)}
-                        helpMetric="strain"
-                        helpText="7-day total TRIMP multiplied by monotony. Up to 3000 is usually manageable, 3000-6000 is high, and above 6000 with high monotony is a strong overreaching flag."
-                        activeHelp={activeHelp}
-                        onToggleHelp={setActiveHelp}
-                        detail={getStrainDetail(stats.strain)}
-                        tone="orange"
-                        style={reveal(400)}
-                    />
+                    <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6 sm:py-6" style={reveal(220)}>
+                        <p className="rv-kicker mb-2">Block Snapshot</p>
+                        <h2 className="rv-section-title text-[1.45rem]">What this slice is saying</h2>
+
+                        <div className="mt-5 grid grid-cols-2 gap-3 border-b border-[var(--rv-border)] pb-5">
+                            <div>
+                                <p className="rv-mini-label mb-1">Runs in View</p>
+                                <p className="rv-data text-[1.65rem] text-[var(--rv-text)]">{stats.runCount}</p>
+                            </div>
+                            <div>
+                                <p className="rv-mini-label mb-1">Average Outing</p>
+                                <p className="rv-data text-[1.65rem] text-[var(--rv-text)]">
+                                    {stats.avgDurationMins > 0 ? `${stats.avgDurationMins.toFixed(0)} min` : '--'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-5 space-y-4">
+                            <SummarySignal
+                                label="Load ratio"
+                                value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
+                                detail={getAcwrDetail(stats.acwr)}
+                            />
+                            <SummarySignal
+                                label="Weekly change"
+                                value={
+                                    stats.weeklyRampPercent !== null
+                                        ? `${stats.weeklyRampPercent >= 0 ? '+' : ''}${stats.weeklyRampPercent.toFixed(0)}%`
+                                        : `${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)} km`
+                                }
+                                detail={getRampDetail(stats.weeklyRampPercent, stats.weeklyRampKm)}
+                            />
+                            <SummarySignal
+                                label="Routine"
+                                value={`${stats.consistencyScore}%`}
+                                detail={getConsistencyDetail(stats.consistencyScore)}
+                            />
+                        </div>
+
+                        <p className="mt-5 text-sm leading-6 text-[var(--rv-text-faint)]">
+                            Open Training for the full workload set, including long-run share, efficiency, climbing trend, monotony, and strain.
+                        </p>
+                    </section>
                 </div>
-            </div>
+            ) : (
+                <section>
+                    <p className="rv-kicker mb-2 px-1">Training Health</p>
+                    <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3 xl:grid-cols-4">
+                        <StatCard
+                            label="Load Ratio"
+                            value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
+                            unit=""
+                            icon={Scale}
+                            color={acwrColorClass(stats.acwr)}
+                            helpMetric="acwr"
+                            helpText="Acute:Chronic Workload Ratio (ACWR), anchored to the selected period end date. Around 0.8-1.3 is generally balanced, and above 1.5 signals a sharp load spike."
+                            activeHelp={activeHelp}
+                            onToggleHelp={setActiveHelp}
+                            detail={getAcwrDetail(stats.acwr)}
+                            tone="green"
+                            style={reveal(120)}
+                        />
+                        <StatCard
+                            label="Weekly Change"
+                            value={
+                                stats.weeklyRampPercent !== null
+                                    ? `${stats.weeklyRampPercent >= 0 ? '+' : ''}${stats.weeklyRampPercent.toFixed(0)}`
+                                    : `${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)}`
+                            }
+                            unit={stats.weeklyRampPercent !== null ? '%' : 'km'}
+                            icon={TrendingUp}
+                            color={rampColorClass(stats.weeklyRampPercent)}
+                            helpMetric="ramp"
+                            helpText="Week-over-week distance change, anchored to the selected period end date. Percentage is shown when last week exists; otherwise the absolute kilometre change is used."
+                            activeHelp={activeHelp}
+                            onToggleHelp={setActiveHelp}
+                            detail={getRampDetail(stats.weeklyRampPercent, stats.weeklyRampKm)}
+                            tone="blue"
+                            style={reveal(160)}
+                        />
+                        <StatCard
+                            label="Routine"
+                            value={stats.consistencyScore.toString()}
+                            unit="%"
+                            icon={Target}
+                            color={consistencyColorClass(stats.consistencyScore)}
+                            helpMetric="consistency"
+                            helpText="Consistency score from recent weekly run frequency and stability. 75+ suggests a strong routine, 50-74 is building, and below 50 is still uneven."
+                            activeHelp={activeHelp}
+                            onToggleHelp={setActiveHelp}
+                            detail={getConsistencyDetail(stats.consistencyScore)}
+                            tone="green"
+                            style={reveal(200)}
+                        />
+                        <StatCard
+                            label="Long Run Share"
+                            value={stats.longRunRatio !== null ? stats.longRunRatio.toFixed(0) : '--'}
+                            unit="%"
+                            icon={PieChart}
+                            color={longRunRatioColorClass(stats.longRunRatio)}
+                            helpMetric="longRunRatio"
+                            helpText="Longest run as a share of that anchored week's total distance. Around 20-35% is common; much higher can indicate the week is too concentrated."
+                            activeHelp={activeHelp}
+                            onToggleHelp={setActiveHelp}
+                            detail={getLongRunDetail(stats.longRunRatio)}
+                            tone="gold"
+                            style={reveal(240)}
+                        />
+                        <StatCard
+                            label="Efficiency"
+                            value={stats.efficiencyIndex !== null ? stats.efficiencyIndex.toFixed(2) : '--'}
+                            unit="m/beat"
+                            icon={HeartPulse}
+                            color={efficiencyColorClass(stats.efficiencyIndex)}
+                            helpMetric="efficiency"
+                            helpText="Distance per heartbeat over the trailing 28 days. Higher is better and usually reflects stronger aerobic efficiency."
+                            activeHelp={activeHelp}
+                            onToggleHelp={setActiveHelp}
+                            detail={getEfficiencyDetail(stats.efficiencyIndex)}
+                            tone="green"
+                            style={reveal(280)}
+                        />
+                        <StatCard
+                            label="Climbing Trend"
+                            value={formatSignedSeconds(stats.gapTrendSecPerKm)}
+                            unit="s/km"
+                            icon={Mountain}
+                            color={gapTrendColorClass(stats.gapTrendSecPerKm)}
+                            helpMetric="gapTrend"
+                            helpText="Change in grade-adjusted pace between the latest 14 days and the 14 days before that. Negative means your climbing effort is getting faster."
+                            activeHelp={activeHelp}
+                            onToggleHelp={setActiveHelp}
+                            detail={getGapTrendDetail(stats.gapTrendSecPerKm)}
+                            tone="blue"
+                            style={reveal(320)}
+                        />
+                        <StatCard
+                            label="Monotony"
+                            value={stats.monotony > 0 ? stats.monotony.toFixed(2) : '--'}
+                            unit=""
+                            icon={Target}
+                            color={monotonyColorClass(stats.monotony)}
+                            helpMetric="monotony"
+                            helpText="Average daily TRIMP divided by day-to-day variation across the last 7 days. Lower values usually mean better variety."
+                            activeHelp={activeHelp}
+                            onToggleHelp={setActiveHelp}
+                            detail={getMonotonyDetail(stats.monotony)}
+                            tone="orange"
+                            style={reveal(360)}
+                        />
+                        <StatCard
+                            label="Strain"
+                            value={stats.strain > 0 ? stats.strain.toFixed(0) : '--'}
+                            unit=""
+                            icon={TrendingUp}
+                            color={strainColorClass(stats.strain)}
+                            helpMetric="strain"
+                            helpText="7-day total TRIMP multiplied by monotony. It is a simple check on how much load and repetition are stacking together."
+                            activeHelp={activeHelp}
+                            onToggleHelp={setActiveHelp}
+                            detail={getStrainDetail(stats.strain)}
+                            tone="orange"
+                            style={reveal(400)}
+                        />
+                    </div>
+                </section>
+            )}
         </div>
     );
 }
@@ -383,6 +415,26 @@ interface StatCardProps {
     activeHelp?: HelpMetric | null;
     onToggleHelp?: (metric: HelpMetric | null) => void;
     tone?: 'blue' | 'green' | 'gold' | 'orange' | 'neutral';
+}
+
+function SummarySignal({
+    label,
+    value,
+    detail,
+}: {
+    label: string;
+    value: string;
+    detail: string;
+}) {
+    return (
+        <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+                <p className="rv-mini-label mb-1">{label}</p>
+                <p className="text-sm leading-6 text-[var(--rv-text-dim)]">{detail}</p>
+            </div>
+            <div className="rv-data shrink-0 text-[1.1rem] text-[var(--rv-text)]">{value}</div>
+        </div>
+    );
 }
 
 function StatCard({

@@ -198,10 +198,15 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
 
     return (
         <div className="rv-panel rv-panel-strong h-[400px] p-6">
-            <h3 className="mb-6 flex items-center gap-2 text-lg font-medium text-[var(--rv-text)]">
-                <TrendingUp className="h-[18px] w-[18px] text-[var(--rv-green)]" />
-                Mileage Trends ({period.mode === 'all' ? 'Overall' : period.mode === 'year' ? period.year : format(new Date(period.year, period.month!), 'MMMM yyyy')})
-            </h3>
+            <div className="mb-6">
+                <h3 className="flex items-center gap-2 text-lg font-medium text-[var(--rv-text)]">
+                    <TrendingUp className="h-[18px] w-[18px] text-[var(--rv-green)]" />
+                    Mileage history ({period.mode === 'all' ? 'Overall' : period.mode === 'year' ? period.year : format(new Date(period.year, period.month!), 'MMMM yyyy')})
+                </h3>
+                <p className="mt-2 max-w-[48ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                    Daily distance sits against the trailing total for this view, so volume trends are visible without stacking another chart.
+                </p>
+            </div>
             <div className="h-[300px]">
                 <Chart type="bar" data={data} options={options} />
             </div>

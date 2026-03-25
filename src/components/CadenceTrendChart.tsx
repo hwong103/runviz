@@ -50,7 +50,7 @@ interface CadenceTrendChartProps {
 }
 
 export function CadenceTrendChart({ activities }: CadenceTrendChartProps) {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(true);
     const chartTheme = useChartTheme();
     const points = useMemo(() => extractCadenceHistory(activities), [activities]);
 
@@ -116,6 +116,9 @@ export function CadenceTrendChart({ activities }: CadenceTrendChartProps) {
                         <Radio className="h-[18px] w-[18px] text-[var(--rv-blue)]" />
                         Cadence trend
                     </h3>
+                    <p className="mt-2 max-w-[48ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                        Track how quickly your legs are turning over and compare the trend against the 170 spm reference line.
+                    </p>
                 </div>
                 <ChevronDown className={`h-5 w-5 text-[var(--rv-text-faint)] transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>

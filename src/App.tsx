@@ -337,7 +337,7 @@ function App() {
     overview: {
       kicker: 'Overview',
       title: 'Current training snapshot',
-      detail: 'One glance for recent health, race readiness, and the next thing worth paying attention to.',
+      detail: 'A compact command center for the current block, with the primary chart up front and deeper analysis one click away.',
     },
     training: {
       kicker: 'Training',
@@ -624,26 +624,26 @@ function App() {
                 </div>
               </div>
 
-              <div className="mt-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar lg:hidden">
-                <InlineTabButton active={dashboardWorkspace === 'overview'} onClick={() => setDashboardWorkspace('overview')}>
-                  Overview
-                </InlineTabButton>
-                <InlineTabButton active={dashboardWorkspace === 'training'} onClick={() => setDashboardWorkspace('training')}>
-                  Training
-                </InlineTabButton>
-                <InlineTabButton active={dashboardWorkspace === 'race'} onClick={() => setDashboardWorkspace('race')}>
-                  Race
-                </InlineTabButton>
-                <InlineTabButton active={dashboardWorkspace === 'logbook'} onClick={() => setDashboardWorkspace('logbook')}>
-                  Logbook
-                </InlineTabButton>
-                <InlineTabButton active={dashboardWorkspace === 'tools'} onClick={() => setDashboardWorkspace('tools')}>
-                  Tools
-                </InlineTabButton>
+              <div className="mt-4 lg:hidden">
+                <label className="rv-mini-label mb-2 block" htmlFor="mobile-workspace">
+                  Workspace
+                </label>
+                <select
+                  id="mobile-workspace"
+                  value={dashboardWorkspace}
+                  onChange={(e) => setDashboardWorkspace(e.target.value as DashboardWorkspace)}
+                  className="w-full rounded-[1.1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3 text-sm font-semibold text-[var(--rv-text-dim)] outline-none transition hover:border-[var(--rv-border-strong)] focus:border-[var(--rv-blue)]/60"
+                >
+                  <option value="overview">Overview</option>
+                  <option value="training">Training</option>
+                  <option value="race">Race</option>
+                  <option value="logbook">Logbook</option>
+                  <option value="tools">Tools</option>
+                </select>
               </div>
 
-              <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--rv-text-dim)]">
+              <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-[var(--rv-text-dim)]">
                   <span>{describeViewPeriod(viewPeriod)}</span>
                   <span className="text-[var(--rv-text-faint)]">/</span>
                   <span>{currentSummary.runCount} runs</span>
@@ -656,8 +656,8 @@ function App() {
                     </>
                   )}
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex flex-wrap items-center gap-1 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] p-1">
+                <div className="grid gap-2 sm:grid-cols-[auto_auto_auto_1fr] xl:flex xl:flex-wrap xl:items-center xl:justify-end">
+                  <div className="flex flex-wrap items-center gap-1 rounded-[1.1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] p-1">
                     {([
                       { mode: 'all', label: 'All' },
                       { mode: 'year', label: 'Year' },
@@ -667,7 +667,7 @@ function App() {
                         key={mode}
                         type="button"
                         onClick={() => setViewPeriod((prev) => ({ ...prev, mode }))}
-                        className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${viewPeriod.mode === mode
+                        className={`rounded-[0.95rem] px-3 py-1.5 text-sm font-semibold transition ${viewPeriod.mode === mode
                           ? 'bg-[var(--rv-text)] text-[var(--rv-bg)]'
                           : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-text)]'
                           }`}
@@ -681,7 +681,7 @@ function App() {
                     <select
                       value={viewPeriod.year}
                       onChange={(e) => setViewPeriod((prev) => ({ ...prev, year: parseInt(e.target.value, 10) }))}
-                      className="rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-2 text-sm font-semibold text-[var(--rv-text-dim)] outline-none transition hover:border-[var(--rv-border-strong)] focus:border-[var(--rv-blue)]/60"
+                      className="min-w-0 rounded-[1.1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-2 text-sm font-semibold text-[var(--rv-text-dim)] outline-none transition hover:border-[var(--rv-border-strong)] focus:border-[var(--rv-blue)]/60"
                     >
                       {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
                     </select>
@@ -691,7 +691,7 @@ function App() {
                     <select
                       value={viewPeriod.month || 0}
                       onChange={(e) => setViewPeriod((prev) => ({ ...prev, month: parseInt(e.target.value, 10) }))}
-                      className="rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-2 text-sm font-semibold text-[var(--rv-text-dim)] outline-none transition hover:border-[var(--rv-border-strong)] focus:border-[var(--rv-blue)]/60"
+                      className="min-w-0 rounded-[1.1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-2 text-sm font-semibold text-[var(--rv-text-dim)] outline-none transition hover:border-[var(--rv-border-strong)] focus:border-[var(--rv-blue)]/60"
                     >
                       {MONTHS.map((month, index) => <option key={month} value={index}>{month}</option>)}
                     </select>
@@ -701,7 +701,8 @@ function App() {
                     type="button"
                     onClick={() => sync({ forceFull: true })}
                     disabled={syncing}
-                    className="inline-flex items-center gap-2 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)] disabled:cursor-wait disabled:opacity-50 active:translate-y-px"
+                    className="rv-sync-button inline-flex items-center justify-center gap-2 rounded-[1.1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)] disabled:cursor-wait disabled:opacity-50 active:translate-y-px"
+                    data-syncing={syncing}
                   >
                     <ReloadIcon className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
                     {syncing ? 'Syncing' : 'Sync'}
@@ -710,7 +711,7 @@ function App() {
               </div>
 
               {dashboardWorkspace === 'training' && (
-                <div className="mt-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <div className="mt-4 flex flex-wrap gap-2">
                   <InlineTabButton active={trainingWorkspace === 'fitness'} onClick={() => setTrainingWorkspace('fitness')}>
                     Fitness
                   </InlineTabButton>
@@ -724,7 +725,7 @@ function App() {
               )}
 
               {dashboardWorkspace === 'race' && (
-                <div className="mt-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <div className="mt-4 flex flex-wrap gap-2">
                   <InlineTabButton active={raceWorkspace === 'predictions'} onClick={() => setRaceWorkspace('predictions')}>
                     Predictions
                   </InlineTabButton>
@@ -737,16 +738,16 @@ function App() {
 
             {dashboardWorkspace === 'overview' && (
               <section className="space-y-4">
-                <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} />
-                <div className="grid gap-4">
+                <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="overview" />
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.72fr)]">
                   <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
                     <FitnessChart activities={activities} period={viewPeriod} />
                   </Suspense>
-                </div>
-                <div className="grid gap-4">
                   <ActivityList
                     activities={filteredActivities}
-                    limit={8}
+                    kicker="Logbook"
+                    title="Recent runs"
+                    limit={6}
                     onSelect={setSelectedActivity}
                     selectedShoeId={selectedShoeId}
                     selectedShoeName={selectedShoeName}
@@ -758,40 +759,49 @@ function App() {
             )}
 
             {dashboardWorkspace === 'training' && trainingWorkspace === 'fitness' && (
-              <section className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
-                <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
-                  <FitnessChart activities={activities} period={viewPeriod} />
-                </Suspense>
-                <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
-                  <WeeklyRampChart activities={activities} />
-                </Suspense>
+              <section className="space-y-4">
+                <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="training" />
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
+                  <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
+                    <FitnessChart activities={activities} period={viewPeriod} />
+                  </Suspense>
+                  <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
+                    <WeeklyRampChart activities={activities} />
+                  </Suspense>
+                </div>
               </section>
             )}
 
             {dashboardWorkspace === 'training' && trainingWorkspace === 'volume' && (
-              <section className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.75fr)]">
-                <Suspense fallback={<PanelFallback title="Mileage" subtitle="Loading volume trends" heightClassName="h-[400px]" />}>
-                  <MileageTrendChart activities={activities} period={viewPeriod} />
-                </Suspense>
-                <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
-                  <WeeklyRampChart activities={activities} />
-                </Suspense>
+              <section className="space-y-4">
+                <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="training" />
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.75fr)]">
+                  <Suspense fallback={<PanelFallback title="Mileage" subtitle="Loading volume trends" heightClassName="h-[400px]" />}>
+                    <MileageTrendChart activities={activities} period={viewPeriod} />
+                  </Suspense>
+                  <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
+                    <WeeklyRampChart activities={activities} />
+                  </Suspense>
+                </div>
               </section>
             )}
 
             {dashboardWorkspace === 'training' && trainingWorkspace === 'mechanics' && (
-              <section className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
-                <Suspense fallback={<PanelFallback title="Cadence" subtitle="Loading run mechanics" />}>
-                  <CadenceTrendChart activities={activities} />
-                </Suspense>
-                <Suspense fallback={<PanelFallback title="Shoes" subtitle="Loading equipment log" />}>
-                  <ShoeTracker
-                    activities={filteredActivities}
-                    shoes={allShoes}
-                    selectedShoeId={selectedShoeId}
-                    onSelectShoe={(id) => setSelectedShoeId((prev) => prev === id ? null : id)}
-                  />
-                </Suspense>
+              <section className="space-y-4">
+                <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="training" />
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
+                  <Suspense fallback={<PanelFallback title="Cadence" subtitle="Loading run mechanics" />}>
+                    <CadenceTrendChart activities={activities} />
+                  </Suspense>
+                  <Suspense fallback={<PanelFallback title="Shoes" subtitle="Loading equipment log" />}>
+                    <ShoeTracker
+                      activities={filteredActivities}
+                      shoes={allShoes}
+                      selectedShoeId={selectedShoeId}
+                      onSelectShoe={(id) => setSelectedShoeId((prev) => prev === id ? null : id)}
+                    />
+                  </Suspense>
+                </div>
               </section>
             )}
 
@@ -949,8 +959,8 @@ function InlineTabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${active
-        ? 'bg-[var(--rv-blue)] text-white shadow-[0_10px_28px_rgba(74,122,255,0.2)]'
+      className={`rounded-[1rem] px-4 py-2 text-sm font-semibold transition ${active
+        ? 'bg-[var(--rv-text)] text-[var(--rv-bg)]'
         : 'border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[var(--rv-text-dim)] hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)]'
         }`}
     >

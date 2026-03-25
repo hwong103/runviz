@@ -113,10 +113,15 @@ export function WeeklyRampChart({ activities }: WeeklyRampChartProps) {
 
     return (
         <div className="rv-panel rv-panel-strong px-5 py-5 sm:px-7 sm:py-6">
-            <h3 className="mb-6 flex items-center gap-2 text-lg font-medium text-[var(--rv-text)]">
-                <TrendingUp className="h-[18px] w-[18px] text-[var(--rv-yellow)]" />
-                Weekly volume history
-            </h3>
+            <div className="mb-6">
+                <h3 className="flex items-center gap-2 text-lg font-medium text-[var(--rv-text)]">
+                    <TrendingUp className="h-[18px] w-[18px] text-[var(--rv-yellow)]" />
+                    Weekly volume history
+                </h3>
+                <p className="mt-2 max-w-[46ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                    Compare each week against the rolling four-week average so rapid changes are easy to spot.
+                </p>
+            </div>
             <div className="h-[320px]">
                 <Chart type="bar" data={data} options={options} />
             </div>
