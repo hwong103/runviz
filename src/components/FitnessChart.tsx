@@ -199,19 +199,19 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             {/* Current values */}
             <div className="mt-6 grid grid-cols-1 gap-0 border-t border-[color-mix(in_srgb,var(--rv-text)_8%,transparent)] pt-6 min-[420px]:grid-cols-3">
                 <div className="border-b border-[var(--rv-border)] px-1 py-4 text-center min-[420px]:border-b-0 min-[420px]:border-r">
-                    <div className="rv-metric text-3xl text-[#13C38B]">
+                    <div className="rv-data text-3xl text-[var(--rv-text)]">
                         {displayMetric ? displayMetric.ctl.toFixed(0) : '-'}
                     </div>
                     <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fitness (CTL)</div>
                 </div>
                 <div className="border-b border-[var(--rv-border)] px-1 py-4 text-center min-[420px]:border-b-0 min-[420px]:border-r">
-                    <div className="rv-metric text-3xl text-[#FF8E2B]">
+                    <div className="rv-data text-3xl text-[var(--rv-text)]">
                         {displayMetric ? displayMetric.atl.toFixed(0) : '-'}
                     </div>
                     <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fatigue (ATL)</div>
                 </div>
                 <div className="px-1 py-4 text-center">
-                    <div className="rv-metric text-3xl text-[var(--rv-yellow)]">
+                    <div className="rv-data text-3xl text-[var(--rv-text)]">
                         {displayMetric ? displayMetric.tsb.toFixed(0) : '-'}
                     </div>
                     <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Form (TSB)</div>

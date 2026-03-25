@@ -191,7 +191,7 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
 
                     <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6 sm:py-6" style={reveal(220)}>
                         <p className="rv-kicker mb-2">Block Snapshot</p>
-                        <h2 className="rv-section-title text-[1.45rem]">What this slice is saying</h2>
+                        <h2 className="rv-section-title text-[1.45rem]">Quick read</h2>
 
                         <div className="mt-5 grid grid-cols-2 gap-3 border-b border-[var(--rv-border)] pb-5">
                             <div>
@@ -229,13 +229,16 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                         </div>
 
                         <p className="mt-5 text-sm leading-6 text-[var(--rv-text-faint)]">
-                            Open Training for the full workload set, including long-run share, efficiency, climbing trend, monotony, and strain.
+                            Open Training Health for the full workload set, including long-run share, efficiency, climbing trend, monotony, and strain.
                         </p>
                     </section>
                 </div>
             ) : (
                 <section>
                     <p className="rv-kicker mb-2 px-1">Training Health</p>
+                    <p className="mb-4 max-w-[64ch] px-1 text-sm leading-6 text-[var(--rv-text-dim)]">
+                        Use load ratio, weekly change, and routine to judge stability first. Tap any metric for threshold guidance if you need the deeper read.
+                    </p>
                     <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3 xl:grid-cols-4">
                         <StatCard
                             label="Load Ratio"

@@ -295,6 +295,9 @@ export function RaceTimePredictions({
                 <div>
                     <p className="rv-kicker mb-2">Race Readiness</p>
                     <h2 className="rv-section-title text-[1.7rem]">Projected race times</h2>
+                    <p className="mt-2 max-w-[52ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                        Compare equivalent race times from your current block, then open the pace guide if you want session targets.
+                    </p>
                 </div>
                 <div ref={tooltipAnchorRef} className="rv-pill-label relative z-10 flex flex-wrap items-center gap-2 sm:ml-auto sm:justify-end">
                     <button
@@ -302,7 +305,7 @@ export function RaceTimePredictions({
                             e.stopPropagation();
                             setActiveTooltip(activeTooltip === 'ctl' ? null : 'ctl');
                         }}
-                        className={`rounded-full px-2.5 py-1.5 cursor-help transition-colors ${predictions.ctl >= 25 ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-white/[0.08] text-[var(--rv-text-dim)] hover:bg-white/10'} ${activeTooltip === 'ctl' ? 'ring-2 ring-emerald-500/50' : ''}`}
+                        className={`rounded-full border px-2.5 py-1.5 cursor-help transition-colors ${predictions.ctl >= 25 ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400' : 'border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[var(--rv-text-dim)]'} ${activeTooltip === 'ctl' ? 'ring-2 ring-emerald-500/35' : ''}`}
                     >
                         Fitness {predictions.ctl.toFixed(0)}
                     </button>
@@ -311,10 +314,10 @@ export function RaceTimePredictions({
                             e.stopPropagation();
                             setActiveTooltip(activeTooltip === 'tsb' ? null : 'tsb');
                         }}
-                        className={`rounded-full px-2.5 py-1.5 cursor-help transition-colors ${predictions.tsb > 5 ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' :
-                            predictions.tsb < -10 ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' :
-                                'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
-                            } ${activeTooltip === 'tsb' ? 'ring-2 ring-white/20' : ''}`}
+                        className={`rounded-full border px-2.5 py-1.5 cursor-help transition-colors ${predictions.tsb > 5 ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400' :
+                            predictions.tsb < -10 ? 'border-red-500/25 bg-red-500/10 text-red-400' :
+                                'border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[var(--rv-text-dim)]'
+                            } ${activeTooltip === 'tsb' ? 'ring-2 ring-[var(--rv-border-strong)]' : ''}`}
                     >
                         Freshness {predictions.tsb > 0 ? '+' : ''}{predictions.tsb.toFixed(0)}
                     </button>
@@ -323,12 +326,12 @@ export function RaceTimePredictions({
                             e.stopPropagation();
                             setActiveTooltip(activeTooltip === 'readiness' ? null : 'readiness');
                         }}
-                        className={`rounded-full px-2.5 py-1.5 cursor-help transition-colors ${predictions.readinessBand === 'ready'
-                            ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                        className={`rounded-full border px-2.5 py-1.5 cursor-help transition-colors ${predictions.readinessBand === 'ready'
+                            ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
                             : predictions.readinessBand === 'building'
-                                ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
-                                : 'bg-white/[0.08] text-[var(--rv-text-dim)] hover:bg-white/10'
-                            } ${activeTooltip === 'readiness' ? 'ring-2 ring-white/20' : ''}`}
+                                ? 'border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/10 text-[var(--rv-yellow)]'
+                                : 'border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[var(--rv-text-dim)]'
+                            } ${activeTooltip === 'readiness' ? 'ring-2 ring-[var(--rv-border-strong)]' : ''}`}
                     >
                         Readiness {predictions.readinessScore}
                     </button>
@@ -347,7 +350,7 @@ export function RaceTimePredictions({
                                 {pred.name}
                             </span>
                             {pred.delta !== null && (
-                                <span className={`rv-pill-label flex items-center gap-1 ${pred.isFaster ? 'text-emerald-400' : 'text-red-400'}`}>
+                                <span className={`rv-pill-label flex items-center gap-1 ${pred.isFaster ? 'text-emerald-400' : 'text-[var(--rv-orange)]'}`}>
                                     <span>{pred.isFaster ? '↓' : '↑'}</span>
                                     <span>{formatTime(Math.abs(pred.delta))}</span>
                                 </span>

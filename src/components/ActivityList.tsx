@@ -91,8 +91,8 @@ export function ActivityList({
                 {runs.length === 0 ? (
                     <div className="space-y-3 py-12 text-center">
                         <Footprints className="mx-auto h-10 w-10 text-[var(--rv-text-faint)]" />
-                        <p className="rv-mini-label text-[var(--rv-text-dim)]">This log is resting</p>
-                        <p className="mx-auto max-w-[30ch] text-sm leading-6 text-[var(--rv-text-faint)]">Try easing the filters or pull a fresh sync. Once a run lands here, RunViz will turn it into a cleaner training story.</p>
+                        <p className="rv-mini-label text-[var(--rv-text-dim)]">No runs in this view</p>
+                        <p className="mx-auto max-w-[30ch] text-sm leading-6 text-[var(--rv-text-faint)]">Try easing the filters or run a fresh sync to bring matching sessions back into the log.</p>
                     </div>
                 ) : (
                     <div className="divide-y divide-[var(--rv-border)]">
@@ -149,9 +149,9 @@ export function ActivityList({
                                         const shoe = (activity.gear_id ? shoes.find(s => s.id === activity.gear_id) : null) || activity.gear;
                                         if (!shoe) return null;
                                         return (
-                                            <div className="group/shoe flex items-center gap-2 rounded-full border border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/10 px-3 py-1.5 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[var(--rv-blue)]/20">
+                                            <div className="group/shoe flex items-center gap-2 rounded-full border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_94%,transparent)] px-3 py-1.5 transition-colors duration-300 hover:border-[var(--rv-border-strong)]">
                                                 <BrandLogo brandName={shoe.brand_name} fallbackMode="none" size={32} className="h-5 w-5" />
-                                                <span className="max-w-[160px] truncate text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[var(--rv-blue)]">
+                                                <span className="max-w-[160px] truncate text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[var(--rv-text-dim)]">
                                                     {shoe.name}
                                                 </span>
                                             </div>

@@ -57,7 +57,7 @@ interface ViewPeriod {
 }
 
 type DashboardWorkspace = 'overview' | 'training' | 'race' | 'logbook' | 'tools';
-type TrainingWorkspace = 'fitness' | 'volume' | 'mechanics';
+type TrainingWorkspace = 'health' | 'fitness' | 'volume' | 'mechanics';
 type RaceWorkspace = 'predictions' | 'vdot';
 type IconType = ComponentType<{ className?: string }>;
 
@@ -140,7 +140,7 @@ function App() {
     month: new Date().getMonth(),
   });
   const [dashboardWorkspace, setDashboardWorkspace] = useState<DashboardWorkspace>('overview');
-  const [trainingWorkspace, setTrainingWorkspace] = useState<TrainingWorkspace>('fitness');
+  const [trainingWorkspace, setTrainingWorkspace] = useState<TrainingWorkspace>('health');
   const [raceWorkspace, setRaceWorkspace] = useState<RaceWorkspace>('predictions');
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
@@ -342,7 +342,7 @@ function App() {
     training: {
       kicker: 'Training',
       title: 'Load and trend analysis',
-      detail: 'Switch between fitness, volume, and mechanics without stacking every chart onto one page.',
+      detail: 'Review block health first, then move into the chart or mechanics view you need.',
     },
     race: {
       kicker: 'Race',
@@ -583,7 +583,7 @@ function App() {
 
           <div className="min-w-0 space-y-5 lg:pl-6">
             <header className="sticky top-0 z-30 border-b border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg)_92%,transparent)] py-4 backdrop-blur-xl">
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                 <div className="min-w-0">
                   <div className="flex items-center gap-3 lg:hidden">
                     <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-blue)_14%,transparent)] text-[var(--rv-blue)]">
@@ -598,25 +598,17 @@ function App() {
                   <h1 className="text-[1.85rem] font-semibold tracking-[-0.05em] text-[var(--rv-text)] sm:text-[2.2rem]">
                     {activeMeta.title}
                   </h1>
-                  <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--rv-text-dim)]">
+                  <p className="mt-2 hidden max-w-3xl text-sm leading-6 text-[var(--rv-text-dim)] sm:block">
                     {activeMeta.detail}
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 lg:hidden">
-                  <div className="flex items-center gap-2 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-2">
-                    {athlete?.profile ? (
-                      <img src={athlete.profile} className="h-6 w-6 rounded-full object-cover" alt="Profile" />
-                    ) : (
-                      <AvatarIcon className="h-4 w-4 text-[var(--rv-text-faint)]" />
-                    )}
-                    <span className="text-sm font-semibold text-[var(--rv-text-dim)]">{athlete?.firstname ?? 'Athlete'}</span>
-                  </div>
+                <div className="flex items-center gap-2 self-start lg:hidden">
                   <ThemeToggle />
                   <button
                     type="button"
                     onClick={logout}
-                    className="inline-flex items-center gap-2 rounded-full border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)] active:translate-y-px"
+                    className="inline-flex items-center gap-2 rounded-[1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)] active:translate-y-px"
                   >
                     <ExitIcon className="h-4 w-4" />
                     Logout
@@ -642,8 +634,8 @@ function App() {
                 </select>
               </div>
 
-              <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-[var(--rv-text-dim)]">
+              <div className="mt-4 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+                <div className="hidden flex-wrap items-center gap-x-3 gap-y-2 text-sm text-[var(--rv-text-dim)] sm:flex">
                   <span>{describeViewPeriod(viewPeriod)}</span>
                   <span className="text-[var(--rv-text-faint)]">/</span>
                   <span>{currentSummary.runCount} runs</span>
@@ -709,31 +701,6 @@ function App() {
                   </button>
                 </div>
               </div>
-
-              {dashboardWorkspace === 'training' && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <InlineTabButton active={trainingWorkspace === 'fitness'} onClick={() => setTrainingWorkspace('fitness')}>
-                    Fitness
-                  </InlineTabButton>
-                  <InlineTabButton active={trainingWorkspace === 'volume'} onClick={() => setTrainingWorkspace('volume')}>
-                    Volume
-                  </InlineTabButton>
-                  <InlineTabButton active={trainingWorkspace === 'mechanics'} onClick={() => setTrainingWorkspace('mechanics')}>
-                    Mechanics
-                  </InlineTabButton>
-                </div>
-              )}
-
-              {dashboardWorkspace === 'race' && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <InlineTabButton active={raceWorkspace === 'predictions'} onClick={() => setRaceWorkspace('predictions')}>
-                    Predictions
-                  </InlineTabButton>
-                  <InlineTabButton active={raceWorkspace === 'vdot'} onClick={() => setRaceWorkspace('vdot')}>
-                    VDOT
-                  </InlineTabButton>
-                </div>
-              )}
             </header>
 
             {dashboardWorkspace === 'overview' && (
@@ -758,9 +725,36 @@ function App() {
               </section>
             )}
 
-            {dashboardWorkspace === 'training' && trainingWorkspace === 'fitness' && (
+            {dashboardWorkspace === 'training' && (
               <section className="space-y-4">
-                <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="training" />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="rv-kicker mb-2">Training Views</p>
+                    <p className="text-sm leading-6 text-[var(--rv-text-dim)]">
+                      Start with block health, then move into the chart or mechanics view you want.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <InlineTabButton active={trainingWorkspace === 'health'} onClick={() => setTrainingWorkspace('health')}>
+                      Health
+                    </InlineTabButton>
+                    <InlineTabButton active={trainingWorkspace === 'fitness'} onClick={() => setTrainingWorkspace('fitness')}>
+                      Fitness
+                    </InlineTabButton>
+                    <InlineTabButton active={trainingWorkspace === 'volume'} onClick={() => setTrainingWorkspace('volume')}>
+                      Volume
+                    </InlineTabButton>
+                    <InlineTabButton active={trainingWorkspace === 'mechanics'} onClick={() => setTrainingWorkspace('mechanics')}>
+                      Mechanics
+                    </InlineTabButton>
+                  </div>
+                </div>
+
+                {trainingWorkspace === 'health' && (
+                  <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="training" />
+                )}
+
+                {trainingWorkspace === 'fitness' && (
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
                   <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
                     <FitnessChart activities={activities} period={viewPeriod} />
@@ -769,12 +763,9 @@ function App() {
                     <WeeklyRampChart activities={activities} />
                   </Suspense>
                 </div>
-              </section>
-            )}
+                )}
 
-            {dashboardWorkspace === 'training' && trainingWorkspace === 'volume' && (
-              <section className="space-y-4">
-                <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="training" />
+                {trainingWorkspace === 'volume' && (
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.75fr)]">
                   <Suspense fallback={<PanelFallback title="Mileage" subtitle="Loading volume trends" heightClassName="h-[400px]" />}>
                     <MileageTrendChart activities={activities} period={viewPeriod} />
@@ -783,12 +774,9 @@ function App() {
                     <WeeklyRampChart activities={activities} />
                   </Suspense>
                 </div>
-              </section>
-            )}
+                )}
 
-            {dashboardWorkspace === 'training' && trainingWorkspace === 'mechanics' && (
-              <section className="space-y-4">
-                <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="training" />
+                {trainingWorkspace === 'mechanics' && (
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
                   <Suspense fallback={<PanelFallback title="Cadence" subtitle="Loading run mechanics" />}>
                     <CadenceTrendChart activities={activities} />
@@ -802,11 +790,28 @@ function App() {
                     />
                   </Suspense>
                 </div>
+                )}
               </section>
             )}
 
             {dashboardWorkspace === 'race' && (
-              <section className="min-w-0">
+              <section className="min-w-0 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="rv-kicker mb-2">Race Views</p>
+                    <p className="text-sm leading-6 text-[var(--rv-text-dim)]">
+                      Compare race forecasts with training paces without carrying both surfaces in the header.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <InlineTabButton active={raceWorkspace === 'predictions'} onClick={() => setRaceWorkspace('predictions')}>
+                      Predictions
+                    </InlineTabButton>
+                    <InlineTabButton active={raceWorkspace === 'vdot'} onClick={() => setRaceWorkspace('vdot')}>
+                      Pace Guide
+                    </InlineTabButton>
+                  </div>
+                </div>
                 {raceWorkspace === 'predictions' ? (
                   <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
                     <RaceTimePredictions activities={activities} period={viewPeriod} />
