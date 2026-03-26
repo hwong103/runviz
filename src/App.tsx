@@ -31,6 +31,9 @@ const FitnessChart = lazy(() =>
 const MileageTrendChart = lazy(() =>
   import('./components/MileageTrendChart').then((module) => ({ default: module.MileageTrendChart }))
 );
+const YearOnYearChart = lazy(() =>
+  import('./components/YearOnYearChart').then((module) => ({ default: module.YearOnYearChart }))
+);
 const RunDetails = lazy(() =>
   import('./components/RunDetails').then((module) => ({ default: module.RunDetails }))
 );
@@ -706,8 +709,8 @@ function App() {
             {dashboardWorkspace === 'overview' && (
               <section className="space-y-4">
                 <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="overview" />
-                <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
-                  <FitnessChart activities={activities} period={viewPeriod} />
+                <Suspense fallback={<PanelFallback title="Year on Year" subtitle="Loading annual comparison" heightClassName="h-[400px]" />}>
+                  <YearOnYearChart activities={activities} />
                 </Suspense>
               </section>
             )}
