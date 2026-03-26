@@ -706,22 +706,9 @@ function App() {
             {dashboardWorkspace === 'overview' && (
               <section className="space-y-4">
                 <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="overview" />
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.72fr)]">
-                  <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
-                    <FitnessChart activities={activities} period={viewPeriod} />
-                  </Suspense>
-                  <ActivityList
-                    activities={filteredActivities}
-                    kicker="Logbook"
-                    title="Recent runs"
-                    limit={6}
-                    onSelect={setSelectedActivity}
-                    selectedShoeId={selectedShoeId}
-                    selectedShoeName={selectedShoeName}
-                    onClearShoeFilter={() => setSelectedShoeId(null)}
-                    shoes={allShoes}
-                  />
-                </div>
+                <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
+                  <FitnessChart activities={activities} period={viewPeriod} />
+                </Suspense>
               </section>
             )}
 

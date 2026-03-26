@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import type { CSSProperties } from 'react';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type { LucideIcon } from 'lucide-react';
-import { Flame, Gauge, HeartPulse, Mountain, PieChart, Ruler, Scale, Target, TrendingUp, Trophy } from 'lucide-react';
+import { HeartPulse, Mountain, PieChart, Scale, Target, TrendingUp } from 'lucide-react';
 import type { Activity } from '../types';
 import { isRun } from '../types';
 import {
@@ -148,91 +148,60 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
     return (
         <div className="space-y-4">
             {isOverview ? (
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.8fr)]">
-                    <div className="grid grid-cols-2 gap-3">
-                        <StatCard
-                            label="Distance"
-                            value={stats.totalDistance.toFixed(1)}
-                            unit="km"
-                            icon={Ruler}
-                            detail={stats.totalDistance > 0 ? 'Total distance in the current view' : 'Mileage will appear after your next run'}
-                            tone="blue"
-                            style={reveal(60)}
-                        />
-                        <StatCard
-                            label="Avg Pace"
-                            value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'}
-                            unit="/km"
-                            icon={Gauge}
-                            detail={stats.avgPace > 0 ? 'Average moving pace across this block' : 'Pace comes through once a run is logged'}
-                            tone="blue"
-                            style={reveal(100)}
-                        />
-                        <StatCard
-                            label="Longest"
-                            value={stats.longestRun.toFixed(1)}
-                            unit="km"
-                            icon={Trophy}
-                            detail={stats.longestRun > 0 ? 'Biggest single outing in this view' : 'No long run recorded here yet'}
-                            tone="gold"
-                            style={reveal(140)}
-                        />
-                        <StatCard
-                            label="Streak"
-                            value={stats.longestStreak.toString()}
-                            unit="days"
-                            icon={Flame}
-                            color="text-orange-400"
-                            detail={stats.longestStreak >= 5 ? 'Rhythm like this compounds nicely' : 'Consistency is built one repeat day at a time'}
-                            tone="orange"
-                            style={reveal(180)}
-                        />
-                    </div>
-
-                    <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6 sm:py-6" style={reveal(220)}>
-                        <p className="rv-kicker mb-2">Block Snapshot</p>
-                        <h2 className="rv-section-title text-[1.45rem]">Quick read</h2>
-
-                        <div className="mt-5 grid grid-cols-2 gap-3 border-b border-[var(--rv-border)] pb-5">
-                            <div>
-                                <p className="rv-mini-label mb-1">Runs in View</p>
-                                <p className="rv-data text-[1.65rem] text-[var(--rv-text)]">{stats.runCount}</p>
-                            </div>
-                            <div>
-                                <p className="rv-mini-label mb-1">Average Outing</p>
-                                <p className="rv-data text-[1.65rem] text-[var(--rv-text)]">
-                                    {stats.avgDurationMins > 0 ? `${stats.avgDurationMins.toFixed(0)} min` : '--'}
-                                </p>
-                            </div>
+                <>
+                    <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6 sm:py-6" style={reveal(60)}>
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                            <ToplineMetric label="Distance" value={stats.totalDistance.toFixed(1)} unit="km" />
+                            <ToplineMetric label="Avg Pace" value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'} unit="/km" />
+                            <ToplineMetric label="Longest" value={stats.longestRun.toFixed(1)} unit="km" />
+                            <ToplineMetric label="Streak" value={stats.longestStreak.toString()} unit="days" />
                         </div>
-
-                        <div className="mt-5 space-y-4">
-                            <SummarySignal
-                                label="Load ratio"
-                                value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
-                                detail={getAcwrDetail(stats.acwr)}
-                            />
-                            <SummarySignal
-                                label="Weekly change"
-                                value={
-                                    stats.weeklyRampPercent !== null
-                                        ? `${stats.weeklyRampPercent >= 0 ? '+' : ''}${stats.weeklyRampPercent.toFixed(0)}%`
-                                        : `${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)} km`
-                                }
-                                detail={getRampDetail(stats.weeklyRampPercent, stats.weeklyRampKm)}
-                            />
-                            <SummarySignal
-                                label="Routine"
-                                value={`${stats.consistencyScore}%`}
-                                detail={getConsistencyDetail(stats.consistencyScore)}
-                            />
-                        </div>
-
-                        <p className="mt-5 text-sm leading-6 text-[var(--rv-text-faint)]">
-                            Open Training Health for the full workload set, including long-run share, efficiency, climbing trend, monotony, and strain.
-                        </p>
                     </section>
-                </div>
+
+                    <section className="rv-panel px-5 py-4 sm:px-6 sm:py-5" style={reveal(120)}>
+                        <p className="rv-kicker mb-3">Block Snapshot</p>
+                        <div className="grid gap-4 lg:grid-cols-[minmax(220px,0.75fr)_minmax(0,1fr)] lg:items-start">
+                            <div className="grid grid-cols-2 gap-3">
+                                <ToplineMetric
+                                    label="Runs in View"
+                                    value={stats.runCount.toString()}
+                                    unit=""
+                                    compact
+                                />
+                                <ToplineMetric
+                                    label="Avg Outing"
+                                    value={stats.avgDurationMins > 0 ? stats.avgDurationMins.toFixed(0) : '--'}
+                                    unit="min"
+                                    compact
+                                />
+                            </div>
+                            <div className="grid gap-3 md:grid-cols-3">
+                                <SummarySignal
+                                    label="Load ratio"
+                                    value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
+                                    detail={getAcwrDetail(stats.acwr)}
+                                    compact
+                                />
+                                <SummarySignal
+                                    label="Weekly change"
+                                    value={
+                                        stats.weeklyRampPercent !== null
+                                            ? `${stats.weeklyRampPercent >= 0 ? '+' : ''}${stats.weeklyRampPercent.toFixed(0)}%`
+                                            : `${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)} km`
+                                    }
+                                    detail={getRampDetail(stats.weeklyRampPercent, stats.weeklyRampKm)}
+                                    compact
+                                />
+                                <SummarySignal
+                                    label="Routine"
+                                    value={`${stats.consistencyScore}%`}
+                                    detail={getConsistencyDetail(stats.consistencyScore)}
+                                    compact
+                                />
+                            </div>
+                        </div>
+                    </section>
+                </>
             ) : (
                 <section>
                     <p className="rv-kicker mb-2 px-1">Training Health</p>
@@ -424,18 +393,44 @@ function SummarySignal({
     label,
     value,
     detail,
+    compact = false,
 }: {
     label: string;
     value: string;
     detail: string;
+    compact?: boolean;
 }) {
     return (
-        <div className="flex items-start justify-between gap-4">
+        <div className={`flex items-start justify-between gap-4 ${compact ? 'rounded-[1rem] border border-[var(--rv-border)] px-3 py-3' : ''}`}>
             <div className="min-w-0">
                 <p className="rv-mini-label mb-1">{label}</p>
                 <p className="text-sm leading-6 text-[var(--rv-text-dim)]">{detail}</p>
             </div>
             <div className="rv-data shrink-0 text-[1.1rem] text-[var(--rv-text)]">{value}</div>
+        </div>
+    );
+}
+
+function ToplineMetric({
+    label,
+    value,
+    unit,
+    compact = false,
+}: {
+    label: string;
+    value: string;
+    unit: string;
+    compact?: boolean;
+}) {
+    return (
+        <div className={`${compact ? 'rounded-[1rem] border border-[var(--rv-border)] px-3 py-3' : ''}`}>
+            <p className="rv-mini-label mb-2">{label}</p>
+            <div className="flex items-baseline gap-2">
+                <span className={`rv-data ${compact ? 'text-[1.5rem]' : 'text-[1.85rem] sm:text-[2rem]'} text-[var(--rv-text)]`}>
+                    {value}
+                </span>
+                {unit ? <span className="rv-mini-label tracking-[0.18em]">{unit}</span> : null}
+            </div>
         </div>
     );
 }

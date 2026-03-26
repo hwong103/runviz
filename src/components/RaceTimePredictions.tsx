@@ -30,6 +30,7 @@ const RACE_DISTANCES = [
     { name: '5K', meters: 5000 },
     { name: '10K', meters: 10000 },
     { name: 'Half Marathon', meters: 21097.5 },
+    { name: 'Marathon', meters: 42195 },
 ];
 
 // Riegel formula: T2 = T1 * (D2/D1)^1.06

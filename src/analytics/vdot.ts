@@ -58,12 +58,21 @@ export interface VDOTResult {
 
 export function calcVDOTFromActivities(activities: Activity[]): VDOTResult | null {
     const runs = activities.filter(isRun);
+
+    // Only consider efforts from the last 90 days so stale PRs don't inflate VDOT.
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 90);
+    const recentRuns = runs.filter(a => parseActivityLocalDate(a.start_date_local) >= cutoff);
+
+    // Fall back to all-time if there are no qualifying recent efforts at all.
+    const pool = recentRuns.length > 0 ? recentRuns : runs;
+
     let bestVDOT = 0;
     let bestResult: VDOTResult | null = null;
 
     for (const target of RACE_DISTANCES_M) {
         const tolerance = target.meters * 0.1;
-        const candidates = runs.filter((activity) => Math.abs(activity.distance - target.meters) <= tolerance);
+        const candidates = pool.filter((activity) => Math.abs(activity.distance - target.meters) <= tolerance);
         if (candidates.length === 0) continue;
 
         const best = candidates.reduce((fastest, candidate) =>
@@ -85,7 +94,7 @@ export function calcVDOTFromActivities(activities: Activity[]): VDOTResult | nul
 
         bestResult = {
             vdot,
-            sourceLabel: `${target.label} - ${timeStr} on ${dateStr}`,
+            sourceLabel: `${target.label} – ${timeStr} on ${dateStr}${pool === runs ? ' (all-time)' : ''}`,
             trainingZones: calcTrainingZones(vdot),
             racePredictions: RACE_DISTANCES_M.map((distance) => ({
                 label: distance.label,
