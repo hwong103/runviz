@@ -160,43 +160,41 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
 
                     <section className="rv-panel px-5 py-4 sm:px-6 sm:py-5" style={reveal(120)}>
                         <p className="rv-kicker mb-3">Block Snapshot</p>
-                        <div className="grid gap-4 lg:grid-cols-[minmax(220px,0.75fr)_minmax(0,1fr)] lg:items-start">
-                            <div className="grid grid-cols-2 gap-3">
-                                <ToplineMetric
+                        <div className="overflow-hidden rounded-[1.35rem] bg-[var(--rv-border)] p-px">
+                            <div className="grid gap-px bg-[var(--rv-border)] md:grid-cols-5">
+                                <SnapshotCell
                                     label="Runs in View"
                                     value={stats.runCount.toString()}
                                     unit=""
-                                    compact
+                                    detail={stats.avgDurationMins > 0 ? `${stats.avgDurationMins.toFixed(0)} min avg outing` : 'Avg outing will appear after your next run'}
                                 />
-                                <ToplineMetric
-                                    label="Avg Outing"
-                                    value={stats.avgDurationMins > 0 ? stats.avgDurationMins.toFixed(0) : '--'}
-                                    unit="min"
-                                    compact
-                                />
-                            </div>
-                            <div className="grid gap-3 md:grid-cols-3">
-                                <SummarySignal
-                                    label="Load ratio"
+                                <SnapshotCell
+                                    label="Load Ratio"
                                     value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
+                                    unit=""
                                     detail={getAcwrDetail(stats.acwr)}
-                                    compact
                                 />
-                                <SummarySignal
-                                    label="Weekly change"
+                                <SnapshotCell
+                                    label="Weekly Change"
                                     value={
                                         stats.weeklyRampPercent !== null
-                                            ? `${stats.weeklyRampPercent >= 0 ? '+' : ''}${stats.weeklyRampPercent.toFixed(0)}%`
-                                            : `${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)} km`
+                                            ? `${stats.weeklyRampPercent >= 0 ? '+' : ''}${stats.weeklyRampPercent.toFixed(0)}`
+                                            : `${stats.weeklyRampKm >= 0 ? '+' : ''}${stats.weeklyRampKm.toFixed(1)}`
                                     }
+                                    unit={stats.weeklyRampPercent !== null ? '%' : 'km'}
                                     detail={getRampDetail(stats.weeklyRampPercent, stats.weeklyRampKm)}
-                                    compact
                                 />
-                                <SummarySignal
+                                <SnapshotCell
                                     label="Routine"
-                                    value={`${stats.consistencyScore}%`}
+                                    value={stats.consistencyScore.toString()}
+                                    unit="%"
                                     detail={getConsistencyDetail(stats.consistencyScore)}
-                                    compact
+                                />
+                                <SnapshotCell
+                                    label="Efficiency"
+                                    value={stats.efficiencyIndex !== null ? stats.efficiencyIndex.toFixed(2) : '--'}
+                                    unit="m/beat"
+                                    detail={getEfficiencyDetail(stats.efficiencyIndex)}
                                 />
                             </div>
                         </div>
@@ -385,24 +383,29 @@ interface StatCardProps {
     tone?: 'blue' | 'green' | 'gold' | 'orange' | 'neutral';
 }
 
-function SummarySignal({
+function SnapshotCell({
     label,
     value,
+    unit,
     detail,
-    compact = false,
 }: {
     label: string;
     value: string;
+    unit: string;
     detail: string;
-    compact?: boolean;
 }) {
     return (
-        <div className={`flex items-start justify-between gap-4 ${compact ? 'rounded-[1rem] border border-[var(--rv-border)] px-3 py-3' : ''}`}>
-            <div className="min-w-0">
-                <p className="rv-mini-label mb-1">{label}</p>
-                <p className="text-sm leading-6 text-[var(--rv-text-dim)]">{detail}</p>
+        <div className="flex min-h-[172px] flex-col justify-between bg-[var(--rv-bg-panel)] px-4 py-4 sm:px-5 sm:py-5">
+            <div>
+                <p className="rv-mini-label mb-3">{label}</p>
+                <div className="flex flex-wrap items-baseline gap-2">
+                    <span className="rv-data text-[1.7rem] text-[var(--rv-text)] sm:text-[1.95rem]">
+                        {value}
+                    </span>
+                    {unit ? <span className="rv-mini-label tracking-[0.18em]">{unit}</span> : null}
+                </div>
             </div>
-            <div className="rv-data shrink-0 text-[1.1rem] text-[var(--rv-text)]">{value}</div>
+            <p className="mt-4 max-w-[18ch] text-sm leading-7 text-[var(--rv-text-dim)]">{detail}</p>
         </div>
     );
 }
