@@ -9,6 +9,7 @@ export interface MonthlyRow {
 
 export interface YearSeries {
   year: number;
+  /** 12 entries — cumulative km through that month (Jan = month 0 total, Feb = Jan+Feb total, etc.) */
   months: MonthlyRow[];
 }
 
@@ -30,11 +31,16 @@ export function computeYearOnYear(activities: Activity[]): YearSeries[] {
 
   return Array.from(yearMap.entries())
     .sort(([a], [b]) => a - b)
-    .map(([year, monthlyKm]) => ({
-      year,
-      months: monthlyKm.map((km, monthIndex) => ({
-        monthIndex,
-        km: Math.round(km * 10) / 10,
-      })),
-    }));
+    .map(([year, monthlyKm]) => {
+      // Convert monthly totals to a running cumulative sum
+      let running = 0;
+      const months = monthlyKm.map((km, monthIndex) => {
+        running += km;
+        return {
+          monthIndex,
+          km: Math.round(running * 10) / 10,
+        };
+      });
+      return { year, months };
+    });
 }

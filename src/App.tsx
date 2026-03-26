@@ -556,7 +556,7 @@ function App() {
               </nav>
             </div>
 
-            <div className="space-y-4 pb-2">
+            <div className="space-y-3 pb-2">
               <div className="flex items-center gap-3">
                 {athlete?.profile ? (
                   <img src={athlete.profile} className="h-10 w-10 rounded-2xl object-cover" alt="Profile" />
@@ -570,17 +570,15 @@ function App() {
                   <p className="text-xs text-[var(--rv-text-faint)]">{syncing ? 'Syncing now' : formatLastSync(lastSync)}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <ThemeToggle />
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:text-[var(--rv-text)] active:translate-y-px"
-                >
-                  <ExitIcon className="h-4 w-4" />
-                  Logout
-                </button>
-              </div>
+              <ThemeToggle />
+              <button
+                type="button"
+                onClick={logout}
+                className="inline-flex w-full items-center gap-2 rounded-[1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)] active:translate-y-px"
+              >
+                <ExitIcon className="h-4 w-4" />
+                Logout
+              </button>
             </div>
           </aside>
 

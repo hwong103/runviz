@@ -46,16 +46,25 @@ export function YearOnYearChart({ activities }: YearOnYearChartProps) {
     const chartTheme = useChartTheme();
     const series = useMemo(() => computeYearOnYear(activities), [activities]);
 
+    // For the current year, only plot up to and including the current month
+    // so the line doesn't flatline at the last cumulative value through Dec.
+    const currentYear = new Date().getFullYear();
+    const currentMonthIndex = new Date().getMonth();
+
     const data = useMemo(
         () => ({
             labels: MONTH_LABELS,
             datasets: series.map((yearSeries, index) => {
                 const palette = YEAR_COLORS[index % YEAR_COLORS.length];
-                const isCurrentYear = yearSeries.year === new Date().getFullYear();
+                const isCurrentYear = yearSeries.year === currentYear;
 
                 return {
                     label: String(yearSeries.year),
-                    data: yearSeries.months.map((month) => (month.km > 0 ? month.km : null)),
+                    data: yearSeries.months.map((month) => {
+                        // For the current year, null out future months so the line ends today
+                        if (isCurrentYear && month.monthIndex > currentMonthIndex) return null;
+                        return month.km > 0 ? month.km : null;
+                    }),
                     borderColor: palette.line,
                     backgroundColor: palette.fill,
                     borderWidth: isCurrentYear ? 2.5 : 1.5,
@@ -67,7 +76,7 @@ export function YearOnYearChart({ activities }: YearOnYearChartProps) {
                 };
             }),
         }),
-        [series]
+        [series, currentYear, currentMonthIndex]
     );
 
     const options = {
@@ -95,7 +104,7 @@ export function YearOnYearChart({ activities }: YearOnYearChartProps) {
                 borderWidth: 1,
                 callbacks: {
                     label: (context: { dataset: { label?: string }; parsed: { y: number | null } }) => {
-                        if (context.parsed.y === null) return `${context.dataset.label}: no runs`;
+                        if (context.parsed.y === null) return `${context.dataset.label}: no data`;
                         return `${context.dataset.label}: ${context.parsed.y} km`;
                     },
                 },
@@ -103,25 +112,19 @@ export function YearOnYearChart({ activities }: YearOnYearChartProps) {
         },
         scales: {
             x: {
-                grid: {
-                    display: false,
-                },
-                ticks: {
-                    color: chartTheme.tickColor,
-                },
+                grid: { display: false },
+                ticks: { color: chartTheme.tickColor },
             },
             y: {
                 beginAtZero: true,
-                grid: {
-                    color: chartTheme.gridColor,
-                },
+                grid: { color: chartTheme.gridColor },
                 ticks: {
                     color: chartTheme.tickColor,
                     callback: (value: number | string) => `${value} km`,
                 },
                 title: {
                     display: true,
-                    text: 'km / month',
+                    text: 'cumulative km',
                     color: chartTheme.axisColor,
                 },
             },
@@ -140,18 +143,18 @@ export function YearOnYearChart({ activities }: YearOnYearChartProps) {
     }
 
     return (
-        <div className="rv-panel rv-panel-strong h-[400px] p-6">
+        <div className="rv-panel rv-panel-strong px-5 py-5 sm:px-7 sm:py-6">
             <div className="mb-6">
                 <p className="rv-kicker mb-2">Year on Year</p>
                 <h3 className="flex items-center gap-2 text-lg font-medium text-[var(--rv-text)]">
                     <BarChart2 className="h-[18px] w-[18px] text-[var(--rv-blue)]" />
-                    Monthly mileage by year
+                    Cumulative mileage by year
                 </h3>
                 <p className="mt-2 max-w-[48ch] text-sm leading-6 text-[var(--rv-text-dim)]">
-                    Each line is one calendar year, so seasonal mileage patterns stay easy to compare across seasons.
+                    Each line is one calendar year. Where the current year sits relative to prior years shows whether annual volume is growing.
                 </p>
             </div>
-            <div className="h-[300px]">
+            <div className="h-[320px]">
                 <Line data={data} options={options} />
             </div>
         </div>
