@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -28,6 +28,7 @@ ChartJS.register(
 );
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const STORAGE_KEY = 'runviz_year_on_year_hidden_years';
 
 const YEAR_COLORS = [
     { line: '#13C38B', fill: 'rgba(19, 195, 139, 0.08)' },
@@ -45,11 +46,42 @@ interface YearOnYearChartProps {
 export function YearOnYearChart({ activities }: YearOnYearChartProps) {
     const chartTheme = useChartTheme();
     const series = useMemo(() => computeYearOnYear(activities), [activities]);
+    const [hiddenYears, setHiddenYears] = useState<string[]>(() => {
+        if (typeof window === 'undefined') return [];
+
+        try {
+            const stored = window.localStorage.getItem(STORAGE_KEY);
+            if (!stored) return [];
+            const parsed = JSON.parse(stored);
+            return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : [];
+        } catch {
+            return [];
+        }
+    });
 
     // For the current year, only plot up to and including the current month
     // so the line doesn't flatline at the last cumulative value through Dec.
     const currentYear = new Date().getFullYear();
     const currentMonthIndex = new Date().getMonth();
+    const availableYears = useMemo(() => series.map((entry) => String(entry.year)), [series]);
+
+    useEffect(() => {
+        setHiddenYears((previous) => {
+            const next = previous.filter((year) => availableYears.includes(year));
+
+            if (next.length === previous.length) {
+                return previous;
+            }
+
+            try {
+                window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            } catch {
+                // Ignore storage write failures.
+            }
+
+            return next;
+        });
+    }, [availableYears]);
 
     const data = useMemo(
         () => ({
@@ -65,6 +97,7 @@ export function YearOnYearChart({ activities }: YearOnYearChartProps) {
                         if (isCurrentYear && month.monthIndex > currentMonthIndex) return null;
                         return month.km > 0 ? month.km : null;
                     }),
+                    hidden: hiddenYears.includes(String(yearSeries.year)),
                     borderColor: palette.line,
                     backgroundColor: palette.fill,
                     borderWidth: isCurrentYear ? 2.5 : 1.5,
@@ -76,7 +109,7 @@ export function YearOnYearChart({ activities }: YearOnYearChartProps) {
                 };
             }),
         }),
-        [series, currentYear, currentMonthIndex]
+        [series, currentYear, currentMonthIndex, hiddenYears]
     );
 
     const options = {
@@ -90,6 +123,24 @@ export function YearOnYearChart({ activities }: YearOnYearChartProps) {
             legend: {
                 display: true,
                 position: 'top' as const,
+                onClick: (_event: unknown, legendItem: { text?: string }) => {
+                    const yearLabel = legendItem.text;
+                    if (!yearLabel) return;
+
+                    setHiddenYears((previous) => {
+                        const next = previous.includes(yearLabel)
+                            ? previous.filter((year) => year !== yearLabel)
+                            : [...previous, yearLabel];
+
+                        try {
+                            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+                        } catch {
+                            // Ignore storage write failures.
+                        }
+
+                        return next;
+                    });
+                },
                 labels: {
                     color: chartTheme.legendColor,
                     usePointStyle: true,
