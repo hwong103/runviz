@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
     CategoryScale,
     Chart as ChartJS,
@@ -10,7 +10,7 @@ import {
     Tooltip,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { ChevronDown, Radio } from 'lucide-react';
+import { Radio } from 'lucide-react';
 import type { Activity } from '../types';
 import { extractCadenceHistory } from '../analytics/cadence';
 import { useChartTheme } from '../hooks/useChartTheme';
@@ -50,7 +50,6 @@ interface CadenceTrendChartProps {
 }
 
 export function CadenceTrendChart({ activities }: CadenceTrendChartProps) {
-    const [open, setOpen] = useState(true);
     const chartTheme = useChartTheme();
     const points = useMemo(() => extractCadenceHistory(activities), [activities]);
 
@@ -104,38 +103,26 @@ export function CadenceTrendChart({ activities }: CadenceTrendChartProps) {
 
     return (
         <div className="rv-panel px-5 py-5 sm:px-7 sm:py-6">
-            <button
-                type="button"
-                onClick={() => setOpen((value) => !value)}
-                className="flex w-full items-center justify-between gap-4 text-left"
-                aria-expanded={open}
-            >
-                <div>
-                    <p className="rv-kicker mb-2">Run Mechanics</p>
-                    <h3 className="flex items-center gap-2 text-lg font-medium text-[var(--rv-text)]">
-                        <Radio className="h-[18px] w-[18px] text-[var(--rv-blue)]" />
-                        Cadence trend
-                    </h3>
-                    <p className="mt-2 max-w-[48ch] text-sm leading-6 text-[var(--rv-text-dim)]">
-                        Track how quickly your legs are turning over and compare the trend against the 170 spm reference line.
-                    </p>
-                </div>
-                <ChevronDown className={`h-5 w-5 text-[var(--rv-text-faint)] transition-transform ${open ? 'rotate-180' : ''}`} />
-            </button>
+            <p className="rv-kicker mb-2">Run Mechanics</p>
+            <h3 className="flex items-center gap-2 text-lg font-medium text-[var(--rv-text)]">
+                <Radio className="h-[18px] w-[18px] text-[var(--rv-blue)]" />
+                Cadence trend
+            </h3>
+            <p className="mt-2 max-w-[48ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                Track how quickly your legs are turning over and compare the trend against the 170 spm reference line.
+            </p>
 
-            {open && (
-                <div className="mt-6">
-                    {points.length < 5 ? (
-                        <div className="rounded-[1.5rem] border border-dashed border-[var(--rv-border)] px-5 py-10 text-center text-sm text-[var(--rv-text-dim)]">
-                            No cadence data - ensure your watch records cadence.
-                        </div>
-                    ) : (
-                        <div className="h-[300px]">
-                            <Line data={data} options={options} plugins={[referenceLinePlugin]} />
-                        </div>
-                    )}
-                </div>
-            )}
+            <div className="mt-6">
+                {points.length < 5 ? (
+                    <div className="rounded-[1.5rem] border border-dashed border-[var(--rv-border)] px-5 py-10 text-center text-sm text-[var(--rv-text-dim)]">
+                        No cadence data - ensure your watch records cadence.
+                    </div>
+                ) : (
+                    <div className="h-[300px]">
+                        <Line data={data} options={options} plugins={[referenceLinePlugin]} />
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

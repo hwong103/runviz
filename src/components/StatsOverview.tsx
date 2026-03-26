@@ -204,10 +204,6 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                 </>
             ) : (
                 <section>
-                    <p className="rv-kicker mb-2 px-1">Training Health</p>
-                    <p className="mb-4 max-w-[64ch] px-1 text-sm leading-6 text-[var(--rv-text-dim)]">
-                        Use load ratio, weekly change, and routine to judge stability first. Tap any metric for threshold guidance if you need the deeper read.
-                    </p>
                     <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3 xl:grid-cols-4">
                         <StatCard
                             label="Load Ratio"
