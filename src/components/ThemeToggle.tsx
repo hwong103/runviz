@@ -1,14 +1,6 @@
-import { Check, Monitor, Moon, SunMedium } from "lucide-react"
+import { Monitor, Moon, SunMedium } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 import { useTheme, type ThemePreference } from "@/hooks/useTheme"
 
 const OPTIONS: Array<{
@@ -21,50 +13,35 @@ const OPTIONS: Array<{
   { value: "system", icon: Monitor, title: "System preference" },
 ]
 
-const SELECTED_LABEL: Record<ThemePreference, string> = {
-  light: "Light",
-  dark: "Dark",
-  system: "System",
-}
-
 export function ThemeToggle() {
   const { preference, setTheme } = useTheme()
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          className="h-9 w-full justify-between rounded-xl px-3"
-        >
-          <span className="inline-flex items-center gap-2">
-            <SunMedium className="size-4" />
-            Theme
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {SELECTED_LABEL[preference]}
-          </span>
-        </Button>
-      </DropdownMenuTrigger>
+    <div
+      className="inline-flex h-9 w-full items-center gap-1 rounded-xl border border-border bg-background p-1"
+      role="group"
+      aria-label="Theme"
+    >
+      {OPTIONS.map(({ value, icon: Icon, title }) => {
+        const selected = preference === value
 
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
-        <DropdownMenuGroup>
-          {OPTIONS.map(({ value, icon: Icon, title }) => (
-            <DropdownMenuItem
-              key={value}
-              onClick={() => setTheme(value)}
-              className="justify-between"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Icon className="size-4" />
-                {title}
-              </span>
-              {preference === value ? <Check className="size-4" /> : null}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        return (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setTheme(value)}
+            aria-pressed={selected}
+            aria-label={title}
+            title={title}
+            className={cn(
+              "inline-flex h-full flex-1 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+              selected && "bg-foreground text-background shadow-sm hover:text-background"
+            )}
+          >
+            <Icon className="size-4" />
+          </button>
+        )
+      })}
+    </div>
   )
 }
