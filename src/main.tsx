@@ -7,6 +7,7 @@ import { GoogleAuthCallback } from './components/GoogleAuthCallback.tsx'
 import { Callback } from './components/Callback.tsx'
 import { GoogleSignInComplete } from './components/GoogleSignInComplete.tsx'
 import { MagicLinkVerify } from './components/MagicLinkVerify.tsx'
+import { ToolRouteFrame } from './components/layout/tool-route-frame.tsx'
 import { SetupRoute } from './components/SetupRoute.tsx'
 import { StravaAuthStart } from './components/StravaAuthStart.tsx'
 
@@ -25,9 +26,13 @@ const routerBase = import.meta.env.BASE_URL.endsWith('/')
         ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
         : pref
     document.documentElement.setAttribute('data-theme', resolved)
+    document.documentElement.classList.toggle('dark', resolved === 'dark')
+    document.documentElement.style.colorScheme = resolved
   } catch {
     const resolved = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
     document.documentElement.setAttribute('data-theme', resolved)
+    document.documentElement.classList.toggle('dark', resolved === 'dark')
+    document.documentElement.style.colorScheme = resolved
   }
 })()
 
@@ -44,8 +49,30 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/signin/complete" element={<GoogleSignInComplete />} />
           <Route path="/api/auth/magic-link/verify" element={<MagicLinkVerify />} />
           <Route path="/setup" element={<SetupRoute />} />
-          <Route path="/plan-route" element={<RoutePlanner />} />
-          <Route path="/form-analysis" element={<FormAnalysis />} />
+          <Route
+            path="/plan-route"
+            element={
+              <ToolRouteFrame
+                eyebrow="Route Planner"
+                title="Plan a route for your next run"
+                subtitle="Choose a start point, set the distance, and export the route from the same RunViz workspace shell."
+              >
+                <RoutePlanner />
+              </ToolRouteFrame>
+            }
+          />
+          <Route
+            path="/form-analysis"
+            element={
+              <ToolRouteFrame
+                eyebrow="Form Lab"
+                title="Review your running form"
+                subtitle="Upload a clip, run the analysis, and keep your video-based coaching workflow inside the shared app shell."
+              >
+                <FormAnalysis />
+              </ToolRouteFrame>
+            }
+          />
         </Routes>
       </Suspense>
     </BrowserRouter>

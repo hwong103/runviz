@@ -43,6 +43,8 @@ function applyTheme(resolved: ResolvedTheme) {
     }
 
     document.documentElement.setAttribute('data-theme', resolved);
+    document.documentElement.classList.toggle('dark', resolved === 'dark');
+    document.documentElement.style.colorScheme = resolved;
 }
 
 function emitChange() {
