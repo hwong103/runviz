@@ -40,6 +40,8 @@ export interface StravaAccessContext {
   athlete: AthleteSummary;
 }
 
+type BetterAuthSession = Awaited<ReturnType<Auth["api"]["getSession"]>>;
+
 function splitName(name: string): { firstname: string; lastname: string } {
   const parts = name.trim().split(/\s+/);
   return {
@@ -84,8 +86,33 @@ async function getBetterAuthSession(auth: Auth, request: Request) {
   }
 }
 
-export async function resolveSession(request: Request, env: Env, auth: Auth): Promise<SessionResponse> {
-  const betterSession = await getBetterAuthSession(auth, request);
+export async function getBetterAuthSessionWithHeaders(
+  auth: Auth,
+  request: Request,
+): Promise<{ session: BetterAuthSession | null; headers: Headers | null }> {
+  try {
+    const result = await auth.api.getSession({
+      headers: request.headers,
+      asResponse: false,
+      returnHeaders: true,
+    }) as { response: BetterAuthSession | null; headers: Headers | null };
+
+    return {
+      session: result?.response ?? null,
+      headers: result?.headers ?? null,
+    };
+  } catch {
+    return { session: null, headers: null };
+  }
+}
+
+export async function resolveSession(
+  request: Request,
+  env: Env,
+  auth: Auth,
+  betterSessionOverride?: BetterAuthSession | null,
+): Promise<SessionResponse> {
+  const betterSession = betterSessionOverride ?? await getBetterAuthSession(auth, request);
   if (betterSession?.user) {
     const userId = betterSession.user.id;
     const linked = await getStoredToken(env, `strava:${userId}`);

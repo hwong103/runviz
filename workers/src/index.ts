@@ -3,6 +3,7 @@ import { createAuth } from './auth';
 import { encrypt } from './crypto';
 import {
     buildAthleteSummary,
+    getBetterAuthSessionWithHeaders,
     resolveSession,
     resolveStravaAccess,
     resolveStoredStravaKeys,
@@ -85,6 +86,23 @@ function withCors(response: Response, origin: string, env: Env): Response {
         status: response.status,
         headers,
     });
+}
+
+function appendSetCookieHeaders(target: Headers, source?: Headers | null) {
+    if (!source) return;
+
+    const getSetCookie = (source as Headers & { getSetCookie?: () => string[] }).getSetCookie;
+    if (typeof getSetCookie === 'function') {
+        for (const value of getSetCookie.call(source)) {
+            target.append('Set-Cookie', value);
+        }
+        return;
+    }
+
+    const setCookie = source.get('set-cookie');
+    if (setCookie) {
+        target.append('Set-Cookie', setCookie);
+    }
 }
 
 // Get session ID from cookie
@@ -377,10 +395,18 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
 
 // Check session
 async function handleHybridSession(request: Request, env: Env, origin: string, auth: ReturnType<typeof createAuth>): Promise<Response> {
-    const session = await resolveSession(request, env, auth);
+    const betterAuthResult = await getBetterAuthSessionWithHeaders(auth, request);
+    const session = await resolveSession(request, env, auth, betterAuthResult.session);
+    const headers = new Headers({
+        ...corsHeaders(origin, env),
+        'Content-Type': 'application/json',
+    });
+
+    appendSetCookieHeaders(headers, betterAuthResult.headers);
+
     return new Response(
         JSON.stringify(session),
-        { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
+        { headers }
     );
 }
 

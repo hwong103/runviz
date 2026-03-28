@@ -37,6 +37,8 @@ export function createAuth(env: Env, baseURL: string) {
       }),
     ],
     session: {
+      expiresIn: 60 * 60 * 24 * 28,
+      updateAge: 60 * 60 * 24,
       cookieCache: {
         enabled: true,
         maxAge: 60 * 5,
