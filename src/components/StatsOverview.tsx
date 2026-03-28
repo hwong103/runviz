@@ -154,7 +154,7 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                             <ToplineMetric label="Distance" value={stats.totalDistance.toFixed(1)} unit="km" />
                             <ToplineMetric label="Avg Pace" value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'} unit="/km" />
                             <ToplineMetric label="Longest" value={stats.longestRun.toFixed(1)} unit="km" />
-                            <ToplineMetric label="Streak" value={stats.longestStreak.toString()} unit="days" />
+                            <ToplineMetric label="Avg Mileage" value={stats.avgDistance.toFixed(1)} unit="km" />
                         </div>
                     </section>
 

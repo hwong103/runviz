@@ -22,9 +22,6 @@ export function CalendarHeatmap({
 
     // Check if we're in month-only view
     const isMonthView = month !== undefined;
-    const cellSize = isMonthView ? 20 : 12;
-    const cellGap = isMonthView ? 6 : 2;
-    const gridStride = cellSize + cellGap;
 
     const { weeks, monthLabels, maxDistance } = useMemo(() => {
         // Build daily distance map
@@ -126,15 +123,16 @@ export function CalendarHeatmap({
     }, [activities, year, month, isMonthView]);
 
     const getColor = (distance: number, isActive: boolean, isSelected: boolean): string => {
-        if (isSelected) return 'bg-[var(--rv-blue)] ring-2 ring-[var(--rv-blue)]/35';
-        if (!isActive) return 'bg-[var(--rv-bg-elevated)]';
-        if (distance === 0) return 'bg-[var(--rv-bg-panel)]';
+        const baseCell = 'border border-[var(--rv-border)]';
+        if (isSelected) return `${baseCell} bg-[var(--rv-blue)] ring-2 ring-[var(--rv-blue)]/35`;
+        if (!isActive) return `${baseCell} bg-[var(--rv-bg-elevated)]`;
+        if (distance === 0) return `${baseCell} bg-[var(--rv-bg-elevated)]`;
         const intensity = Math.min(distance / maxDistance, 1);
 
-        if (intensity < 0.25) return 'bg-[var(--rv-green)]/30';
-        if (intensity < 0.5) return 'bg-[var(--rv-green)]/45';
-        if (intensity < 0.75) return 'bg-[var(--rv-green)]/65';
-        return 'bg-[var(--rv-green)]';
+        if (intensity < 0.25) return `${baseCell} bg-[var(--rv-green)]/30`;
+        if (intensity < 0.5) return `${baseCell} bg-[var(--rv-green)]/45`;
+        if (intensity < 0.75) return `${baseCell} bg-[var(--rv-green)]/65`;
+        return `${baseCell} bg-[var(--rv-green)]`;
     };
 
     const getDayStory = (distance: number) => {
@@ -176,17 +174,7 @@ export function CalendarHeatmap({
                         </div>
 
                         {/* Calendar grid */}
-                        <div
-                            className={`relative flex ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}
-                            style={{
-                                backgroundImage: `
-                                  linear-gradient(to right, color-mix(in srgb, var(--rv-border) 70%, transparent) 1px, transparent 1px),
-                                  linear-gradient(to bottom, color-mix(in srgb, var(--rv-border) 70%, transparent) 1px, transparent 1px)
-                                `,
-                                backgroundPosition: `0 0, 0 0`,
-                                backgroundSize: `${gridStride}px ${gridStride}px`,
-                            }}
-                        >
+                        <div className={`relative flex ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}>
                             {weeks.map((week, weekIdx) => (
                                 <div key={weekIdx} className={`flex flex-col ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}>
                                     {week.map((day, dayIdx) => {
@@ -213,7 +201,7 @@ export function CalendarHeatmap({
                                                     }
                                                 }}
                                                 onMouseLeave={() => setHoveredDay(null)}
-                                                className={`relative ${isMonthView ? 'h-5 w-5 rounded-[3px]' : 'h-3 w-3 rounded-[2px]'} transition-all duration-200 focus-visible:scale-125 focus-visible:ring-2 focus-visible:ring-[var(--rv-border-strong)] ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'bg-transparent'
+                                                className={`relative ${isMonthView ? 'h-5 w-5 rounded-[3px]' : 'h-3 w-3 rounded-[2px]'} transition-all duration-200 focus-visible:scale-125 focus-visible:ring-2 focus-visible:ring-[var(--rv-border-strong)] ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'border border-transparent bg-transparent'
                                                     } ${isInteractive ? 'cursor-pointer hover:scale-110 hover:ring-2 hover:ring-white/30' : ''}`}
                                                 disabled={!isInteractive}
                                                 aria-label={day ? `${format(parseISO(day.date), 'MMMM d, yyyy')}, ${day.distance.toFixed(2)} kilometers, ${getDayStory(day.distance)}` : 'Empty day'}
