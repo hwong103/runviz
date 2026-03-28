@@ -682,7 +682,7 @@ function App() {
                   <CalendarIcon className="h-4 w-4 text-[var(--rv-blue)]" />
                   <p className="rv-kicker">Calendar</p>
                 </div>
-                <p className="mb-4 max-w-[58ch] text-sm leading-6 text-muted-foreground">
+                <p className="mb-4 text-sm leading-6 text-muted-foreground xl:max-w-[72ch]">
                   Scan the whole block at a glance, then drop into the daily log or shoe rotation below.
                 </p>
                 <CalendarHeatmap
