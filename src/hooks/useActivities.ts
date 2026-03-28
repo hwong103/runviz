@@ -56,7 +56,6 @@ export function useActivities(enabled = true) {
 
         try {
             const isFullSync = options.forceFull === true;
-            console.log(`--- Starting ${isFullSync ? 'Full' : 'Incremental'} Sync ---`);
             const currentActivities = await cache.getCachedActivities();
             let page = 1;
             let hasMore = true;
@@ -65,7 +64,6 @@ export function useActivities(enabled = true) {
             const newlyFetched: Activity[] = [];
 
             while (hasMore && page <= 20) {
-                console.log(`Fetching page ${page} (${perPage} per page)...`);
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const response = await activitiesApi.list(page, perPage) as any;
 
@@ -84,7 +82,6 @@ export function useActivities(enabled = true) {
                 if (pageActivities.length > 0) {
                     totalNewSaved += pageActivities.length;
                     newlyFetched.push(...pageActivities);
-                    console.log(`✅ Processed ${pageActivities.length} activities on page ${page}`);
                 }
 
                 // Incremental Sync optimization:
@@ -97,7 +94,6 @@ export function useActivities(enabled = true) {
                     );
 
                     if (allKnown && page > 1) { // Always fetch at least 1 page to check for updates
-                        console.log('🏁 Incremental sync: Reached known history.');
                         hasMore = false;
                     } else {
                         page++;
@@ -121,7 +117,6 @@ export function useActivities(enabled = true) {
                 await cache.setLastSyncDate(new Date());
             }
 
-            console.log(`--- Sync Complete. New found: ${totalNewSaved} ---`);
             const finalActivities = await cache.getCachedActivities();
 
             setState({
@@ -163,7 +158,6 @@ export function useActivities(enabled = true) {
         const init = async () => {
             await loadCached();
             // Automatically sync after load
-            console.log('🔄 Triggering automatic sync on load...');
             sync();
         };
         init();

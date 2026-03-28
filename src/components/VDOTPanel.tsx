@@ -19,16 +19,16 @@ export function VDOTPanel({ activities }: VDOTPanelProps) {
 
     return (
         <div className="rv-panel rv-panel-strong px-5 py-5 sm:px-7 sm:py-6">
-            <div className="mb-6 flex items-start justify-between gap-4">
+            <div className="mb-5 flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1.05fr)_auto] xl:items-start">
                 <div>
                     <p className="rv-kicker mb-2">Training Paces</p>
                     <h2 className="rv-section-title text-[1.55rem]">VDOT pace guide</h2>
-                    <p className="mt-2 max-w-[48ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                    <p className="mt-2 max-w-[44ch] text-sm leading-6 text-[var(--rv-text-dim)]">
                         Use your strongest recent race-like effort to anchor training paces and forecast equivalent race times.
                     </p>
                 </div>
                 {result && (
-                    <div className="rounded-full border border-[var(--rv-blue)]/25 bg-[var(--rv-blue)]/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-[var(--rv-blue)]">
+                    <div className="rounded-full border border-[var(--rv-blue)]/25 bg-[var(--rv-blue)]/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-[var(--rv-blue)]">
                         VDOT {result.vdot.toFixed(1)}
                     </div>
                 )}
@@ -39,44 +39,46 @@ export function VDOTPanel({ activities }: VDOTPanelProps) {
                     No qualifying efforts found. Run a solid 5K, 10K, or half marathon to unlock VDOT guidance.
                 </div>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-5">
                     <p className="text-sm text-[var(--rv-text-dim)]">Reference effort: {result.sourceLabel}</p>
 
-                    <div className="grid gap-3">
-                        {ZONE_META.map((zone) => {
-                            const [slow, fast] = result.trainingZones[zone.key];
-                            return (
-                                <div
-                                    key={zone.key}
-                                    className="rounded-[1.35rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3"
-                                >
-                                    <div className="mb-1 flex items-center justify-between gap-3">
-                                        <span className="text-sm font-bold uppercase tracking-[0.18em]" style={{ color: zone.color }}>
-                                            {zone.key}
-                                        </span>
-                                        <span className="text-sm font-semibold text-[var(--rv-text)]">{zone.label}</span>
+                    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.9fr)] xl:items-start">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            {ZONE_META.map((zone) => {
+                                const [slow, fast] = result.trainingZones[zone.key];
+                                return (
+                                    <div
+                                        key={zone.key}
+                                        className="rounded-[1.2rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3"
+                                    >
+                                        <div className="mb-1 flex items-center justify-between gap-3">
+                                            <span className="text-sm font-bold uppercase tracking-[0.18em]" style={{ color: zone.color }}>
+                                                {zone.key}
+                                            </span>
+                                            <span className="text-sm font-semibold text-[var(--rv-text)]">{zone.label}</span>
+                                        </div>
+                                        <div className="rv-metric text-[1.2rem] leading-tight text-[var(--rv-text)]">
+                                            {formatPace(fast)} - {formatPace(slow)} /km
+                                        </div>
                                     </div>
-                                    <div className="rv-metric text-[1.35rem] text-[var(--rv-text)]">
-                                        {formatPace(fast)} - {formatPace(slow)} /km
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            })}
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        {result.racePredictions.map((prediction) => (
-                            <div
-                                key={prediction.label}
-                                className="rounded-[1.4rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-4"
-                            >
-                                <div className="rv-mini-label mb-2">{prediction.label}</div>
-                                <div className="rv-metric text-[1.8rem] text-[var(--rv-text)]">{formatTime(prediction.timeS)}</div>
-                                <div className="mt-1 text-sm text-[var(--rv-text-dim)]">
-                                    {formatPace((prediction.timeS / prediction.meters) * 1000 / 60)} /km
+                        <div className="grid grid-cols-2 gap-3 self-start">
+                            {result.racePredictions.map((prediction) => (
+                                <div
+                                    key={prediction.label}
+                                    className="rounded-[1.2rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3"
+                                >
+                                    <div className="rv-mini-label mb-1.5">{prediction.label}</div>
+                                    <div className="rv-metric text-[1.55rem] leading-none text-[var(--rv-text)]">{formatTime(prediction.timeS)}</div>
+                                    <div className="mt-1 text-sm text-[var(--rv-text-dim)]">
+                                        {formatPace((prediction.timeS / prediction.meters) * 1000 / 60)} /km
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}

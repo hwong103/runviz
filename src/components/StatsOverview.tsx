@@ -154,14 +154,14 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                             <ToplineMetric label="Distance" value={stats.totalDistance.toFixed(1)} unit="km" />
                             <ToplineMetric label="Avg Pace" value={stats.avgPace > 0 ? formatPace(stats.avgPace) : '--:--'} unit="/km" />
                             <ToplineMetric label="Longest" value={stats.longestRun.toFixed(1)} unit="km" />
-                            <ToplineMetric label="Streak" value={stats.longestStreak.toString()} unit="days" />
+                            <ToplineMetric label="Avg Mileage" value={stats.avgDistance.toFixed(1)} unit="km" />
                         </div>
                     </section>
 
                     <section className="rv-panel px-5 py-4 sm:px-6 sm:py-5" style={reveal(120)}>
                         <p className="rv-kicker mb-3">Block Snapshot</p>
-                        <div className="overflow-hidden rounded-[1.35rem] bg-[var(--rv-border)] p-px">
-                            <div className="grid gap-px bg-[var(--rv-border)] md:grid-cols-5">
+                        <div className="overflow-hidden rounded-[1.35rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)]">
+                            <div className="grid divide-y divide-[var(--rv-border)] bg-[var(--rv-bg-panel)] md:grid-cols-5 md:divide-x md:divide-y-0">
                                 <SnapshotCell
                                     label="Runs in View"
                                     value={stats.runCount.toString()}

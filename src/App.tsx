@@ -1,29 +1,35 @@
 import { lazy, Suspense, useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import type { CSSProperties, ComponentType, ReactNode } from 'react';
+import type { CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-  ActivityLogIcon,
-  AvatarIcon,
-  BackpackIcon,
-  BarChartIcon,
   CalendarIcon,
-  DashboardIcon,
-  ExitIcon,
-  GearIcon,
   ReloadIcon,
-  RocketIcon,
 } from '@radix-ui/react-icons';
+import { Backpack, RefreshCw, Rocket } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
+import { AppShell } from './components/layout/app-shell';
 import { SetupPage } from './components/SetupPage';
 import { StatsOverview } from './components/StatsOverview';
 import { CalendarHeatmap } from './components/CalendarHeatmap';
 import { ActivityList } from './components/ActivityList';
-import { ThemeToggle } from './components/ThemeToggle';
+import { Button } from './components/ui/button';
+import { PeriodComboButton } from './components/ui/PeriodComboButton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from './components/ui/toggle-group';
 import type { Activity, Gear } from './types';
 import { isRun } from './types';
 import { gear as gearApi } from './services/api';
 import { parseActivityLocalDate } from './utils/activityDate';
+import {
+  DASHBOARD_WORKSPACE_META,
+  MONTHS,
+  type DashboardWorkspace,
+  type RaceWorkspace,
+  type TrainingWorkspace,
+  type ViewPeriod,
+  isDashboardWorkspace,
+} from './lib/dashboard';
 
 const FitnessChart = lazy(() =>
   import('./components/FitnessChart').then((module) => ({ default: module.FitnessChart }))
@@ -53,26 +59,12 @@ const CadenceTrendChart = lazy(() =>
   import('./components/CadenceTrendChart').then((module) => ({ default: module.CadenceTrendChart }))
 );
 
-interface ViewPeriod {
-  mode: 'all' | 'year' | 'month';
-  year: number;
-  month: number | null;
-}
-
-type DashboardWorkspace = 'overview' | 'training' | 'race' | 'logbook' | 'tools';
-type TrainingWorkspace = 'health' | 'fitness' | 'volume' | 'mechanics';
-type RaceWorkspace = 'predictions' | 'vdot';
-type IconType = ComponentType<{ className?: string }>;
-
-const MONTHS = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-];
-
 const GEAR_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 const GEAR_FAILURE_RETRY_MS = 1000 * 60 * 60 * 12; // 12 hours
 const MAX_GEAR_FETCH_PER_SESSION = 10;
 const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
+const workspaceTabTriggerClass =
+  "min-w-0 rounded-lg border border-border bg-background px-2 py-1.5 text-[0.8rem] text-foreground/75 hover:text-foreground sm:px-4 sm:py-2 sm:text-sm data-[state=active]:!border-foreground/20 data-[state=active]:!bg-foreground data-[state=active]:!text-background dark:data-[state=active]:!bg-foreground dark:data-[state=active]:!text-background";
 
 interface GearCachePayload {
   updatedAt: number;
@@ -159,7 +151,7 @@ function App() {
   const inFlightGearIds = useRef<Set<string>>(new Set());
   const failedGearIds = useRef<Map<string, number>>(new Map());
   const gearFetchCount = useRef(0);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     const error = searchParams.get('error');
@@ -179,6 +171,13 @@ function App() {
 
     if (error === 'auth_failed') {
       setMagicStatus('We could not complete sign-in. Please try again.');
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const workspace = searchParams.get('workspace');
+    if (isDashboardWorkspace(workspace)) {
+      setDashboardWorkspace(workspace);
     }
   }, [searchParams]);
 
@@ -228,7 +227,6 @@ function App() {
 
       gearFetchCount.current += idsToFetch.length;
       idsToFetch.forEach(id => inFlightGearIds.current.add(id));
-      console.log('Fetching missing gear:', idsToFetch);
       // Fetch individually (Strava doesn't have a bulk endpoint for this)
       // Limit concurrency to avoid triggering rate limits too aggressively
 
@@ -285,7 +283,7 @@ function App() {
       years.add(year);
     });
     if (years.size === 0) years.add(new Date().getFullYear());
-    return Array.from(years).sort((a, b) => b - a);
+    return Array.from(years).sort((a, b) => a - b);
   }, [activities]);
 
   // Filter activities for the current view
@@ -336,34 +334,16 @@ function App() {
     };
   }, [filteredActivities]);
 
-  const workspaceMeta: Record<DashboardWorkspace, { kicker: string; title: string; detail: string }> = {
-    overview: {
-      kicker: 'Overview',
-      title: 'Current training snapshot',
-      detail: 'A compact command center for the current block, with the primary chart up front and deeper analysis one click away.',
-    },
-    training: {
-      kicker: 'Training',
-      title: 'Load and trend analysis',
-      detail: 'Review block health first, then move into the chart or mechanics view you need.',
-    },
-    race: {
-      kicker: 'Race',
-      title: 'Prediction and pacing',
-      detail: 'Keep forecasting and training pace guidance together in one coaching-oriented view.',
-    },
-    logbook: {
-      kicker: 'Logbook',
-      title: 'Runs, shoes, and calendar',
-      detail: 'Filter the training log, inspect recent runs, and jump through the calendar without leaving the list.',
-    },
-    tools: {
-      kicker: 'Tools',
-      title: 'Planning and form review',
-      detail: 'Non-daily tools live here so the dashboard stays focused on training decisions.',
-    },
-  };
-  const activeMeta = workspaceMeta[dashboardWorkspace];
+  const activeMeta = DASHBOARD_WORKSPACE_META[dashboardWorkspace];
+
+  const handleWorkspaceSelect = useCallback((workspace: DashboardWorkspace) => {
+    setDashboardWorkspace(workspace);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('workspace', workspace);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   if (authLoading) {
     return (
@@ -493,7 +473,79 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen text-[var(--rv-text)]">
+    <AppShell
+      eyebrow={activeMeta.kicker}
+      title={activeMeta.title}
+      subtitle={activeMeta.description}
+      currentWorkspace={dashboardWorkspace}
+      onWorkspaceSelect={handleWorkspaceSelect}
+      athleteName={athleteLabel}
+      athleteImage={athlete?.profile ?? null}
+      statusText={syncing ? 'Syncing now' : formatLastSync(lastSync)}
+      onLogout={logout}
+      headerActions={
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
+            <span>{describeViewPeriod(viewPeriod)}</span>
+            <span className="text-border">/</span>
+            <span>{currentSummary.runCount} runs</span>
+            <span className="text-border">/</span>
+            <span>{currentSummary.totalDistanceKm.toFixed(1)} km</span>
+            {selectedShoeName ? (
+              <>
+                <span className="text-border">/</span>
+                <span>{selectedShoeName}</span>
+              </>
+            ) : null}
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-[auto_auto_auto] xl:flex xl:flex-wrap xl:justify-end">
+            <ToggleGroup
+              type="single"
+              value={viewPeriod.mode}
+              onValueChange={(value) => {
+                if (!value) return;
+                setViewPeriod((prev) => ({ ...prev, mode: value as ViewPeriod['mode'] }));
+              }}
+              variant="outline"
+              spacing={1}
+              className="w-full sm:w-auto"
+            >
+              <ToggleGroupItem value="all" className="flex-1 sm:flex-none">
+                All
+              </ToggleGroupItem>
+              <ToggleGroupItem value="year" className="flex-1 sm:flex-none">
+                Year
+              </ToggleGroupItem>
+              <ToggleGroupItem value="month" className="flex-1 sm:flex-none">
+                Month
+              </ToggleGroupItem>
+            </ToggleGroup>
+
+            <PeriodComboButton
+              viewPeriod={viewPeriod}
+              availableYears={availableYears}
+              onViewPeriodChange={setViewPeriod}
+            />
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => sync({ forceFull: true })}
+              disabled={syncing}
+              className="h-8 justify-center gap-2 px-3 sm:min-w-[96px]"
+            >
+              {syncing ? (
+                <RefreshCw className="size-4 animate-spin" />
+              ) : (
+                <ReloadIcon className="h-4 w-4" />
+              )}
+              {syncing ? 'Syncing' : 'Sync'}
+            </Button>
+          </div>
+        </div>
+      }
+    >
       {selectedActivity && (
         <Suspense fallback={<ModalFallback />}>
           <RunDetails
@@ -506,459 +558,214 @@ function App() {
         </Suspense>
       )}
 
-      <div className="mx-auto max-w-[1720px] px-4 py-4 sm:px-6 lg:px-8">
-        <div className="grid gap-0 lg:grid-cols-[220px_minmax(0,1fr)]">
-          <aside className="hidden lg:flex lg:sticky lg:top-4 lg:min-h-[calc(100dvh-2rem)] lg:flex-col lg:justify-between lg:border-r lg:border-[var(--rv-border)] lg:pr-6">
-            <div className="space-y-8">
-              <div className="pt-2">
-                <p className="text-[1.1rem] font-semibold tracking-[-0.06em] text-[var(--rv-text)]">
-                  RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
+      <div className="mx-auto max-w-[1720px] space-y-5">
+        {dashboardWorkspace === 'overview' && (
+          <section className="space-y-4">
+            <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="overview" />
+            <Suspense fallback={<PanelFallback title="Year on Year" subtitle="Loading annual comparison" heightClassName="h-[400px]" />}>
+              <YearOnYearChart activities={activities} />
+            </Suspense>
+          </section>
+        )}
+
+        {dashboardWorkspace === 'training' && (
+          <Tabs
+            value={trainingWorkspace}
+            onValueChange={(value) => setTrainingWorkspace(value as TrainingWorkspace)}
+            className="space-y-4"
+          >
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div>
+                <p className="rv-kicker mb-2">Training Views</p>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Start with block health, then move into the chart or mechanics view you want.
                 </p>
-                <p className="mt-1 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Training Workspace</p>
               </div>
-
-              <nav className="space-y-1.5">
-                <SidebarNavButton
-                  label="Overview"
-                  detail="KPI view"
-                  icon={DashboardIcon}
-                  active={dashboardWorkspace === 'overview'}
-                  onClick={() => setDashboardWorkspace('overview')}
-                />
-                <SidebarNavButton
-                  label="Training"
-                  detail="Load and trends"
-                  icon={BarChartIcon}
-                  active={dashboardWorkspace === 'training'}
-                  onClick={() => setDashboardWorkspace('training')}
-                />
-                <SidebarNavButton
-                  label="Race"
-                  detail="Predictions and VDOT"
-                  icon={RocketIcon}
-                  active={dashboardWorkspace === 'race'}
-                  onClick={() => setDashboardWorkspace('race')}
-                />
-                <SidebarNavButton
-                  label="Logbook"
-                  detail="Runs and shoes"
-                  icon={ActivityLogIcon}
-                  active={dashboardWorkspace === 'logbook'}
-                  onClick={() => setDashboardWorkspace('logbook')}
-                />
-                <SidebarNavButton
-                  label="Tools"
-                  detail="Plan and review"
-                  icon={GearIcon}
-                  active={dashboardWorkspace === 'tools'}
-                  onClick={() => setDashboardWorkspace('tools')}
-                />
-              </nav>
+              <TabsList variant="line" className="grid h-auto w-full grid-cols-4 gap-2 bg-transparent p-0 sm:flex sm:w-auto sm:flex-wrap sm:justify-start">
+                <TabsTrigger value="health" className={workspaceTabTriggerClass}>
+                  Health
+                </TabsTrigger>
+                <TabsTrigger value="fitness" className={workspaceTabTriggerClass}>
+                  Fitness
+                </TabsTrigger>
+                <TabsTrigger value="volume" className={workspaceTabTriggerClass}>
+                  Volume
+                </TabsTrigger>
+                <TabsTrigger value="mechanics" className={workspaceTabTriggerClass}>
+                  Mechanics
+                </TabsTrigger>
+              </TabsList>
             </div>
 
-            <div className="space-y-3 pb-2">
-              <div className="flex items-center gap-3">
-                {athlete?.profile ? (
-                  <img src={athlete.profile} className="h-10 w-10 rounded-2xl object-cover" alt="Profile" />
-                ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-text)_10%,transparent)] text-[var(--rv-text-faint)]">
-                    <AvatarIcon className="h-4 w-4" />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-[var(--rv-text)]">{athleteLabel}</p>
-                  <p className="text-xs text-[var(--rv-text-faint)]">{syncing ? 'Syncing now' : formatLastSync(lastSync)}</p>
-                </div>
-              </div>
-              <ThemeToggle />
-              <button
-                type="button"
-                onClick={logout}
-                className="inline-flex w-full items-center gap-2 rounded-[1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)] active:translate-y-px"
-              >
-                <ExitIcon className="h-4 w-4" />
-                Logout
-              </button>
-            </div>
-          </aside>
-
-          <div className="min-w-0 space-y-5 lg:pl-6">
-            <header className="sticky top-0 z-30 border-b border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg)_92%,transparent)] py-4 backdrop-blur-xl">
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-3 lg:hidden">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-blue)_14%,transparent)] text-[var(--rv-blue)]">
-                      <DashboardIcon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold tracking-[-0.04em] text-[var(--rv-text)]">RunViz</p>
-                      <p className="text-xs uppercase tracking-[0.22em] text-[var(--rv-text-faint)]">Training Workspace</p>
-                    </div>
-                  </div>
-                  <p className="mt-4 mb-2 text-xs uppercase tracking-[0.24em] text-[var(--rv-text-faint)] lg:mt-0">{activeMeta.kicker}</p>
-                  <h1 className="text-[1.85rem] font-semibold tracking-[-0.05em] text-[var(--rv-text)] sm:text-[2.2rem]">
-                    {activeMeta.title}
-                  </h1>
-                  <p className="mt-2 hidden max-w-3xl text-sm leading-6 text-[var(--rv-text-dim)] sm:block">
-                    {activeMeta.detail}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 self-start lg:hidden">
-                  <ThemeToggle />
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className="inline-flex items-center gap-2 rounded-[1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)] active:translate-y-px"
-                  >
-                    <ExitIcon className="h-4 w-4" />
-                    Logout
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-4 lg:hidden">
-                <label className="rv-mini-label mb-2 block" htmlFor="mobile-workspace">
-                  Workspace
-                </label>
-                <select
-                  id="mobile-workspace"
-                  value={dashboardWorkspace}
-                  onChange={(e) => setDashboardWorkspace(e.target.value as DashboardWorkspace)}
-                  className="w-full rounded-[1.1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3 text-sm font-semibold text-[var(--rv-text-dim)] outline-none transition hover:border-[var(--rv-border-strong)] focus:border-[var(--rv-blue)]/60"
-                >
-                  <option value="overview">Overview</option>
-                  <option value="training">Training</option>
-                  <option value="race">Race</option>
-                  <option value="logbook">Logbook</option>
-                  <option value="tools">Tools</option>
-                </select>
-              </div>
-
-              <div className="mt-4 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-                <div className="hidden flex-wrap items-center gap-x-3 gap-y-2 text-sm text-[var(--rv-text-dim)] sm:flex">
-                  <span>{describeViewPeriod(viewPeriod)}</span>
-                  <span className="text-[var(--rv-text-faint)]">/</span>
-                  <span>{currentSummary.runCount} runs</span>
-                  <span className="text-[var(--rv-text-faint)]">/</span>
-                  <span>{currentSummary.totalDistanceKm.toFixed(1)} km</span>
-                  {selectedShoeName && (
-                    <>
-                      <span className="text-[var(--rv-text-faint)]">/</span>
-                      <span>{selectedShoeName}</span>
-                    </>
-                  )}
-                </div>
-                <div className="grid gap-2 sm:grid-cols-[auto_auto_auto_1fr] xl:flex xl:flex-wrap xl:items-center xl:justify-end">
-                  <div className="flex flex-wrap items-center gap-1 rounded-[1.1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] p-1">
-                    {([
-                      { mode: 'all', label: 'All' },
-                      { mode: 'year', label: 'Year' },
-                      { mode: 'month', label: 'Month' },
-                    ] as const).map(({ mode, label }) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setViewPeriod((prev) => ({ ...prev, mode }))}
-                        className={`rounded-[0.95rem] px-3 py-1.5 text-sm font-semibold transition ${viewPeriod.mode === mode
-                          ? 'bg-[var(--rv-text)] text-[var(--rv-bg)]'
-                          : 'text-[var(--rv-text-faint)] hover:text-[var(--rv-text)]'
-                          }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {viewPeriod.mode !== 'all' && (
-                    <select
-                      value={viewPeriod.year}
-                      onChange={(e) => setViewPeriod((prev) => ({ ...prev, year: parseInt(e.target.value, 10) }))}
-                      className="min-w-0 rounded-[1.1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-2 text-sm font-semibold text-[var(--rv-text-dim)] outline-none transition hover:border-[var(--rv-border-strong)] focus:border-[var(--rv-blue)]/60"
-                    >
-                      {availableYears.map((year) => <option key={year} value={year}>{year}</option>)}
-                    </select>
-                  )}
-
-                  {viewPeriod.mode === 'month' && (
-                    <select
-                      value={viewPeriod.month || 0}
-                      onChange={(e) => setViewPeriod((prev) => ({ ...prev, month: parseInt(e.target.value, 10) }))}
-                      className="min-w-0 rounded-[1.1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-2 text-sm font-semibold text-[var(--rv-text-dim)] outline-none transition hover:border-[var(--rv-border-strong)] focus:border-[var(--rv-blue)]/60"
-                    >
-                      {MONTHS.map((month, index) => <option key={month} value={index}>{month}</option>)}
-                    </select>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => sync({ forceFull: true })}
-                    disabled={syncing}
-                    className="rv-sync-button inline-flex items-center justify-center gap-2 rounded-[1.1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-2 text-sm font-semibold text-[var(--rv-text-dim)] transition hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)] disabled:cursor-wait disabled:opacity-50 active:translate-y-px"
-                    data-syncing={syncing}
-                  >
-                    <ReloadIcon className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-                    {syncing ? 'Syncing' : 'Sync'}
-                  </button>
-                </div>
-              </div>
-            </header>
-
-            {dashboardWorkspace === 'overview' && (
-              <section className="space-y-4">
-                <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="overview" />
-                <Suspense fallback={<PanelFallback title="Year on Year" subtitle="Loading annual comparison" heightClassName="h-[400px]" />}>
-                  <YearOnYearChart activities={activities} />
+            <TabsContent value="health" className="mt-0">
+              <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="training" />
+            </TabsContent>
+            <TabsContent value="fitness" className="mt-0">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
+                <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
+                  <FitnessChart activities={activities} period={viewPeriod} />
                 </Suspense>
-              </section>
-            )}
-
-            {dashboardWorkspace === 'training' && (
-              <section className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="rv-kicker mb-2">Training Views</p>
-                    <p className="text-sm leading-6 text-[var(--rv-text-dim)]">
-                      Start with block health, then move into the chart or mechanics view you want.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <InlineTabButton active={trainingWorkspace === 'health'} onClick={() => setTrainingWorkspace('health')}>
-                      Health
-                    </InlineTabButton>
-                    <InlineTabButton active={trainingWorkspace === 'fitness'} onClick={() => setTrainingWorkspace('fitness')}>
-                      Fitness
-                    </InlineTabButton>
-                    <InlineTabButton active={trainingWorkspace === 'volume'} onClick={() => setTrainingWorkspace('volume')}>
-                      Volume
-                    </InlineTabButton>
-                    <InlineTabButton active={trainingWorkspace === 'mechanics'} onClick={() => setTrainingWorkspace('mechanics')}>
-                      Mechanics
-                    </InlineTabButton>
-                  </div>
-                </div>
-
-                {trainingWorkspace === 'health' && (
-                  <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="training" />
-                )}
-
-                {trainingWorkspace === 'fitness' && (
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
-                  <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
-                    <FitnessChart activities={activities} period={viewPeriod} />
-                  </Suspense>
-                  <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
-                    <WeeklyRampChart activities={activities} />
-                  </Suspense>
-                </div>
-                )}
-
-                {trainingWorkspace === 'volume' && (
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.75fr)]">
-                  <Suspense fallback={<PanelFallback title="Mileage" subtitle="Loading volume trends" heightClassName="h-[400px]" />}>
-                    <MileageTrendChart activities={activities} period={viewPeriod} />
-                  </Suspense>
-                  <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
-                    <WeeklyRampChart activities={activities} />
-                  </Suspense>
-                </div>
-                )}
-
-                {trainingWorkspace === 'mechanics' && (
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
-                  <Suspense fallback={<PanelFallback title="Cadence" subtitle="Loading run mechanics" />}>
-                    <CadenceTrendChart activities={activities} />
-                  </Suspense>
-                  <Suspense fallback={<PanelFallback title="Shoes" subtitle="Loading equipment log" />}>
-                    <ShoeTracker
-                      activities={filteredActivities}
-                      shoes={allShoes}
-                      selectedShoeId={selectedShoeId}
-                      onSelectShoe={(id) => setSelectedShoeId((prev) => prev === id ? null : id)}
-                    />
-                  </Suspense>
-                </div>
-                )}
-              </section>
-            )}
-
-            {dashboardWorkspace === 'race' && (
-              <section className="min-w-0 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="rv-kicker mb-2">Race Views</p>
-                    <p className="text-sm leading-6 text-[var(--rv-text-dim)]">
-                      Compare race forecasts with training paces without carrying both surfaces in the header.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <InlineTabButton active={raceWorkspace === 'predictions'} onClick={() => setRaceWorkspace('predictions')}>
-                      Predictions
-                    </InlineTabButton>
-                    <InlineTabButton active={raceWorkspace === 'vdot'} onClick={() => setRaceWorkspace('vdot')}>
-                      Pace Guide
-                    </InlineTabButton>
-                  </div>
-                </div>
-                {raceWorkspace === 'predictions' ? (
-                  <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
-                    <RaceTimePredictions activities={activities} period={viewPeriod} />
-                  </Suspense>
-                ) : (
-                  <Suspense fallback={<PanelFallback title="VDOT" subtitle="Loading training pace zones" />}>
-                    <VDOTPanel activities={activities} />
-                  </Suspense>
-                )}
-              </section>
-            )}
-
-            {dashboardWorkspace === 'logbook' && (
-              <section className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
-                <ActivityList
-                  activities={filteredActivities}
-                  limit={50}
-                  onSelect={setSelectedActivity}
-                  selectedShoeId={selectedShoeId}
-                  selectedShoeName={selectedShoeName}
-                  onClearShoeFilter={() => setSelectedShoeId(null)}
-                  shoes={allShoes}
-                />
-                <div className="space-y-4">
-                  <Suspense fallback={<PanelFallback title="Shoes" subtitle="Loading equipment log" />}>
-                    <ShoeTracker
-                      activities={filteredActivities}
-                      shoes={allShoes}
-                      selectedShoeId={selectedShoeId}
-                      onSelectShoe={(id) => setSelectedShoeId((prev) => prev === id ? null : id)}
-                    />
-                  </Suspense>
-                  <section className="rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_86%,transparent)] px-5 py-5">
-                    <div className="mb-5 flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-[var(--rv-blue)]" />
-                      <p className="rv-kicker">Calendar</p>
-                    </div>
-                    <CalendarHeatmap
-                      activities={activities}
-                      year={viewPeriod.mode !== 'all' ? viewPeriod.year : undefined}
-                      month={viewPeriod.mode === 'month' ? (viewPeriod.month ?? undefined) : undefined}
-                      onSelectDay={handleSelectDay}
-                      selectedDate={selectedActivity?.start_date_local.split('T')[0]}
-                    />
-                  </section>
-                </div>
-              </section>
-            )}
-
-            {dashboardWorkspace === 'tools' && (
-              <section className="space-y-4">
-                <Link
-                  to="/plan-route"
-                  className="block rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_86%,transparent)] px-5 py-5 transition hover:border-[var(--rv-border-strong)] hover:bg-[color-mix(in_srgb,var(--rv-bg-panel)_96%,transparent)]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-blue)_18%,transparent)] text-[var(--rv-blue)]">
-                      <BackpackIcon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="rv-kicker mb-1">Route Planner</p>
-                      <h3 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">Build the next route</h3>
-                    </div>
-                  </div>
-                  <p className="mt-4 max-w-[52ch] text-sm leading-6 text-[var(--rv-text-dim)]">
-                    Choose a start point, set a target distance, and export a route without carrying this tool inside the daily dashboard.
-                  </p>
-                </Link>
-
-                <Link
-                  to="/form-analysis"
-                  className="block rounded-[2rem] border border-[var(--rv-border)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_86%,transparent)] px-5 py-5 transition hover:border-[var(--rv-border-strong)] hover:bg-[color-mix(in_srgb,var(--rv-bg-panel)_96%,transparent)]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-yellow)_18%,transparent)] text-[var(--rv-yellow)]">
-                      <RocketIcon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="rv-kicker mb-1">Form Lab</p>
-                      <h3 className="text-xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">Review running form</h3>
-                    </div>
-                  </div>
-                  <p className="mt-4 max-w-[52ch] text-sm leading-6 text-[var(--rv-text-dim)]">
-                    Upload a clip, link it to a run, and keep technical feedback in a dedicated review flow.
-                  </p>
-                </Link>
-              </section>
-            )}
-
-            <footer className="border-t border-[var(--rv-border)] px-1 py-4">
-              <div className="rv-mini-label flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <span>RunViz analytics v4.2</span>
-                <span>Synced with the Strava API</span>
-                <a href="https://github.com/hwong103/runviz" className="transition hover:text-[var(--rv-text)]">Project source</a>
+                <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
+                  <WeeklyRampChart activities={activities} />
+                </Suspense>
               </div>
-            </footer>
+            </TabsContent>
+            <TabsContent value="volume" className="mt-0">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.75fr)]">
+                <Suspense fallback={<PanelFallback title="Mileage" subtitle="Loading volume trends" heightClassName="h-[400px]" />}>
+                  <MileageTrendChart activities={activities} period={viewPeriod} />
+                </Suspense>
+                <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
+                  <WeeklyRampChart activities={activities} />
+                </Suspense>
+              </div>
+            </TabsContent>
+            <TabsContent value="mechanics" className="mt-0">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
+                <Suspense fallback={<PanelFallback title="Cadence" subtitle="Loading run mechanics" />}>
+                  <CadenceTrendChart activities={activities} />
+                </Suspense>
+                <Suspense fallback={<PanelFallback title="Shoes" subtitle="Loading equipment log" />}>
+                  <ShoeTracker
+                    activities={filteredActivities}
+                    shoes={allShoes}
+                    selectedShoeId={selectedShoeId}
+                    onSelectShoe={(id) => setSelectedShoeId((prev) => prev === id ? null : id)}
+                  />
+                </Suspense>
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {dashboardWorkspace === 'race' && (
+          <Tabs
+            value={raceWorkspace}
+            onValueChange={(value) => setRaceWorkspace(value as RaceWorkspace)}
+            className="space-y-4"
+          >
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div>
+                <p className="rv-kicker mb-2">Race Views</p>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Compare race forecasts with training paces without carrying both surfaces in the header.
+                </p>
+              </div>
+              <TabsList variant="line" className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:flex sm:w-auto sm:flex-wrap sm:justify-start">
+                <TabsTrigger value="predictions" className={workspaceTabTriggerClass}>
+                  Predictions
+                </TabsTrigger>
+                <TabsTrigger value="vdot" className={workspaceTabTriggerClass}>
+                  Pace Guide
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="predictions" className="mt-0">
+              <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
+                <RaceTimePredictions activities={activities} period={viewPeriod} />
+              </Suspense>
+            </TabsContent>
+            <TabsContent value="vdot" className="mt-0">
+              <Suspense fallback={<PanelFallback title="VDOT" subtitle="Loading training pace zones" />}>
+                <VDOTPanel activities={activities} />
+              </Suspense>
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {dashboardWorkspace === 'logbook' && (
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
+            <ActivityList
+              activities={filteredActivities}
+              limit={50}
+              onSelect={setSelectedActivity}
+              selectedShoeId={selectedShoeId}
+              selectedShoeName={selectedShoeName}
+              onClearShoeFilter={() => setSelectedShoeId(null)}
+              shoes={allShoes}
+            />
+            <div className="space-y-4">
+              <Suspense fallback={<PanelFallback title="Shoes" subtitle="Loading equipment log" />}>
+                <ShoeTracker
+                  activities={filteredActivities}
+                  shoes={allShoes}
+                  selectedShoeId={selectedShoeId}
+                  onSelectShoe={(id) => setSelectedShoeId((prev) => prev === id ? null : id)}
+                />
+              </Suspense>
+              <section className="rounded-[1.4rem] border border-border bg-card px-5 py-5 shadow-sm">
+                <div className="mb-5 flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-[var(--rv-blue)]" />
+                  <p className="rv-kicker">Calendar</p>
+                </div>
+                <CalendarHeatmap
+                  activities={activities}
+                  year={viewPeriod.mode !== 'all' ? viewPeriod.year : undefined}
+                  month={viewPeriod.mode === 'month' ? (viewPeriod.month ?? undefined) : undefined}
+                  onSelectDay={handleSelectDay}
+                  selectedDate={selectedActivity?.start_date_local.split('T')[0]}
+                />
+              </section>
+            </div>
+          </section>
+        )}
+
+        {dashboardWorkspace === 'tools' && (
+          <section className="grid gap-4 lg:grid-cols-2">
+            <Link
+              to="/plan-route"
+              className="rounded-[1.4rem] border border-border bg-card p-5 shadow-sm transition hover:border-foreground/15 hover:bg-muted/40"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-blue)_18%,transparent)] text-[var(--rv-blue)]">
+                  <Backpack className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="rv-kicker mb-1">Route Planner</p>
+                  <h3 className="text-xl font-semibold tracking-[-0.03em] text-foreground">
+                    Build the next route
+                  </h3>
+                </div>
+              </div>
+              <p className="mt-4 max-w-[52ch] text-sm leading-6 text-muted-foreground">
+                Choose a start point, set a target distance, and export a route without carrying this tool inside the daily dashboard.
+              </p>
+            </Link>
+
+            <Link
+              to="/form-analysis"
+              className="rounded-[1.4rem] border border-border bg-card p-5 shadow-sm transition hover:border-foreground/15 hover:bg-muted/40"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--rv-yellow)_18%,transparent)] text-[var(--rv-yellow)]">
+                  <Rocket className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="rv-kicker mb-1">Form Lab</p>
+                  <h3 className="text-xl font-semibold tracking-[-0.03em] text-foreground">
+                    Review running form
+                  </h3>
+                </div>
+              </div>
+              <p className="mt-4 max-w-[52ch] text-sm leading-6 text-muted-foreground">
+                Upload a clip, link it to a run, and keep technical feedback in a dedicated review flow.
+              </p>
+            </Link>
+          </section>
+        )}
+
+        <footer className="border-t border-border px-1 py-4">
+          <div className="rv-mini-label flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>RunViz analytics v4.5</span>
+            <span>Synced with the Strava API</span>
+            <a href="https://github.com/hwong103/runviz" className="transition hover:text-foreground">
+              Project source
+            </a>
           </div>
-        </div>
+        </footer>
       </div>
-    </div>
-  );
-}
-
-function SidebarNavButton({
-  label,
-  detail,
-  icon: Icon,
-  active,
-  onClick,
-}: {
-  label: string;
-  detail: string;
-  icon: IconType;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group flex w-full items-center gap-3 rounded-[1.35rem] px-3 py-3 text-left transition ${active
-        ? 'bg-[var(--rv-text)] text-[var(--rv-bg)]'
-        : 'text-[var(--rv-text-dim)] hover:bg-[var(--rv-bg-panel)] hover:text-[var(--rv-text)]'
-        }`}
-    >
-      <div className={`flex h-10 w-10 items-center justify-center rounded-2xl transition ${active
-        ? 'bg-[color-mix(in_srgb,var(--rv-bg)_10%,transparent)] text-[var(--rv-bg)]'
-        : 'bg-[color-mix(in_srgb,var(--rv-text)_8%,transparent)] text-[var(--rv-text-faint)] group-hover:text-[var(--rv-text)]'
-        }`}>
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="min-w-0">
-        <div className="text-sm font-semibold tracking-[-0.03em]">{label}</div>
-        <div className={`text-xs ${active ? 'text-[color-mix(in_srgb,var(--rv-bg)_70%,transparent)]' : 'text-[var(--rv-text-faint)]'}`}>{detail}</div>
-      </div>
-    </button>
-  );
-}
-
-function InlineTabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-[1rem] px-4 py-2 text-sm font-semibold transition ${active
-        ? 'bg-[var(--rv-text)] text-[var(--rv-bg)]'
-        : 'border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[var(--rv-text-dim)] hover:border-[var(--rv-border-strong)] hover:text-[var(--rv-text)]'
-        }`}
-    >
-      {children}
-    </button>
+    </AppShell>
   );
 }
 

@@ -123,15 +123,16 @@ export function CalendarHeatmap({
     }, [activities, year, month, isMonthView]);
 
     const getColor = (distance: number, isActive: boolean, isSelected: boolean): string => {
-        if (isSelected) return 'bg-[var(--rv-blue)] ring-2 ring-[var(--rv-blue)]/35';
-        if (!isActive) return 'bg-[var(--rv-bg-elevated)]';
-        if (distance === 0) return 'bg-[var(--rv-bg-panel)]';
+        const baseCell = 'border border-[var(--rv-border)]';
+        if (isSelected) return `${baseCell} bg-[var(--rv-blue)] ring-2 ring-[var(--rv-blue)]/35`;
+        if (!isActive) return `${baseCell} bg-[var(--rv-bg-elevated)]`;
+        if (distance === 0) return `${baseCell} bg-[var(--rv-bg-elevated)]`;
         const intensity = Math.min(distance / maxDistance, 1);
 
-        if (intensity < 0.25) return 'bg-[var(--rv-green)]/30';
-        if (intensity < 0.5) return 'bg-[var(--rv-green)]/45';
-        if (intensity < 0.75) return 'bg-[var(--rv-green)]/65';
-        return 'bg-[var(--rv-green)]';
+        if (intensity < 0.25) return `${baseCell} bg-[var(--rv-green)]/30`;
+        if (intensity < 0.5) return `${baseCell} bg-[var(--rv-green)]/45`;
+        if (intensity < 0.75) return `${baseCell} bg-[var(--rv-green)]/65`;
+        return `${baseCell} bg-[var(--rv-green)]`;
     };
 
     const getDayStory = (distance: number) => {
@@ -159,55 +160,57 @@ export function CalendarHeatmap({
                     ))}
                 </div>
 
-                <div className={`flex ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}>
-                    {/* Day labels */}
-                    <div className="flex flex-col gap-0.5 pr-2 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-[var(--rv-text-faint)] select-none">
-                        <span className={isMonthView ? 'h-5' : 'h-3'}>S</span>
-                        <span className={isMonthView ? 'h-5' : 'h-3'}>M</span>
-                        <span className={isMonthView ? 'h-5' : 'h-3'}>T</span>
-                        <span className={isMonthView ? 'h-5' : 'h-3'}>W</span>
-                        <span className={isMonthView ? 'h-5' : 'h-3'}>T</span>
-                        <span className={isMonthView ? 'h-5' : 'h-3'}>F</span>
-                        <span className={isMonthView ? 'h-5' : 'h-3'}>S</span>
-                    </div>
-
-                    {/* Calendar grid */}
+                <div className="rounded-[1.35rem] border border-[var(--rv-border)]/70 bg-[var(--rv-bg-panel)]/30 p-3 sm:p-4">
                     <div className={`flex ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}>
-                        {weeks.map((week, weekIdx) => (
-                            <div key={weekIdx} className={`flex flex-col ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}>
-                                {week.map((day, dayIdx) => {
-                                    const isInteractive = isMonthView ? day?.inRange : day?.currentMonth;
-                                    return (
-                                        <button
-                                            key={dayIdx}
-                                            type="button"
-                                            onClick={() => isInteractive && onSelectDay?.(day!.date)}
-                                            onMouseEnter={(e) => {
-                                                if (isInteractive) {
-                                                    const rect = e.currentTarget.getBoundingClientRect();
-                                                    const TOOLTIP_WIDTH = 140;
-                                                    const clampedX = Math.min(
-                                                        window.innerWidth - TOOLTIP_WIDTH / 2,
-                                                        Math.max(TOOLTIP_WIDTH / 2, rect.left + rect.width / 2)
-                                                    );
-                                                    setHoveredDay({
-                                                        date: day!.date,
-                                                        distance: day!.distance,
-                                                        x: clampedX,
-                                                        y: rect.top - 10
-                                                    });
-                                                }
-                                            }}
-                                            onMouseLeave={() => setHoveredDay(null)}
-                                            className={`${isMonthView ? 'h-5 w-5 rounded-[3px]' : 'h-3 w-3 rounded-[2px]'} transition-all duration-200 focus-visible:scale-125 focus-visible:ring-2 focus-visible:ring-[var(--rv-border-strong)] ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'bg-transparent'
-                                                } ${isInteractive ? 'cursor-pointer hover:scale-110 hover:ring-2 hover:ring-white/30' : ''}`}
-                                            disabled={!isInteractive}
-                                            aria-label={day ? `${format(parseISO(day.date), 'MMMM d, yyyy')}, ${day.distance.toFixed(2)} kilometers, ${getDayStory(day.distance)}` : 'Empty day'}
-                                        />
-                                    );
-                                })}
-                            </div>
-                        ))}
+                        {/* Day labels */}
+                        <div className="flex flex-col gap-0.5 pr-2 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-[var(--rv-text-faint)] select-none">
+                            <span className={isMonthView ? 'h-5' : 'h-3'}>S</span>
+                            <span className={isMonthView ? 'h-5' : 'h-3'}>M</span>
+                            <span className={isMonthView ? 'h-5' : 'h-3'}>T</span>
+                            <span className={isMonthView ? 'h-5' : 'h-3'}>W</span>
+                            <span className={isMonthView ? 'h-5' : 'h-3'}>T</span>
+                            <span className={isMonthView ? 'h-5' : 'h-3'}>F</span>
+                            <span className={isMonthView ? 'h-5' : 'h-3'}>S</span>
+                        </div>
+
+                        {/* Calendar grid */}
+                        <div className={`relative flex ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}>
+                            {weeks.map((week, weekIdx) => (
+                                <div key={weekIdx} className={`flex flex-col ${isMonthView ? 'gap-1.5' : 'gap-0.5'}`}>
+                                    {week.map((day, dayIdx) => {
+                                        const isInteractive = isMonthView ? day?.inRange : day?.currentMonth;
+                                        return (
+                                            <button
+                                                key={dayIdx}
+                                                type="button"
+                                                onClick={() => isInteractive && onSelectDay?.(day!.date)}
+                                                onMouseEnter={(e) => {
+                                                    if (isInteractive) {
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        const TOOLTIP_WIDTH = 140;
+                                                        const clampedX = Math.min(
+                                                            window.innerWidth - TOOLTIP_WIDTH / 2,
+                                                            Math.max(TOOLTIP_WIDTH / 2, rect.left + rect.width / 2)
+                                                        );
+                                                        setHoveredDay({
+                                                            date: day!.date,
+                                                            distance: day!.distance,
+                                                            x: clampedX,
+                                                            y: rect.top - 10
+                                                        });
+                                                    }
+                                                }}
+                                                onMouseLeave={() => setHoveredDay(null)}
+                                                className={`relative ${isMonthView ? 'h-5 w-5 rounded-[3px]' : 'h-3 w-3 rounded-[2px]'} transition-all duration-200 focus-visible:scale-125 focus-visible:ring-2 focus-visible:ring-[var(--rv-border-strong)] ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'border border-transparent bg-transparent'
+                                                    } ${isInteractive ? 'cursor-pointer hover:scale-110 hover:ring-2 hover:ring-white/30' : ''}`}
+                                                disabled={!isInteractive}
+                                                aria-label={day ? `${format(parseISO(day.date), 'MMMM d, yyyy')}, ${day.distance.toFixed(2)} kilometers, ${getDayStory(day.distance)}` : 'Empty day'}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
