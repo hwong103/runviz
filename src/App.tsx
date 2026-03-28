@@ -283,7 +283,7 @@ function App() {
       years.add(year);
     });
     if (years.size === 0) years.add(new Date().getFullYear());
-    return Array.from(years).sort((a, b) => b - a);
+    return Array.from(years).sort((a, b) => a - b);
   }, [activities]);
 
   // Filter activities for the current view
