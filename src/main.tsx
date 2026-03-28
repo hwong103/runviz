@@ -8,6 +8,7 @@ import { Callback } from './components/Callback.tsx'
 import { GoogleSignInComplete } from './components/GoogleSignInComplete.tsx'
 import { MagicLinkVerify } from './components/MagicLinkVerify.tsx'
 import { ToolRouteFrame } from './components/layout/tool-route-frame.tsx'
+import { SettingsPage } from './components/SettingsPage.tsx'
 import { SetupRoute } from './components/SetupRoute.tsx'
 import { StravaAuthStart } from './components/StravaAuthStart.tsx'
 
@@ -49,6 +50,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/signin/complete" element={<GoogleSignInComplete />} />
           <Route path="/api/auth/magic-link/verify" element={<MagicLinkVerify />} />
           <Route path="/setup" element={<SetupRoute />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route
             path="/plan-route"
             element={

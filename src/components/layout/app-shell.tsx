@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { Link, useLocation } from "react-router-dom"
 import {
   LogOut,
+  Settings2,
   Sparkles,
 } from "lucide-react"
 
@@ -174,8 +175,19 @@ export function AppShell({
             </div>
           </div>
 
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
             <ThemeToggle />
+            <Button
+              asChild
+              variant="outline"
+              size="icon"
+              className="size-11 rounded-xl"
+              aria-label="Settings"
+            >
+              <Link to="/settings">
+                <Settings2 />
+              </Link>
+            </Button>
             {onLogout ? (
               <Button
                 variant="outline"
