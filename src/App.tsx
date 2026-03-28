@@ -775,7 +775,7 @@ function App() {
 
 function BrandWordmark({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className={`flex ${compact ? 'items-center gap-3' : 'flex-col items-start gap-2'}`}>
       <span className={`${compact ? 'text-3xl' : 'text-5xl sm:text-6xl'} font-bold tracking-[-0.08em] text-[var(--rv-text)]`}>
         RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
       </span>

@@ -480,7 +480,7 @@ function InstructionStep({
 
 function BrandWordmark({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="rv-reveal-subtle flex items-center gap-3" style={reveal(40)}>
+    <div className={`rv-reveal-subtle flex ${compact ? 'items-center gap-3' : 'flex-col items-start gap-2'}`} style={reveal(40)}>
       <span className={`${compact ? 'text-3xl' : 'text-5xl sm:text-6xl'} font-bold tracking-[-0.08em] text-[var(--rv-text)]`}>
         RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
       </span>
