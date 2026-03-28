@@ -676,33 +676,23 @@ function App() {
 
         {dashboardWorkspace === 'logbook' && (
           <section className="space-y-4">
-            <div>
-              <div className="mb-3 flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-[var(--rv-blue)]" />
-                <p className="rv-kicker">Calendar</p>
-              </div>
-              <p className="mb-4 max-w-[58ch] text-sm leading-6 text-muted-foreground">
-                Scan the whole block at a glance, then drop into the daily log or shoe rotation below.
-              </p>
-              <CalendarHeatmap
-                activities={activities}
-                year={viewPeriod.mode !== 'all' ? viewPeriod.year : undefined}
-                month={viewPeriod.mode === 'month' ? (viewPeriod.month ?? undefined) : undefined}
-                onSelectDay={handleSelectDay}
-                selectedDate={selectedActivity?.start_date_local.split('T')[0]}
-              />
-            </div>
-
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
-              <ActivityList
-                activities={filteredActivities}
-                limit={50}
-                onSelect={setSelectedActivity}
-                selectedShoeId={selectedShoeId}
-                selectedShoeName={selectedShoeName}
-                onClearShoeFilter={() => setSelectedShoeId(null)}
-                shoes={allShoes}
-              />
+              <div>
+                <div className="mb-3 flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-[var(--rv-blue)]" />
+                  <p className="rv-kicker">Calendar</p>
+                </div>
+                <p className="mb-4 max-w-[58ch] text-sm leading-6 text-muted-foreground">
+                  Scan the whole block at a glance, then drop into the daily log or shoe rotation below.
+                </p>
+                <CalendarHeatmap
+                  activities={activities}
+                  year={viewPeriod.mode !== 'all' ? viewPeriod.year : undefined}
+                  month={viewPeriod.mode === 'month' ? (viewPeriod.month ?? undefined) : undefined}
+                  onSelectDay={handleSelectDay}
+                  selectedDate={selectedActivity?.start_date_local.split('T')[0]}
+                />
+              </div>
               <Suspense fallback={<PanelFallback title="Shoes" subtitle="Loading equipment log" />}>
                 <ShoeTracker
                   activities={filteredActivities}
@@ -712,6 +702,16 @@ function App() {
                 />
               </Suspense>
             </div>
+
+            <ActivityList
+              activities={filteredActivities}
+              limit={50}
+              onSelect={setSelectedActivity}
+              selectedShoeId={selectedShoeId}
+              selectedShoeName={selectedShoeName}
+              onClearShoeFilter={() => setSelectedShoeId(null)}
+              shoes={allShoes}
+            />
           </section>
         )}
 

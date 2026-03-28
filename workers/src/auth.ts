@@ -29,7 +29,9 @@ export function createAuth(env: Env, baseURL: string) {
             subject: "Your RunViz sign-in link",
             html: `
               <p>Click the link below to sign in to RunViz. It expires in 10 minutes.</p>
-              <p><a href="${url}">${url}</a></p>
+              <p>
+                <a href="${url}">Sign in to RunViz</a>
+              </p>
               <p>If you did not request this, you can safely ignore this email.</p>
             `,
           });
