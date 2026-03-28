@@ -18,18 +18,19 @@ export function ThemeToggle({
 }: {
   compact?: boolean
 }) {
-  const { preference, resolved, setTheme } = useTheme()
+  const { preference, setTheme } = useTheme()
 
   if (compact) {
-    const isDark = resolved === "dark"
-    const nextTheme: ThemePreference = isDark ? "light" : "dark"
-    const Icon = isDark ? SunMedium : Moon
-    const title = isDark ? "Switch to light mode" : "Switch to dark mode"
+    const activeIndex = OPTIONS.findIndex(({ value }) => value === preference)
+    const nextTheme = OPTIONS[(activeIndex + 1) % OPTIONS.length]
+    const currentTheme = OPTIONS[activeIndex] ?? OPTIONS[0]
+    const Icon = currentTheme.icon
+    const title = `${currentTheme.title}. Switch to ${nextTheme.title.toLowerCase()}.`
 
     return (
       <button
         type="button"
-        onClick={() => setTheme(nextTheme)}
+        onClick={() => setTheme(nextTheme.value)}
         aria-label={title}
         title={title}
         className="inline-flex size-11 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
