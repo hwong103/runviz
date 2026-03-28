@@ -306,14 +306,14 @@ function App() {
   }, [activities, viewPeriod, selectedShoeId]);
 
   const handleSelectDay = useCallback((dateStr: string) => {
-    const activity = activities.find(a => {
+    const activity = filteredActivities.find(a => {
       if (!isRun(a)) return false;
       return a.start_date_local.startsWith(dateStr);
     });
     if (activity) {
       setSelectedActivity(activity);
     }
-  }, [activities]);
+  }, [filteredActivities]);
 
   // Get selected shoe name for filter indicator
   const selectedShoeName = useMemo(() => {
@@ -623,7 +623,7 @@ function App() {
             <TabsContent value="mechanics" className="mt-0">
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
                 <Suspense fallback={<PanelFallback title="Cadence" subtitle="Loading run mechanics" />}>
-                  <CadenceTrendChart activities={activities} />
+                  <CadenceTrendChart activities={filteredActivities} />
                 </Suspense>
                 <Suspense fallback={<PanelFallback title="Shoes" subtitle="Loading equipment log" />}>
                   <ShoeTracker
@@ -686,7 +686,7 @@ function App() {
                   Scan the whole block at a glance, then drop into the daily log or shoe rotation below.
                 </p>
                 <CalendarHeatmap
-                  activities={activities}
+                  activities={filteredActivities}
                   year={viewPeriod.mode !== 'all' ? viewPeriod.year : undefined}
                   month={viewPeriod.mode === 'month' ? (viewPeriod.month ?? undefined) : undefined}
                   onSelectDay={handleSelectDay}

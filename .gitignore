@@ -26,9 +26,9 @@ dist-ssr
 # Cloudflare
 .wrangler
 .dev.vars
+.sfdx/
 
 # Environments
 .env
 .env.*
 !.env.example
-
