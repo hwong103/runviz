@@ -64,7 +64,7 @@ const GEAR_FAILURE_RETRY_MS = 1000 * 60 * 60 * 12; // 12 hours
 const MAX_GEAR_FETCH_PER_SESSION = 10;
 const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
 const workspaceTabTriggerClass =
-  "rounded-lg border border-border bg-background px-4 py-2 text-foreground/75 hover:text-foreground data-[state=active]:!border-foreground/20 data-[state=active]:!bg-foreground data-[state=active]:!text-background dark:data-[state=active]:!bg-foreground dark:data-[state=active]:!text-background";
+  "min-w-0 rounded-lg border border-border bg-background px-2 py-1.5 text-[0.8rem] text-foreground/75 hover:text-foreground sm:px-4 sm:py-2 sm:text-sm data-[state=active]:!border-foreground/20 data-[state=active]:!bg-foreground data-[state=active]:!text-background dark:data-[state=active]:!bg-foreground dark:data-[state=active]:!text-background";
 
 interface GearCachePayload {
   updatedAt: number;
@@ -533,7 +533,7 @@ function App() {
               variant="outline"
               onClick={() => sync({ forceFull: true })}
               disabled={syncing}
-              className="h-8 justify-center gap-2 sm:min-w-[120px]"
+              className="h-8 justify-center gap-2 px-3 sm:min-w-[96px]"
             >
               {syncing ? (
                 <RefreshCw className="size-4 animate-spin" />
@@ -581,7 +581,7 @@ function App() {
                   Start with block health, then move into the chart or mechanics view you want.
                 </p>
               </div>
-              <TabsList variant="line" className="flex h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0 sm:w-auto">
+              <TabsList variant="line" className="grid h-auto w-full grid-cols-4 gap-2 bg-transparent p-0 sm:flex sm:w-auto sm:flex-wrap sm:justify-start">
                 <TabsTrigger value="health" className={workspaceTabTriggerClass}>
                   Health
                 </TabsTrigger>
@@ -651,7 +651,7 @@ function App() {
                   Compare race forecasts with training paces without carrying both surfaces in the header.
                 </p>
               </div>
-              <TabsList variant="line" className="flex h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0 sm:w-auto">
+              <TabsList variant="line" className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:flex sm:w-auto sm:flex-wrap sm:justify-start">
                 <TabsTrigger value="predictions" className={workspaceTabTriggerClass}>
                   Predictions
                 </TabsTrigger>
