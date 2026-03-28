@@ -626,16 +626,16 @@ function App() {
                 </p>
               </div>
               <TabsList variant="line" className="flex h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0 sm:w-auto">
-                <TabsTrigger value="health" className="rounded-lg border border-border bg-background px-4 py-2 data-active:border-foreground/20 data-active:bg-foreground data-active:text-background">
+                <TabsTrigger value="health" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
                   Health
                 </TabsTrigger>
-                <TabsTrigger value="fitness" className="rounded-lg border border-border bg-background px-4 py-2 data-active:border-foreground/20 data-active:bg-foreground data-active:text-background">
+                <TabsTrigger value="fitness" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
                   Fitness
                 </TabsTrigger>
-                <TabsTrigger value="volume" className="rounded-lg border border-border bg-background px-4 py-2 data-active:border-foreground/20 data-active:bg-foreground data-active:text-background">
+                <TabsTrigger value="volume" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
                   Volume
                 </TabsTrigger>
-                <TabsTrigger value="mechanics" className="rounded-lg border border-border bg-background px-4 py-2 data-active:border-foreground/20 data-active:bg-foreground data-active:text-background">
+                <TabsTrigger value="mechanics" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
                   Mechanics
                 </TabsTrigger>
               </TabsList>
@@ -696,10 +696,10 @@ function App() {
                 </p>
               </div>
               <TabsList variant="line" className="flex h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0 sm:w-auto">
-                <TabsTrigger value="predictions" className="rounded-lg border border-border bg-background px-4 py-2 data-active:border-foreground/20 data-active:bg-foreground data-active:text-background">
+                <TabsTrigger value="predictions" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
                   Predictions
                 </TabsTrigger>
-                <TabsTrigger value="vdot" className="rounded-lg border border-border bg-background px-4 py-2 data-active:border-foreground/20 data-active:bg-foreground data-active:text-background">
+                <TabsTrigger value="vdot" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
                   Pace Guide
                 </TabsTrigger>
               </TabsList>

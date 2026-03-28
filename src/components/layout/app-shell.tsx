@@ -2,8 +2,6 @@ import type { ReactNode } from "react"
 import { Link, useLocation } from "react-router-dom"
 import {
   LogOut,
-  MoreHorizontal,
-  PanelTopClose,
   Sparkles,
 } from "lucide-react"
 
@@ -23,14 +21,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 import {
   DASHBOARD_WORKSPACE_META,
-  TOOL_PAGE_META,
   buildDashboardHref,
   type DashboardWorkspace,
 } from "@/lib/dashboard"
@@ -107,9 +103,6 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const location = useLocation()
-  const currentToolPage = Object.values(TOOL_PAGE_META).find(
-    (item) => item.href === location.pathname
-  )
 
   return (
     <SidebarProvider defaultOpen>
@@ -152,26 +145,6 @@ export function AppShell({
                         ? () => onWorkspaceSelect(workspace)
                         : undefined
                     }
-                  />
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarSeparator />
-
-          <SidebarGroup>
-            <SidebarGroupLabel>Pages</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {Object.values(TOOL_PAGE_META).map((page) => (
-                  <AppShellMenuButton
-                    key={page.href}
-                    label={page.label}
-                    detail={page.detail}
-                    href={page.href}
-                    icon={page.icon}
-                    active={currentToolPage?.href === page.href}
                   />
                 ))}
               </SidebarMenu>
@@ -234,10 +207,6 @@ export function AppShell({
                     <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
                       {title}
                     </h1>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
-                      <MoreHorizontal className="size-3.5" />
-                      RunViz workspace
-                    </span>
                   </div>
                   {subtitle ? (
                     <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
@@ -248,14 +217,8 @@ export function AppShell({
               </div>
 
               {headerActions ? (
-                <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-                  <div className="hidden items-center gap-2 text-sm text-muted-foreground md:flex">
-                    <PanelTopClose className="size-4" />
-                    Calm, dense workspace chrome with mobile-first navigation.
-                  </div>
-                  <div className={cn("min-w-0 xl:max-w-[1000px] xl:flex-1")}>
-                    {headerActions}
-                  </div>
+                <div className={cn("min-w-0 xl:max-w-[1000px] xl:self-end")}>
+                  {headerActions}
                 </div>
               ) : null}
             </div>
