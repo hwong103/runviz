@@ -14,14 +14,7 @@ import { StatsOverview } from './components/StatsOverview';
 import { CalendarHeatmap } from './components/CalendarHeatmap';
 import { ActivityList } from './components/ActivityList';
 import { Button } from './components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './components/ui/select';
+import { PeriodComboButton } from './components/ui/PeriodComboButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from './components/ui/toggle-group';
 import type { Activity, Gear } from './types';
@@ -506,7 +499,7 @@ function App() {
             ) : null}
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-[auto_auto_auto_auto] xl:flex xl:flex-wrap xl:justify-end">
+          <div className="grid gap-2 sm:grid-cols-[auto_auto_auto] xl:flex xl:flex-wrap xl:justify-end">
             <ToggleGroup
               type="single"
               value={viewPeriod.mode}
@@ -529,49 +522,11 @@ function App() {
               </ToggleGroupItem>
             </ToggleGroup>
 
-            {viewPeriod.mode !== 'all' ? (
-              <Select
-                value={String(viewPeriod.year)}
-                onValueChange={(value) =>
-                  setViewPeriod((prev) => ({ ...prev, year: parseInt(value, 10) }))
-                }
-              >
-                <SelectTrigger className="w-full sm:w-[120px]">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent align="end">
-                  <SelectGroup>
-                    {availableYears.map((year) => (
-                      <SelectItem key={year} value={String(year)}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            ) : null}
-
-            {viewPeriod.mode === 'month' ? (
-              <Select
-                value={String(viewPeriod.month ?? 0)}
-                onValueChange={(value) =>
-                  setViewPeriod((prev) => ({ ...prev, month: parseInt(value, 10) }))
-                }
-              >
-                <SelectTrigger className="w-full sm:w-[140px]">
-                  <SelectValue placeholder="Month" />
-                </SelectTrigger>
-                <SelectContent align="end">
-                  <SelectGroup>
-                    {MONTHS.map((month, index) => (
-                      <SelectItem key={month} value={String(index)}>
-                        {month}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            ) : null}
+            <PeriodComboButton
+              viewPeriod={viewPeriod}
+              availableYears={availableYears}
+              onViewPeriodChange={setViewPeriod}
+            />
 
             <Button
               type="button"
