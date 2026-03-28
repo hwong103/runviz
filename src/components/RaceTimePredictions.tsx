@@ -292,21 +292,21 @@ export function RaceTimePredictions({
 
     return (
         <div className="rv-panel relative px-5 py-5 sm:px-6 sm:py-6">
-            <div className="mb-6 flex flex-wrap items-start gap-3">
+            <div className="mb-5 flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1.1fr)_auto] xl:items-start">
                 <div>
                     <p className="rv-kicker mb-2">Race Readiness</p>
                     <h2 className="rv-section-title text-[1.7rem]">Projected race times</h2>
-                    <p className="mt-2 max-w-[52ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                    <p className="mt-2 max-w-[46ch] text-sm leading-6 text-[var(--rv-text-dim)]">
                         Compare equivalent race times from your current block, then open the pace guide if you want session targets.
                     </p>
                 </div>
-                <div ref={tooltipAnchorRef} className="rv-pill-label relative z-10 flex flex-wrap items-center gap-2 sm:ml-auto sm:justify-end">
+                <div ref={tooltipAnchorRef} className="rv-pill-label relative z-10 flex flex-wrap items-center gap-2 xl:justify-end">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             setActiveTooltip(activeTooltip === 'ctl' ? null : 'ctl');
                         }}
-                        className={`rounded-full border px-2.5 py-1.5 cursor-help transition-colors ${predictions.ctl >= 25 ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400' : 'border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[var(--rv-text-dim)]'} ${activeTooltip === 'ctl' ? 'ring-2 ring-emerald-500/35' : ''}`}
+                        className={`rounded-full border px-2.5 py-1 cursor-help transition-colors ${predictions.ctl >= 25 ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400' : 'border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[var(--rv-text-dim)]'} ${activeTooltip === 'ctl' ? 'ring-2 ring-emerald-500/35' : ''}`}
                     >
                         Fitness {predictions.ctl.toFixed(0)}
                     </button>
@@ -315,7 +315,7 @@ export function RaceTimePredictions({
                             e.stopPropagation();
                             setActiveTooltip(activeTooltip === 'tsb' ? null : 'tsb');
                         }}
-                        className={`rounded-full border px-2.5 py-1.5 cursor-help transition-colors ${predictions.tsb > 5 ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400' :
+                        className={`rounded-full border px-2.5 py-1 cursor-help transition-colors ${predictions.tsb > 5 ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400' :
                             predictions.tsb < -10 ? 'border-red-500/25 bg-red-500/10 text-red-400' :
                                 'border-[var(--rv-border)] bg-[var(--rv-bg-panel)] text-[var(--rv-text-dim)]'
                             } ${activeTooltip === 'tsb' ? 'ring-2 ring-[var(--rv-border-strong)]' : ''}`}
@@ -327,7 +327,7 @@ export function RaceTimePredictions({
                             e.stopPropagation();
                             setActiveTooltip(activeTooltip === 'readiness' ? null : 'readiness');
                         }}
-                        className={`rounded-full border px-2.5 py-1.5 cursor-help transition-colors ${predictions.readinessBand === 'ready'
+                        className={`rounded-full border px-2.5 py-1 cursor-help transition-colors ${predictions.readinessBand === 'ready'
                             ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
                             : predictions.readinessBand === 'building'
                                 ? 'border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/10 text-[var(--rv-yellow)]'
@@ -340,25 +340,25 @@ export function RaceTimePredictions({
                 </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="grid gap-3 xl:grid-cols-2">
                 {predictions.predictions.map(pred => (
                     <div
                         key={pred.name}
-                        className="rounded-[1.6rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] p-4"
+                        className="rounded-[1.45rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3.5"
                     >
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="mb-2 flex items-center justify-between gap-3">
                             <span className="rv-mini-label">
                                 {pred.name}
                             </span>
                             {pred.delta !== null && (
-                                <span className={`rv-pill-label flex items-center gap-1 ${pred.isFaster ? 'text-emerald-400' : 'text-[var(--rv-orange)]'}`}>
+                                <span className={`rv-pill-label flex items-center gap-1 text-[0.72rem] ${pred.isFaster ? 'text-emerald-400' : 'text-[var(--rv-orange)]'}`}>
                                     <span>{pred.isFaster ? '↓' : '↑'}</span>
                                     <span>{formatTime(Math.abs(pred.delta))}</span>
                                 </span>
                             )}
                         </div>
-                        <div className="flex flex-wrap items-baseline gap-3">
-                            <span className="rv-metric text-4xl text-[var(--rv-text)]">
+                        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                            <span className="rv-metric text-[2.25rem] leading-none text-[var(--rv-text)]">
                                 {formatTime(pred.time)}
                             </span>
                             <span className="text-sm font-semibold text-[var(--rv-text-dim)]">
@@ -369,7 +369,7 @@ export function RaceTimePredictions({
                 ))}
             </div>
 
-            <div className="mt-4 text-center text-sm font-medium text-[var(--rv-text-faint)]">
+            <div className="mt-3 text-center text-sm font-medium text-[var(--rv-text-faint)]">
                 Built from fitness, freshness, recent quality sessions, and long-run support.
             </div>
             {activeTooltip && createPortal(

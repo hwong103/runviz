@@ -515,7 +515,6 @@ function App() {
                 setViewPeriod((prev) => ({ ...prev, mode: value as ViewPeriod['mode'] }));
               }}
               variant="outline"
-              size="lg"
               spacing={1}
               className="w-full sm:w-auto"
             >
@@ -537,7 +536,7 @@ function App() {
                   setViewPeriod((prev) => ({ ...prev, year: parseInt(value, 10) }))
                 }
               >
-                <SelectTrigger className="h-11 w-full sm:w-[120px]">
+                <SelectTrigger className="w-full sm:w-[120px]">
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent align="end">
@@ -559,7 +558,7 @@ function App() {
                   setViewPeriod((prev) => ({ ...prev, month: parseInt(value, 10) }))
                 }
               >
-                <SelectTrigger className="h-11 w-full sm:w-[140px]">
+                <SelectTrigger className="w-full sm:w-[140px]">
                   <SelectValue placeholder="Month" />
                 </SelectTrigger>
                 <SelectContent align="end">
@@ -579,7 +578,7 @@ function App() {
               variant="outline"
               onClick={() => sync({ forceFull: true })}
               disabled={syncing}
-              className="h-11 justify-center gap-2 sm:min-w-[120px]"
+              className="h-8 justify-center gap-2 sm:min-w-[120px]"
             >
               {syncing ? (
                 <RefreshCw className="size-4 animate-spin" />

@@ -217,7 +217,7 @@ export function AppShell({
               </div>
 
               {headerActions ? (
-                <div className={cn("min-w-0 xl:max-w-[1000px] xl:self-end")}>
+                <div className={cn("min-w-0 w-full")}>
                   {headerActions}
                 </div>
               ) : null}
