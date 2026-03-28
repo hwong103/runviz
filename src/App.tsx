@@ -70,6 +70,8 @@ const GEAR_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 const GEAR_FAILURE_RETRY_MS = 1000 * 60 * 60 * 12; // 12 hours
 const MAX_GEAR_FETCH_PER_SESSION = 10;
 const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
+const workspaceTabTriggerClass =
+  "rounded-lg border border-border bg-background px-4 py-2 text-foreground/75 hover:text-foreground data-[state=active]:!border-foreground/20 data-[state=active]:!bg-foreground data-[state=active]:!text-background dark:data-[state=active]:!bg-foreground dark:data-[state=active]:!text-background";
 
 interface GearCachePayload {
   updatedAt: number;
@@ -232,7 +234,6 @@ function App() {
 
       gearFetchCount.current += idsToFetch.length;
       idsToFetch.forEach(id => inFlightGearIds.current.add(id));
-      console.log('Fetching missing gear:', idsToFetch);
       // Fetch individually (Strava doesn't have a bulk endpoint for this)
       // Limit concurrency to avoid triggering rate limits too aggressively
 
@@ -514,6 +515,7 @@ function App() {
                 setViewPeriod((prev) => ({ ...prev, mode: value as ViewPeriod['mode'] }));
               }}
               variant="outline"
+              size="lg"
               spacing={1}
               className="w-full sm:w-auto"
             >
@@ -535,7 +537,7 @@ function App() {
                   setViewPeriod((prev) => ({ ...prev, year: parseInt(value, 10) }))
                 }
               >
-                <SelectTrigger className="w-full sm:w-[120px]">
+                <SelectTrigger className="h-11 w-full sm:w-[120px]">
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent align="end">
@@ -557,7 +559,7 @@ function App() {
                   setViewPeriod((prev) => ({ ...prev, month: parseInt(value, 10) }))
                 }
               >
-                <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectTrigger className="h-11 w-full sm:w-[140px]">
                   <SelectValue placeholder="Month" />
                 </SelectTrigger>
                 <SelectContent align="end">
@@ -577,7 +579,7 @@ function App() {
               variant="outline"
               onClick={() => sync({ forceFull: true })}
               disabled={syncing}
-              className="h-8 justify-center gap-2 sm:min-w-[120px]"
+              className="h-11 justify-center gap-2 sm:min-w-[120px]"
             >
               {syncing ? (
                 <RefreshCw className="size-4 animate-spin" />
@@ -626,16 +628,16 @@ function App() {
                 </p>
               </div>
               <TabsList variant="line" className="flex h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0 sm:w-auto">
-                <TabsTrigger value="health" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
+                <TabsTrigger value="health" className={workspaceTabTriggerClass}>
                   Health
                 </TabsTrigger>
-                <TabsTrigger value="fitness" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
+                <TabsTrigger value="fitness" className={workspaceTabTriggerClass}>
                   Fitness
                 </TabsTrigger>
-                <TabsTrigger value="volume" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
+                <TabsTrigger value="volume" className={workspaceTabTriggerClass}>
                   Volume
                 </TabsTrigger>
-                <TabsTrigger value="mechanics" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
+                <TabsTrigger value="mechanics" className={workspaceTabTriggerClass}>
                   Mechanics
                 </TabsTrigger>
               </TabsList>
@@ -696,10 +698,10 @@ function App() {
                 </p>
               </div>
               <TabsList variant="line" className="flex h-auto w-full flex-wrap justify-start gap-2 bg-transparent p-0 sm:w-auto">
-                <TabsTrigger value="predictions" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
+                <TabsTrigger value="predictions" className={workspaceTabTriggerClass}>
                   Predictions
                 </TabsTrigger>
-                <TabsTrigger value="vdot" className="rounded-lg border border-border bg-background px-4 py-2 data-[state=active]:border-foreground/20 data-[state=active]:bg-foreground data-[state=active]:text-background">
+                <TabsTrigger value="vdot" className={workspaceTabTriggerClass}>
                   Pace Guide
                 </TabsTrigger>
               </TabsList>

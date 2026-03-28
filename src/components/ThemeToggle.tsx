@@ -18,7 +18,7 @@ export function ThemeToggle() {
 
   return (
     <div
-      className="inline-flex h-9 w-full items-center gap-1 rounded-xl border border-border bg-background p-1"
+      className="inline-flex h-11 w-full items-center gap-1 rounded-xl border border-border bg-background p-1"
       role="group"
       aria-label="Theme"
     >
@@ -34,7 +34,7 @@ export function ThemeToggle() {
             aria-label={title}
             title={title}
             className={cn(
-              "inline-flex h-full flex-1 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+              "inline-flex h-full min-w-11 flex-1 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
               selected && "bg-foreground text-background shadow-sm hover:text-background"
             )}
           >

@@ -117,7 +117,7 @@ export function AppShell({
                 RunViz
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                Training workspace
+                Performance dashboard
               </p>
             </div>
           </div>
@@ -181,7 +181,7 @@ export function AppShell({
                 variant="outline"
                 size="icon"
                 onClick={onLogout}
-                className="size-9 rounded-xl"
+                className="size-11 rounded-xl"
                 aria-label="Logout"
               >
                 <LogOut />
@@ -197,7 +197,7 @@ export function AppShell({
             <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
               <div className="flex items-start gap-3">
                 <div className="md:hidden">
-                  <SidebarTrigger className="size-9 rounded-xl border border-border/70" />
+                  <SidebarTrigger className="size-11 rounded-xl border border-border/70" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
