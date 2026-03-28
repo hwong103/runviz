@@ -13,8 +13,31 @@ const OPTIONS: Array<{
   { value: "system", icon: Monitor, title: "System preference" },
 ]
 
-export function ThemeToggle() {
-  const { preference, setTheme } = useTheme()
+export function ThemeToggle({
+  compact = false,
+}: {
+  compact?: boolean
+}) {
+  const { preference, resolved, setTheme } = useTheme()
+
+  if (compact) {
+    const isDark = resolved === "dark"
+    const nextTheme: ThemePreference = isDark ? "light" : "dark"
+    const Icon = isDark ? SunMedium : Moon
+    const title = isDark ? "Switch to light mode" : "Switch to dark mode"
+
+    return (
+      <button
+        type="button"
+        onClick={() => setTheme(nextTheme)}
+        aria-label={title}
+        title={title}
+        className="inline-flex size-11 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      >
+        <Icon className="size-4" />
+      </button>
+    )
+  }
 
   return (
     <div

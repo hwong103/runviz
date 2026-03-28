@@ -176,7 +176,7 @@ export function AppShell({
           </div>
 
           <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
-            <ThemeToggle />
+            <ThemeToggle compact />
             <Button
               asChild
               variant="outline"
