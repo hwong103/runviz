@@ -167,7 +167,7 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
 
     return (
         <div className="rv-panel rv-panel-strong px-5 py-5 sm:px-7 sm:py-6">
-            <div className="mb-6 flex flex-wrap items-center gap-3">
+            <div className="mb-5 flex flex-wrap items-center gap-3">
                 <div>
                     <p className="rv-kicker mb-2">Training Load</p>
                     <h2 className="text-2xl font-bold tracking-tight text-[var(--rv-text)]">
@@ -186,7 +186,7 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
                 </div>
             </div>
 
-            <div className="h-72">
+            <div className="h-56 sm:h-60">
                 {metrics.length > 0 ? (
                     <Line data={chartData} options={options} />
                 ) : (
@@ -197,20 +197,20 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
             </div>
 
             {/* Current values */}
-            <div className="mt-6 grid grid-cols-1 gap-0 border-t border-[color-mix(in_srgb,var(--rv-text)_8%,transparent)] pt-6 min-[420px]:grid-cols-3">
-                <div className="border-b border-[var(--rv-border)] px-1 py-4 text-center min-[420px]:border-b-0 min-[420px]:border-r">
+            <div className="mt-5 grid grid-cols-1 gap-0 border-t border-[color-mix(in_srgb,var(--rv-text)_8%,transparent)] pt-5 min-[420px]:grid-cols-3">
+                <div className="border-b border-[var(--rv-border)] px-1 py-3 text-center min-[420px]:border-b-0 min-[420px]:border-r">
                     <div className="rv-data text-3xl text-[var(--rv-text)]">
                         {displayMetric ? displayMetric.ctl.toFixed(0) : '-'}
                     </div>
                     <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fitness (CTL)</div>
                 </div>
-                <div className="border-b border-[var(--rv-border)] px-1 py-4 text-center min-[420px]:border-b-0 min-[420px]:border-r">
+                <div className="border-b border-[var(--rv-border)] px-1 py-3 text-center min-[420px]:border-b-0 min-[420px]:border-r">
                     <div className="rv-data text-3xl text-[var(--rv-text)]">
                         {displayMetric ? displayMetric.atl.toFixed(0) : '-'}
                     </div>
                     <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Fatigue (ATL)</div>
                 </div>
-                <div className="px-1 py-4 text-center">
+                <div className="px-1 py-3 text-center">
                     <div className="rv-data text-3xl text-[var(--rv-text)]">
                         {displayMetric ? displayMetric.tsb.toFixed(0) : '-'}
                     </div>

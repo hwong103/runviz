@@ -11,6 +11,78 @@ interface CalendarHeatmapProps {
     selectedDate?: string | null;
 }
 
+interface YearGridMonthProps {
+    mg: {
+        monthIndex: number;
+        label: string;
+        firstDow: number;
+        days: Array<{ date: string; distance: number; inRange: boolean }>;
+    };
+    maxDistance: number;
+    selectedDate?: string | null;
+    onSelectDay?: (date: string) => void;
+    setHoveredDay: (v: { date: string; distance: number; x: number; y: number } | null) => void;
+}
+
+function YearGridMonth({ mg, maxDistance, selectedDate, onSelectDay, setHoveredDay }: YearGridMonthProps) {
+    const getCellClass = (distance: number, isSelected: boolean): string => {
+        const baseCell = 'border border-[var(--rv-border)] transition-transform duration-100 hover:scale-110 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+        if (isSelected) return `${baseCell} bg-[var(--rv-blue)] ring-1 ring-[var(--rv-blue)]/40`;
+        if (distance === 0) return `${baseCell} bg-[var(--rv-bg-elevated)]`;
+        const intensity = maxDistance === 0 ? 0 : Math.min(distance / maxDistance, 1);
+        if (intensity < 0.25) return `${baseCell} bg-[var(--rv-green)]/30`;
+        if (intensity < 0.5) return `${baseCell} bg-[var(--rv-green)]/45`;
+        if (intensity < 0.75) return `${baseCell} bg-[var(--rv-green)]/65`;
+        return `${baseCell} bg-[var(--rv-green)]`;
+    };
+
+    const leadingEmpties = Array.from({ length: mg.firstDow });
+
+    return (
+        <div className="min-w-0">
+            <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-text-faint)]">
+                {mg.label}
+            </p>
+
+            <div className="mb-1.5 grid grid-cols-7 gap-[3px]">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                    <div key={i} className="text-center text-[0.6rem] text-[var(--rv-text-faint)]/75 select-none">
+                        {d}
+                    </div>
+                ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-[3px]">
+                {leadingEmpties.map((_, i) => (
+                    <div key={`e-${i}`} />
+                ))}
+                {mg.days.map((day) => {
+                    const isSelected = selectedDate === day.date;
+                    return (
+                        <button
+                            key={day.date}
+                            type="button"
+                            onClick={() => onSelectDay?.(day.date)}
+                            onMouseEnter={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const TOOLTIP_WIDTH = 140;
+                                const clampedX = Math.min(
+                                    window.innerWidth - TOOLTIP_WIDTH / 2,
+                                    Math.max(TOOLTIP_WIDTH / 2, rect.left + rect.width / 2)
+                                );
+                                setHoveredDay({ date: day.date, distance: day.distance, x: clampedX, y: rect.top - 10 });
+                            }}
+                            onMouseLeave={() => setHoveredDay(null)}
+                            className={`aspect-square w-full rounded-[3px] ${getCellClass(day.distance, isSelected)}`}
+                            aria-label={`${format(parseISO(day.date), 'MMMM d, yyyy')}, ${day.distance.toFixed(1)} km`}
+                        />
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
 export function CalendarHeatmap({
     activities,
     year = new Date().getFullYear(),
@@ -23,7 +95,7 @@ export function CalendarHeatmap({
     // Check if we're in month-only view
     const isMonthView = month !== undefined;
 
-    const { weeks, monthLabels, maxDistance } = useMemo(() => {
+    const { weeks, monthLabels, maxDistance, monthGrids } = useMemo(() => {
         // Build daily distance map
         const dailyDistances = new Map<string, number>();
 
@@ -119,7 +191,39 @@ export function CalendarHeatmap({
             }
         }
 
-        return { weeks, monthLabels: months, maxDistance: max };
+        const monthGrids: Array<{
+            monthIndex: number;
+            label: string;
+            firstDow: number;
+            days: Array<{ date: string; distance: number; inRange: boolean }>;
+        }> = [];
+
+        if (!isMonthView) {
+            for (let m = 0; m < 12; m++) {
+                const firstOfMonth = new Date(year, m, 1);
+                const lastOfMonth = new Date(year, m + 1, 0);
+                const daysInMonth = lastOfMonth.getDate();
+                const days: Array<{ date: string; distance: number; inRange: boolean }> = [];
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateStr = format(new Date(year, m, d), 'yyyy-MM-dd');
+                    days.push({
+                        date: dateStr,
+                        distance: dailyDistances.get(dateStr) ?? 0,
+                        inRange: true,
+                    });
+                }
+
+                monthGrids.push({
+                    monthIndex: m,
+                    label: firstOfMonth.toLocaleString('default', { month: 'short' }).toUpperCase(),
+                    firstDow: firstOfMonth.getDay(),
+                    days,
+                });
+            }
+        }
+
+        return { weeks, monthLabels: months, maxDistance: max, monthGrids };
     }, [activities, year, month, isMonthView]);
 
     const getColor = (distance: number, isActive: boolean, isSelected: boolean): string => {
@@ -143,6 +247,59 @@ export function CalendarHeatmap({
         if (intensity >= 0.25) return 'Steady mileage';
         return 'Light touch';
     };
+
+    if (!isMonthView) {
+        return (
+            <div className="rv-panel rv-panel-strong px-5 py-5 sm:px-6 sm:py-6">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 md:grid-cols-4">
+                    {monthGrids.map((mg) => (
+                        <YearGridMonth
+                            key={mg.monthIndex}
+                            mg={mg}
+                            maxDistance={maxDistance}
+                            selectedDate={selectedDate}
+                            onSelectDay={onSelectDay}
+                            setHoveredDay={setHoveredDay}
+                        />
+                    ))}
+                </div>
+
+                <div className="mt-5 flex flex-wrap items-center gap-3 sm:gap-5">
+                    <div className="flex items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-text-faint)]">
+                        <span>Less</span>
+                        <div className="h-3 w-3 rounded-[2px] border border-[var(--rv-border)] bg-[var(--rv-bg-elevated)]" />
+                        <div className="h-3 w-3 rounded-[2px] border border-[var(--rv-border)] bg-[var(--rv-green)]/30" />
+                        <div className="h-3 w-3 rounded-[2px] border border-[var(--rv-border)] bg-[var(--rv-green)]/45" />
+                        <div className="h-3 w-3 rounded-[2px] border border-[var(--rv-border)] bg-[var(--rv-green)]/65" />
+                        <div className="h-3 w-3 rounded-[2px] border border-[var(--rv-border)] bg-[var(--rv-green)]" />
+                        <span>More</span>
+                    </div>
+                    {onSelectDay && (
+                        <div className="text-[0.78rem] italic text-[var(--rv-blue)]/80">
+                            Click a day to open that run story
+                        </div>
+                    )}
+                </div>
+
+                {hoveredDay && (
+                    <div
+                        className="rv-panel fixed z-[200] pointer-events-none -translate-x-1/2 -translate-y-full px-3 py-2 animate-in fade-in zoom-in-95 duration-150"
+                        style={{ left: hoveredDay.x, top: hoveredDay.y }}
+                    >
+                        <div className="mb-0.5 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-blue)]">
+                            {format(parseISO(hoveredDay.date), 'MMM d, yyyy')}
+                        </div>
+                        <div className="text-sm font-semibold text-[var(--rv-text)]">
+                            {hoveredDay.distance.toFixed(2)} km
+                        </div>
+                        <div className="mt-1 text-[0.72rem] uppercase tracking-[0.16em] text-[var(--rv-text-faint)]">
+                            {getDayStory(hoveredDay.distance)}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return (
         <div className="rv-subtle-card overflow-x-auto p-4 sm:p-5">
