@@ -6,6 +6,7 @@ import type { LucideIcon } from 'lucide-react';
 import { HeartPulse, Mountain, PieChart, Scale, Target, TrendingUp } from 'lucide-react';
 import type { Activity } from '../types';
 import { isRun } from '../types';
+import { TrainingHealthTrendChart, type TrainingHealthMetricKey } from './TrainingHealthTrendChart';
 import {
     calculateAcwr,
     calculateWeeklyRamp,
@@ -36,11 +37,32 @@ interface StatsOverviewProps {
     variant?: 'overview' | 'training';
 }
 
-type HelpMetric = 'acwr' | 'ramp' | 'consistency' | 'longRunRatio' | 'efficiency' | 'gapTrend' | 'monotony' | 'strain';
+type HelpMetric = TrainingHealthMetricKey;
+
+function getSelectedPeriodEnd(period: StatsOverviewProps['period']) {
+    const now = new Date();
+
+    if (period.mode === 'all') return now;
+
+    if (period.mode === 'year') {
+        if (period.year === now.getFullYear()) return now;
+        return new Date(period.year, 11, 31, 23, 59, 59, 999);
+    }
+
+    if (period.mode === 'month' && period.month !== null) {
+        const isCurrentMonth = period.year === now.getFullYear() && period.month === now.getMonth();
+        if (isCurrentMonth) return now;
+        return new Date(period.year, period.month + 1, 0, 23, 59, 59, 999);
+    }
+
+    return now;
+}
 
 export function StatsOverview({ activities, allActivities, period, variant = 'overview' }: StatsOverviewProps) {
     const [activeHelp, setActiveHelp] = useState<HelpMetric | null>(null);
+    const [activeMetric, setActiveMetric] = useState<TrainingHealthMetricKey>('efficiency');
     const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
+    const selectedPeriodEnd = useMemo(() => getSelectedPeriodEnd(period), [period]);
 
     useEffect(() => {
         if (!activeHelp) return;
@@ -62,21 +84,6 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
     }, [activeHelp]);
 
     const stats = useMemo(() => {
-        const now = new Date();
-        const selectedPeriodEnd = (() => {
-            if (period.mode === 'all') return now;
-            if (period.mode === 'year') {
-                if (period.year === now.getFullYear()) return now;
-                return new Date(period.year, 11, 31, 23, 59, 59, 999);
-            }
-            if (period.mode === 'month' && period.month !== null) {
-                const isCurrentMonth = period.year === now.getFullYear() && period.month === now.getMonth();
-                if (isCurrentMonth) return now;
-                return new Date(period.year, period.month + 1, 0, 23, 59, 59, 999);
-            }
-            return now;
-        })();
-
         // Filter activities by period
         const filteredActivities = activities.filter((a) => {
             if (!isRun(a)) return false;
@@ -128,7 +135,7 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
             strain,
             ...streakData,
         };
-    }, [activities, allActivities, period]);
+    }, [activities, allActivities, period, selectedPeriodEnd]);
 
     const formatPace = (pace: number) => {
         const mins = Math.floor(pace);
@@ -201,8 +208,8 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                     </section>
                 </>
             ) : (
-                <section>
-                    <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3 xl:grid-cols-4">
+                <section className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2.5 min-[420px]:grid-cols-3 xl:grid-cols-4">
                         <StatCard
                             label="Load Ratio"
                             value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
@@ -216,6 +223,9 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                             detail={getAcwrDetail(stats.acwr)}
                             tone="green"
                             style={reveal(120)}
+                            metricKey="acwr"
+                            isSelected={activeMetric === 'acwr'}
+                            onSelectMetric={setActiveMetric}
                         />
                         <StatCard
                             label="Weekly Change"
@@ -234,6 +244,9 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                             detail={getRampDetail(stats.weeklyRampPercent, stats.weeklyRampKm)}
                             tone="blue"
                             style={reveal(160)}
+                            metricKey="ramp"
+                            isSelected={activeMetric === 'ramp'}
+                            onSelectMetric={setActiveMetric}
                         />
                         <StatCard
                             label="Routine"
@@ -248,6 +261,9 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                             detail={getConsistencyDetail(stats.consistencyScore)}
                             tone="green"
                             style={reveal(200)}
+                            metricKey="consistency"
+                            isSelected={activeMetric === 'consistency'}
+                            onSelectMetric={setActiveMetric}
                         />
                         <StatCard
                             label="Long Run Share"
@@ -262,6 +278,9 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                             detail={getLongRunDetail(stats.longRunRatio)}
                             tone="gold"
                             style={reveal(240)}
+                            metricKey="longRunRatio"
+                            isSelected={activeMetric === 'longRunRatio'}
+                            onSelectMetric={setActiveMetric}
                         />
                         <StatCard
                             label="Efficiency"
@@ -276,6 +295,9 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                             detail={getEfficiencyDetail(stats.efficiencyIndex)}
                             tone="green"
                             style={reveal(280)}
+                            metricKey="efficiency"
+                            isSelected={activeMetric === 'efficiency'}
+                            onSelectMetric={setActiveMetric}
                         />
                         <StatCard
                             label="Climbing Trend"
@@ -290,6 +312,9 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                             detail={getGapTrendDetail(stats.gapTrendSecPerKm)}
                             tone="blue"
                             style={reveal(320)}
+                            metricKey="gapTrend"
+                            isSelected={activeMetric === 'gapTrend'}
+                            onSelectMetric={setActiveMetric}
                         />
                         <StatCard
                             label="Monotony"
@@ -304,6 +329,9 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                             detail={getMonotonyDetail(stats.monotony)}
                             tone="orange"
                             style={reveal(360)}
+                            metricKey="monotony"
+                            isSelected={activeMetric === 'monotony'}
+                            onSelectMetric={setActiveMetric}
                         />
                         <StatCard
                             label="Strain"
@@ -318,8 +346,17 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                             detail={getStrainDetail(stats.strain)}
                             tone="orange"
                             style={reveal(400)}
+                            metricKey="strain"
+                            isSelected={activeMetric === 'strain'}
+                            onSelectMetric={setActiveMetric}
                         />
                     </div>
+                    <TrainingHealthTrendChart
+                        activities={allActivities}
+                        period={period}
+                        selectedPeriodEnd={selectedPeriodEnd}
+                        metric={activeMetric}
+                    />
                 </section>
             )}
         </div>
@@ -381,6 +418,9 @@ interface StatCardProps {
     activeHelp?: HelpMetric | null;
     onToggleHelp?: (metric: HelpMetric | null) => void;
     tone?: 'blue' | 'green' | 'gold' | 'orange' | 'neutral';
+    metricKey?: TrainingHealthMetricKey;
+    isSelected?: boolean;
+    onSelectMetric?: (metric: TrainingHealthMetricKey) => void;
 }
 
 function SnapshotCell({
@@ -447,11 +487,15 @@ function StatCard({
     activeHelp,
     onToggleHelp,
     tone = 'neutral',
+    metricKey,
+    isSelected = false,
+    onSelectMetric,
 }: StatCardProps) {
     const showHelp = !!helpMetric && activeHelp === helpMetric;
     const isCompact = !helpMetric;
     const cardRef = useRef<HTMLDivElement | null>(null);
     const [tooltipStyle, setTooltipStyle] = useState<CSSProperties>({});
+    const isInteractive = !!metricKey && !!onSelectMetric;
 
     useEffect(() => {
         if (!showHelp || !cardRef.current) return;
@@ -478,10 +522,28 @@ function StatCard({
             ref={cardRef}
             style={style}
             data-tone={tone}
-            className={`rv-panel rv-stat-card rv-reveal-subtle rv-spotlight relative overflow-hidden transition-all duration-300 group hover:-translate-y-1 hover:border-[var(--rv-border-strong)] ${isCompact ? 'p-3 sm:p-4' : 'p-4 sm:p-5'}`}
+            className={`rv-panel rv-stat-card rv-reveal-subtle rv-spotlight relative overflow-hidden transition-all duration-300 group hover:-translate-y-1 hover:border-[var(--rv-border-strong)] ${isCompact ? 'p-3 sm:p-3.5' : 'p-3.5 sm:p-4'} ${isInteractive ? 'cursor-pointer' : ''} ${isSelected ? 'border-[var(--rv-border-strong)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_82%,white_18%)] shadow-[0_18px_36px_rgba(0,0,0,0.10)]' : ''}`}
+            role={isInteractive ? 'button' : undefined}
+            tabIndex={isInteractive ? 0 : undefined}
+            aria-pressed={isInteractive ? isSelected : undefined}
+            onClick={() => {
+                if (metricKey && onSelectMetric) onSelectMetric(metricKey);
+            }}
+            onKeyDown={(e) => {
+                if (!isInteractive || !metricKey || !onSelectMetric) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectMetric(metricKey);
+                }
+            }}
         >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
-            <div className={`mb-3 flex items-center gap-2 ${isCompact ? 'pr-3' : 'pr-6'}`}>
+            {isInteractive && isSelected ? (
+                <div className="absolute left-3 top-3 rounded-full border border-[var(--rv-border-strong)] bg-[var(--rv-bg-elevated)] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--rv-text)]">
+                    Trend
+                </div>
+            ) : null}
+            <div className={`mb-2.5 flex items-center gap-2 ${isCompact ? 'pr-3' : 'pr-6'} ${isInteractive && isSelected ? 'pt-7' : ''}`}>
                 <Icon className={`${isCompact ? 'h-[16px] w-[16px]' : 'h-[18px] w-[18px]'} text-[var(--rv-text-faint)] transition-transform duration-300 group-hover:scale-110 group-hover:text-[var(--rv-text-dim)]`} />
                 <span className={`rv-mini-label ${isCompact ? 'tracking-[0.2em]' : 'tracking-[0.24em]'}`}>{label}</span>
             </div>
@@ -513,11 +575,11 @@ function StatCard({
                 </>
             )}
             <div className="flex flex-wrap items-baseline gap-1.5">
-                <span className={`rv-data ${isCompact ? 'text-[1.5rem] sm:text-[1.85rem]' : 'text-[1.8rem] sm:text-[2.15rem]'} ${color}`}>{value}</span>
+                <span className={`rv-data ${isCompact ? 'text-[1.4rem] sm:text-[1.7rem]' : 'text-[1.65rem] sm:text-[1.95rem]'} ${color}`}>{value}</span>
                 <span className="rv-mini-label tracking-[0.18em]">{unit}</span>
             </div>
             {detail && (
-                <p className="rv-body-copy-sm mt-2 max-w-[24ch]">
+                <p className="rv-body-copy-sm mt-1.5 max-w-[22ch] text-[13px] leading-6">
                     {detail}
                 </p>
             )}
