@@ -111,7 +111,11 @@ export function AppShell({
         <SidebarHeader className="gap-4 px-3 py-4">
           <div className="flex items-center gap-3 rounded-xl border border-sidebar-border/70 bg-sidebar-accent/35 px-3 py-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
-              <Sparkles className="size-4" />
+              <img
+                src="/favicon.png"
+                alt="RunViz favicon"
+                className="size-5 object-contain"
+              />
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold tracking-tight">
