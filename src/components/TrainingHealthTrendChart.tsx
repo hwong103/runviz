@@ -216,9 +216,7 @@ export function TrainingHealthTrendChart({
     const nonNullPoints = series.filter((point): point is MetricSeriesPoint & { value: number } => point.value !== null);
     const latestPoint = nonNullPoints[nonNullPoints.length - 1] ?? null;
     const firstPoint = nonNullPoints[0] ?? null;
-    const previousPoint = nonNullPoints.length > 1 ? nonNullPoints[nonNullPoints.length - 2] : null;
     const changeInView = latestPoint && firstPoint ? latestPoint.value - firstPoint.value : null;
-    const latestDelta = latestPoint && previousPoint ? latestPoint.value - previousPoint.value : null;
     const hasData = nonNullPoints.length > 0;
     const isDaily = period.mode === 'month';
 
@@ -302,18 +300,18 @@ export function TrainingHealthTrendChart({
     }), [chartTheme.gridColor, chartTheme.tickColor, chartTheme.tooltipBg, chartTheme.tooltipBody, chartTheme.tooltipBorder, chartTheme.tooltipTitle, isDaily, metric, metricDefinition]);
 
     return (
-        <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6 sm:py-6">
-            <div className="flex flex-col gap-4 border-b border-[var(--rv-border)] pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <section className="rv-panel rv-panel-strong px-4 py-4 sm:px-5 sm:py-5">
+            <div className="flex flex-col gap-3 border-b border-[var(--rv-border)] pb-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <p className="rv-kicker mb-2">Metric Trend</p>
-                    <h3 className="text-2xl font-bold tracking-tight text-[var(--rv-text)]">
+                    <h3 className="text-[1.8rem] font-bold tracking-tight text-[var(--rv-text)] sm:text-[2rem]">
                         {metricDefinition.label} over time
                     </h3>
-                    <p className="mt-2 max-w-[58ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                    <p className="mt-1.5 max-w-[54ch] text-sm leading-6 text-[var(--rv-text-dim)]">
                         {metricDefinition.trendRule}. {metricDefinition.context}
                     </p>
                 </div>
-                <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
+                <div className="grid grid-cols-3 gap-2 sm:min-w-[400px]">
                     <TrendChip
                         label="Latest"
                         value={latestPoint ? metricDefinition.formatValue(latestPoint.value) : '--'}
@@ -329,7 +327,7 @@ export function TrainingHealthTrendChart({
                 </div>
             </div>
 
-            <div className="mt-5 h-[320px]">
+            <div className="mt-4 h-[240px] sm:h-[250px]">
                 {hasData ? (
                     <Line data={chartData} options={options} />
                 ) : (
@@ -339,50 +337,15 @@ export function TrainingHealthTrendChart({
                 )}
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <TrendNote
-                    label="Current reading"
-                    value={latestPoint ? metricDefinition.formatValue(latestPoint.value) : '--'}
-                    detail={latestPoint ? `Anchored to ${format(latestPoint.anchorDate, 'd MMM yyyy')}.` : 'Waiting for enough data in the selected range.'}
-                />
-                <TrendNote
-                    label="Latest move"
-                    value={latestDelta !== null ? metricDefinition.formatDelta(latestDelta) : '--'}
-                    detail={latestDelta !== null ? 'Compared with the previous visible anchor.' : 'Need two visible points before a change can be shown.'}
-                />
-                <TrendNote
-                    label="Context"
-                    value={metricDefinition.unit || 'Guide'}
-                    detail={metricDefinition.context}
-                />
-            </div>
         </section>
     );
 }
 
 function TrendChip({ label, value }: { label: string; value: string }) {
     return (
-        <div className="rounded-[1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-3">
-            <div className="rv-mini-label mb-2">{label}</div>
-            <div className="text-sm font-semibold text-[var(--rv-text)]">{value}</div>
-        </div>
-    );
-}
-
-function TrendNote({
-    label,
-    value,
-    detail,
-}: {
-    label: string;
-    value: string;
-    detail: string;
-}) {
-    return (
-        <div className="rounded-[1rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-4">
-            <p className="rv-mini-label mb-2">{label}</p>
-            <p className="text-base font-semibold text-[var(--rv-text)]">{value}</p>
-            <p className="mt-2 text-sm leading-6 text-[var(--rv-text-dim)]">{detail}</p>
+        <div className="rounded-[0.95rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-3 py-2.5">
+            <div className="rv-mini-label mb-1.5">{label}</div>
+            <div className="text-sm font-semibold text-[var(--rv-text)] sm:text-[0.98rem]">{value}</div>
         </div>
     );
 }

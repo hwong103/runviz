@@ -208,8 +208,8 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                     </section>
                 </>
             ) : (
-                <section className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3 min-[420px]:grid-cols-3 xl:grid-cols-4">
+                <section className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2.5 min-[420px]:grid-cols-3 xl:grid-cols-4">
                         <StatCard
                             label="Load Ratio"
                             value={stats.acwr !== null ? stats.acwr.toFixed(2) : '--'}
@@ -522,7 +522,7 @@ function StatCard({
             ref={cardRef}
             style={style}
             data-tone={tone}
-            className={`rv-panel rv-stat-card rv-reveal-subtle rv-spotlight relative overflow-hidden transition-all duration-300 group hover:-translate-y-1 hover:border-[var(--rv-border-strong)] ${isCompact ? 'p-3 sm:p-4' : 'p-4 sm:p-5'} ${isInteractive ? 'cursor-pointer' : ''} ${isSelected ? 'border-[var(--rv-border-strong)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_82%,white_18%)] shadow-[0_18px_36px_rgba(0,0,0,0.10)]' : ''}`}
+            className={`rv-panel rv-stat-card rv-reveal-subtle rv-spotlight relative overflow-hidden transition-all duration-300 group hover:-translate-y-1 hover:border-[var(--rv-border-strong)] ${isCompact ? 'p-3 sm:p-3.5' : 'p-3.5 sm:p-4'} ${isInteractive ? 'cursor-pointer' : ''} ${isSelected ? 'border-[var(--rv-border-strong)] bg-[color-mix(in_srgb,var(--rv-bg-panel)_82%,white_18%)] shadow-[0_18px_36px_rgba(0,0,0,0.10)]' : ''}`}
             role={isInteractive ? 'button' : undefined}
             tabIndex={isInteractive ? 0 : undefined}
             aria-pressed={isInteractive ? isSelected : undefined}
@@ -539,11 +539,11 @@ function StatCard({
         >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
             {isInteractive && isSelected ? (
-                <div className="absolute left-3 top-3 rounded-full border border-[var(--rv-border-strong)] bg-[var(--rv-bg-elevated)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--rv-text)]">
+                <div className="absolute left-3 top-3 rounded-full border border-[var(--rv-border-strong)] bg-[var(--rv-bg-elevated)] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--rv-text)]">
                     Trend
                 </div>
             ) : null}
-            <div className={`mb-3 flex items-center gap-2 ${isCompact ? 'pr-3' : 'pr-6'} ${isInteractive && isSelected ? 'pt-7' : ''}`}>
+            <div className={`mb-2.5 flex items-center gap-2 ${isCompact ? 'pr-3' : 'pr-6'} ${isInteractive && isSelected ? 'pt-7' : ''}`}>
                 <Icon className={`${isCompact ? 'h-[16px] w-[16px]' : 'h-[18px] w-[18px]'} text-[var(--rv-text-faint)] transition-transform duration-300 group-hover:scale-110 group-hover:text-[var(--rv-text-dim)]`} />
                 <span className={`rv-mini-label ${isCompact ? 'tracking-[0.2em]' : 'tracking-[0.24em]'}`}>{label}</span>
             </div>
@@ -575,11 +575,11 @@ function StatCard({
                 </>
             )}
             <div className="flex flex-wrap items-baseline gap-1.5">
-                <span className={`rv-data ${isCompact ? 'text-[1.5rem] sm:text-[1.85rem]' : 'text-[1.8rem] sm:text-[2.15rem]'} ${color}`}>{value}</span>
+                <span className={`rv-data ${isCompact ? 'text-[1.4rem] sm:text-[1.7rem]' : 'text-[1.65rem] sm:text-[1.95rem]'} ${color}`}>{value}</span>
                 <span className="rv-mini-label tracking-[0.18em]">{unit}</span>
             </div>
             {detail && (
-                <p className="rv-body-copy-sm mt-2 max-w-[24ch]">
+                <p className="rv-body-copy-sm mt-1.5 max-w-[22ch] text-[13px] leading-6">
                     {detail}
                 </p>
             )}
