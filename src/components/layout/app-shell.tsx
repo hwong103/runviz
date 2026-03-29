@@ -112,9 +112,9 @@ export function AppShell({
           <div className="flex items-center gap-3 rounded-xl border border-sidebar-border/70 bg-sidebar-accent/35 px-3 py-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
               <img
-                src="/favicon.png"
-                alt="RunViz favicon"
-                className="size-5 object-contain"
+                src="/runviz-mark.png"
+                alt="RunViz mark"
+                className="size-7 rounded-full object-cover"
               />
             </div>
             <div className="min-w-0">
