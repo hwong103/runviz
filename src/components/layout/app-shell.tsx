@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { Link, useLocation } from "react-router-dom"
 import {
+  ChartNoAxesCombined,
   LogOut,
   Settings2,
   Sparkles,
@@ -111,11 +112,7 @@ export function AppShell({
         <SidebarHeader className="gap-4 px-3 py-4">
           <div className="flex items-center gap-3 rounded-xl border border-sidebar-border/70 bg-sidebar-accent/35 px-3 py-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
-              <img
-                src="/runviz-mark.png"
-                alt="RunViz mark"
-                className="size-7 rounded-full object-cover"
-              />
+              <ChartNoAxesCombined className="size-4.5" />
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold tracking-tight">
