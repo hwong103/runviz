@@ -11,7 +11,7 @@ interface SetupPageProps {
   user: { id: string; email?: string; name?: string; image?: string | null } | null;
   needsStravaConnect: boolean;
   login: () => Promise<void>;
-  connectStrava: () => void;
+  connectStrava: () => Promise<void>;
   sendMagicLink: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -210,11 +210,6 @@ export function SetupPage({
               <p className="rv-body-copy rv-reveal-subtle max-w-3xl sm:text-lg" style={reveal(90)}>
                 RunViz needs access to your Strava data. To set this up, you'll create a free Strava API application — this takes about 2 minutes.
               </p>
-              <div className="rv-reveal-subtle flex flex-wrap gap-3" style={reveal(150)}>
-                <span className="rv-chip">Step-by-step guide</span>
-                <span className="rv-chip">Account-specific credentials</span>
-                <span className="rv-chip">Encrypted secret storage</span>
-              </div>
             </div>
 
             <div className="grid gap-4">
@@ -298,10 +293,6 @@ export function SetupPage({
                   <strong className="text-[var(--rv-text)]">Do not</strong> copy the Access Token or Refresh Token — those are different fields and are not needed here.
                 </div>
               </InstructionStep>
-
-              <InstructionStep index="04" title="Paste them below and click Save" delay={390}>
-                <p>RunViz will use these credentials to securely connect to Strava on your behalf.</p>
-              </InstructionStep>
             </div>
           </div>
         </section>
@@ -309,9 +300,9 @@ export function SetupPage({
         <aside className="rv-panel rv-panel-accent rv-reveal rv-spotlight flex flex-col gap-6 px-6 py-8 sm:px-8 lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] lg:self-start lg:overflow-auto" style={reveal(200)}>
           <div className="space-y-2">
             <p className="rv-kicker">Your Strava app</p>
-            <h2 className="rv-metric text-4xl sm:text-5xl">Save your credentials</h2>
+            <h2 className="rv-metric text-4xl sm:text-5xl">Paste and connect</h2>
             <p className="rv-body-copy-sm">
-              RunViz uses only your Client ID and Client Secret for this account. The setup stays tied to {accountLabel}.
+              Paste your Client ID and Client Secret here, then RunViz will save them for {accountLabel} and take you straight into Strava connection.
             </p>
           </div>
 
@@ -342,23 +333,37 @@ export function SetupPage({
               <div className="flex flex-col gap-3">
                 <button
                   onClick={async () => {
-                    if (!stravaClientIdInput.trim() || !stravaClientSecretInput.trim()) {
-                      setStravaSetupStatus('Enter both your Strava Client ID and Client Secret.');
-                      return;
-                    }
-                    setStravaSetupSaving(true);
-                    setStravaSetupStatus(null);
                     try {
-                      await authApi.saveStravaKey(stravaClientIdInput.trim(), stravaClientSecretInput.trim());
-                      const status = await authApi.getStravaKeyStatus();
-                      setStravaKeyConfigured(status.configured);
-                      setStravaKeyUpdatedAt(status.updatedAt ?? null);
-                      setStravaClientIdInput(status.clientId ?? stravaClientIdInput.trim());
-                      setStravaClientSecretInput('');
-                      setStravaSetupStatus('Strava app saved. You can connect your account now.');
+                      const trimmedClientId = stravaClientIdInput.trim();
+                      const trimmedClientSecret = stravaClientSecretInput.trim();
+                      const shouldSaveCredentials = trimmedClientId.length > 0 || trimmedClientSecret.length > 0;
+
+                      if (!stravaKeyConfigured && !shouldSaveCredentials) {
+                        setStravaSetupStatus('Enter both your Strava Client ID and Client Secret.');
+                        return;
+                      }
+
+                      if (shouldSaveCredentials) {
+                        if (!trimmedClientId || !trimmedClientSecret) {
+                          setStravaSetupStatus('Enter both your Strava Client ID and Client Secret.');
+                          return;
+                        }
+
+                        setStravaSetupSaving(true);
+                        setStravaSetupStatus(null);
+                        await authApi.saveStravaKey(trimmedClientId, trimmedClientSecret);
+                        const status = await authApi.getStravaKeyStatus();
+                        setStravaKeyConfigured(status.configured);
+                        setStravaKeyUpdatedAt(status.updatedAt ?? null);
+                        setStravaClientIdInput(status.clientId ?? trimmedClientId);
+                        setStravaClientSecretInput('');
+                      }
+
+                      setStravaSetupStatus(shouldSaveCredentials ? 'Strava app saved. Redirecting you to connect Strava...' : 'Redirecting you to connect Strava...');
+                      await connectStrava();
                     } catch (error) {
-                      console.error('Failed to save Strava app:', error);
-                      setStravaSetupStatus(error instanceof Error ? error.message : 'Unable to save your Strava app.');
+                      console.error('Failed to continue Strava setup:', error);
+                      setStravaSetupStatus(error instanceof Error ? error.message : 'Unable to continue Strava setup.');
                     } finally {
                       setStravaSetupSaving(false);
                     }
@@ -366,7 +371,7 @@ export function SetupPage({
                   disabled={stravaSetupSaving || stravaSetupLoading}
                   className="rv-button-secondary rv-pill-label px-6 py-3 disabled:cursor-wait"
                 >
-                  {stravaSetupSaving ? 'Saving...' : 'Save Strava app'}
+                  {stravaSetupSaving ? 'Saving...' : stravaKeyConfigured ? 'Connect Strava' : 'Save and connect Strava'}
                 </button>
                 <div className="rv-body-copy-sm">
                   {stravaSetupLoading
@@ -382,22 +387,12 @@ export function SetupPage({
                   {stravaSetupStatus}
                 </p>
               )}
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  onClick={connectStrava}
-                  disabled={!stravaKeyConfigured || stravaSetupLoading || stravaSetupSaving}
-                  className="rv-button-primary px-6 py-4 disabled:cursor-not-allowed"
-                >
-                  Connect Strava
-                </button>
-                <button
-                  onClick={logout}
-                  className="rv-button-secondary rv-pill-label px-6 py-4"
-                >
-                  Sign out
-                </button>
-              </div>
+              <button
+                onClick={logout}
+                className="rv-button-secondary rv-pill-label px-6 py-4"
+              >
+                Sign out
+              </button>
             </>
           ) : (
             <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-5 py-5 text-sm leading-7 text-[var(--rv-text-dim)]">
