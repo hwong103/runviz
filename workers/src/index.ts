@@ -609,14 +609,8 @@ async function handleApiRequest(
 // Nominatim Geocoding Proxy
 async function handleSearchGeocoding(url: URL, env: Env, origin: string): Promise<Response> {
     const q = url.searchParams.get('q')?.trim();
-    if (!q) {
-        return new Response(JSON.stringify({ error: 'Missing query' }), {
-            status: 400,
-            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
-        });
-    }
-    if (q.length > 200) {
-        return new Response(JSON.stringify({ error: 'Query too long' }), {
+    if (!q || q.length > 300) {
+        return new Response(JSON.stringify({ error: 'Invalid query' }), {
             status: 400,
             headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
         });

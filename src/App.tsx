@@ -488,6 +488,14 @@ function App() {
             <p className="rv-mini-label mt-6">Connect Strava during setup after sign-in.</p>
           </div>
         </div>
+        <div className="mt-8 text-center">
+          <Link
+            to="/privacy"
+            className="rv-mini-label transition hover:text-foreground"
+          >
+            Privacy Policy
+          </Link>
+        </div>
       </main>
     );
   }
@@ -844,6 +852,9 @@ function App() {
             <a href="https://github.com/hwong103/runviz" className="transition hover:text-foreground">
               Project source
             </a>
+            <Link to="/privacy" className="transition hover:text-foreground">
+              Privacy
+            </Link>
           </div>
         </footer>
       </div>

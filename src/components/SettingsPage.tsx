@@ -212,6 +212,15 @@ export function SettingsPage() {
           </div>
         </div>
       </div>
+      <div className="pt-2 text-center">
+        <Link
+          to="/privacy"
+          className="rv-mini-label inline-flex items-center gap-1.5 transition hover:text-foreground"
+        >
+          <ShieldCheck className="size-3" />
+          Privacy Policy
+        </Link>
+      </div>
     </AppShell>
   )
 }
