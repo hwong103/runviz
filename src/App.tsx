@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   CalendarIcon,
 } from '@radix-ui/react-icons';
-import { Backpack, Rocket } from 'lucide-react';
+import { Backpack, ChevronDown, Rocket } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
 import { AppShell } from './components/layout/app-shell';
@@ -12,9 +12,18 @@ import { SetupPage } from './components/SetupPage';
 import { StatsOverview } from './components/StatsOverview';
 import { CalendarHeatmap } from './components/CalendarHeatmap';
 import { ActivityList } from './components/ActivityList';
+import { Button } from './components/ui/button';
 import { PeriodComboButton } from './components/ui/PeriodComboButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { Toggle } from './components/ui/toggle';
 import { ToggleGroup, ToggleGroupItem } from './components/ui/toggle-group';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from './components/ui/dropdown-menu';
 import type { Activity, Gear } from './types';
 import { isRun } from './types';
 import { gear as gearApi } from './services/api';
@@ -299,16 +308,19 @@ function App() {
       if (viewPeriod.mode === '30d') {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - 30);
+        cutoff.setHours(0, 0, 0, 0);
         return date >= cutoff;
       }
       if (viewPeriod.mode === '90d') {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - 90);
+        cutoff.setHours(0, 0, 0, 0);
         return date >= cutoff;
       }
       if (viewPeriod.mode === '365d') {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - 365);
+        cutoff.setHours(0, 0, 0, 0);
         return date >= cutoff;
       }
       return false;
@@ -516,53 +528,52 @@ function App() {
           </div>
 
           <div className="grid gap-2 sm:grid-cols-[auto_auto] xl:flex xl:flex-wrap xl:justify-end">
-            <ToggleGroup
-              type="single"
-              value={filterStyle}
-              onValueChange={(value) => {
-                if (!value) return;
-                const newStyle = value as 'relative' | 'calendar';
-                setFilterStyle(newStyle);
-                if (newStyle === 'relative') {
+            <div className="flex items-center gap-1 rounded-md border border-input bg-transparent p-0.5">
+              <Toggle
+                pressed={filterStyle === 'relative'}
+                onPressedChange={() => {
+                  setFilterStyle('relative');
                   setViewPeriod({ mode: '90d', year: viewPeriod.year, month: viewPeriod.month });
-                } else {
-                  setViewPeriod({ mode: 'year', year: new Date().getFullYear(), month: new Date().getMonth() });
-                }
-              }}
-              variant="outline"
-              spacing={1}
-              className="w-full sm:w-auto"
-            >
-              <ToggleGroupItem value="relative" className="flex-1 sm:flex-none">
+                }}
+                size="sm"
+                className="data-[state=on]:bg-muted"
+              >
                 Relative
-              </ToggleGroupItem>
-              <ToggleGroupItem value="calendar" className="flex-1 sm:flex-none">
+              </Toggle>
+              <Toggle
+                pressed={filterStyle === 'calendar'}
+                onPressedChange={() => {
+                  setFilterStyle('calendar');
+                  setViewPeriod({ mode: 'year', year: new Date().getFullYear(), month: new Date().getMonth() });
+                }}
+                size="sm"
+                className="data-[state=on]:bg-muted"
+              >
                 Calendar
-              </ToggleGroupItem>
-            </ToggleGroup>
+              </Toggle>
+            </div>
 
             {filterStyle === 'relative' ? (
-              <ToggleGroup
-                type="single"
-                value={viewPeriod.mode}
-                onValueChange={(value) => {
-                  if (!value) return;
-                  setViewPeriod((prev) => ({ ...prev, mode: value as ViewPeriod['mode'] }));
-                }}
-                variant="outline"
-                spacing={1}
-                className="w-full sm:w-auto"
-              >
-                <ToggleGroupItem value="30d" className="flex-1 sm:flex-none">
-                  30d
-                </ToggleGroupItem>
-                <ToggleGroupItem value="90d" className="flex-1 sm:flex-none">
-                  90d
-                </ToggleGroupItem>
-                <ToggleGroupItem value="365d" className="flex-1 sm:flex-none">
-                  365d
-                </ToggleGroupItem>
-              </ToggleGroup>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-8 justify-between gap-2 px-3 sm:min-w-[120px]">
+                    {viewPeriod.mode === '30d' ? 'Last 30 days' : viewPeriod.mode === '90d' ? 'Last 90 days' : 'Last 365 days'}
+                    <ChevronDown className="size-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[160px]">
+                  <DropdownMenuRadioGroup
+                    value={viewPeriod.mode}
+                    onValueChange={(value) => {
+                      setViewPeriod((prev) => ({ ...prev, mode: value as ViewPeriod['mode'] }));
+                    }}
+                  >
+                    <DropdownMenuRadioItem value="30d">Last 30 days</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="90d">Last 90 days</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="365d">Last 365 days</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <>
                 <ToggleGroup
