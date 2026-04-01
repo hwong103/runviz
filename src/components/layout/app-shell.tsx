@@ -116,7 +116,7 @@ export function AppShell({
       <Sidebar className="border-r border-sidebar-border/70" variant="inset">
         <SidebarHeader className="gap-4 px-3 py-4">
           <div className="flex items-center gap-3 rounded-xl border border-sidebar-border/70 bg-sidebar-accent/35 px-3 py-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-foreground text-background shadow-sm">
               <ChartNoAxesCombined className="size-4.5" />
             </div>
             <div className="min-w-0">

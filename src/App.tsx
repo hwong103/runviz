@@ -72,6 +72,28 @@ const MAX_GEAR_FETCH_PER_SESSION = 10;
 const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
 const workspaceTabTriggerClass =
   "min-w-0 rounded-lg border border-border bg-background px-2 py-1.5 text-[0.8rem] text-foreground/75 hover:text-foreground sm:px-4 sm:py-2 sm:text-sm data-[state=active]:!border-foreground/20 data-[state=active]:!bg-foreground data-[state=active]:!text-background dark:data-[state=active]:!bg-foreground dark:data-[state=active]:!text-background";
+const LOADING_QUIPS = [
+  'Tying shoelaces...',
+  'Stretching hamstrings...',
+  'Pinning on the race bib...',
+  'Calibrating the GPS watch...',
+  'Warming up on the track...',
+  'Checking the weather forecast...',
+  'Lacing up the race shoes...',
+  'Eating the pre-run banana...',
+  'Consulting the training plan...',
+  'Calculating the optimal pace...',
+  'Checking heart rate zones...',
+  'Plotting the route on the map...',
+  'Filling the water bottle...',
+  'Queuing up the race playlist...',
+  'Applying the anti-chafe balm...',
+  'Reviewing last week\'s mileage...',
+  'Setting the interval timer...',
+  'Checking for elevation on the course...',
+  'Syncing the Garmin...',
+  'Taking a deep breath at the start line...',
+] as const;
 
 interface GearCachePayload {
   updatedAt: number;
@@ -123,6 +145,21 @@ function saveGearCache(athleteId: number, gearMap: Map<string, Gear>, failedMap:
   }
 }
 
+function useLoadingQuip(): string {
+  const [quip, setQuip] = useState(
+    () => LOADING_QUIPS[Math.floor(Math.random() * LOADING_QUIPS.length)]
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuip(LOADING_QUIPS[Math.floor(Math.random() * LOADING_QUIPS.length)]);
+    }, 1800);
+    return () => clearInterval(interval);
+  }, []);
+
+  return quip;
+}
+
 function App() {
   const {
     isAuthenticated,
@@ -152,6 +189,7 @@ function App() {
   const [magicSending, setMagicSending] = useState(false);
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
   const [googleStatus, setGoogleStatus] = useState<string | null>(null);
+  const loadingQuip = useLoadingQuip();
 
   // Store additionally fetched gear (e.g. retired shoes not in athlete profile)
   const [additionalGear, setAdditionalGear] = useState<Map<string, Gear>>(new Map());
@@ -388,7 +426,7 @@ function App() {
           <div className="h-12 w-12 rounded-full border-4 border-[var(--rv-blue)]/40 border-t-[var(--rv-blue)] animate-spin" />
           <div>
             <p className="rv-kicker mb-2">System Sync</p>
-            <p className="text-lg font-medium text-[var(--rv-text-dim)]">Loading RunViz performance lab...</p>
+            <p className="text-lg font-medium text-[var(--rv-text-dim)]">{loadingQuip}</p>
           </div>
         </div>
       </div>
@@ -866,7 +904,7 @@ function App() {
 
 function BrandWordmark({ compact = false }: { compact?: boolean }) {
   return (
-    <div className={`flex ${compact ? 'items-center gap-3' : 'flex-col items-start gap-2'}`}>
+    <div className={`flex flex-col ${compact ? 'items-center gap-2' : 'items-start gap-2'}`}>
       <span className={`${compact ? 'text-3xl' : 'text-5xl sm:text-6xl'} font-bold tracking-[-0.08em] text-[var(--rv-text)]`}>
         RUN<span className="text-[var(--rv-yellow)]">VIZ</span>
       </span>
