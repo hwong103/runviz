@@ -73,6 +73,11 @@ export function RaceTimePredictions({
     restHR = 60,
     mostRecentActivityId
 }: RaceTimePredictionsProps) {
+    const raceInsightPayload = useMemo(
+        () => (allActivities ? buildRacePredictionPayload(allActivities) : {}),
+        [allActivities]
+    );
+
     const predictions = useMemo(() => {
         const runs = activities.filter(isRun);
         if (runs.length === 0) return null;
@@ -437,8 +442,9 @@ export function RaceTimePredictions({
                 <div className="mt-4">
                     <AIInsightCard
                         insightType="race-prediction"
-                        payload={buildRacePredictionPayload(allActivities)}
+                        payload={raceInsightPayload}
                         mostRecentActivityId={mostRecentActivityId}
+                        conditionMet={Boolean(raceInsightPayload.vdot)}
                         windowLabel="Based on last 90 days"
                     />
                 </div>

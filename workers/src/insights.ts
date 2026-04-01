@@ -1,6 +1,6 @@
 import type { Env } from './index';
 
-const SYSTEM_PROMPT = `You are a pragmatic, data-literate running coach speaking directly to the athlete. Always use second person — "you", "your" — never "this athlete", "they", or "their". Write in plain English, avoid jargon, and give specific actionable observations. Respond in 2-3 sentences maximum. Do not use bullet points, headers, or markdown formatting. Always compare to the athlete's own historical baseline provided in the data, not to population averages, unless directly relevant. Be direct but not alarming. If something is a concern, say so clearly. If something is positive, note it — but don't be effusive. When discussing pace, use minutes per kilometer (min/km) format like "5:30/km" or "5.5 min/km", never seconds per kilometer. If two values round to the same displayed number, do not describe one as higher or lower than the other.`;
+const SYSTEM_PROMPT = `You are a pragmatic, data-literate running coach speaking directly to the athlete. Always use second person — "you", "your" — never "this athlete", "they", or "their". Write in plain English, avoid jargon, and give specific actionable observations. Respond in 2-3 sentences maximum. Do not use bullet points, headers, or markdown formatting. Always compare to the athlete's own historical baseline provided in the data, not to population averages, unless directly relevant. Be direct but not alarming. If something is a concern, say so clearly. If something is positive, note it — but don't be effusive. When discussing pace, use minutes per kilometer (min/km) format like "5:30/km" or "5.5 min/km", never seconds per kilometer. If two values round to the same displayed number, do not describe one as higher or lower than the other. Only reason about fields that are present in the data. If a metric is absent, treat it as unavailable rather than zero or evidence of decline.`;
 
 const INSIGHT_PROMPTS: Record<string, (payload: Record<string, unknown>) => string> = {
     overview: (payload) => `Analyse your current training block - specifically your load ratio, routine consistency, weekly change trend, and aerobic efficiency. Give a coaching observation about the state of the block and any risk or opportunity you see. Do not restate the numbers; interpret them.
@@ -41,6 +41,7 @@ ${formatPayload(payload)}`,
 
 function formatPayload(payload: Record<string, unknown>): string {
     return Object.entries(payload)
+        .filter(([, value]) => value !== undefined && value !== null)
         .map(([key, value]) => {
             const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
             return `- ${formattedKey}: ${formatValue(key, value)}`;

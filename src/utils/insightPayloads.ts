@@ -63,13 +63,13 @@ export interface InjuryRiskPayload {
 }
 
 export interface RacePredictionPayload {
-    vdot: number;
-    predictedMarathonMins: number;
-    predictedHalfMins: number;
-    predicted10kMins: number;
-    predicted5kMins: number;
-    vdotTrend: 'improving' | 'declining' | 'stable';
-    vdotChangeSince90Days: number;
+    vdot?: number;
+    predictedMarathonMins?: number;
+    predictedHalfMins?: number;
+    predicted10kMins?: number;
+    predicted5kMins?: number;
+    vdotTrend?: 'improving' | 'declining' | 'stable';
+    vdotChangeSince90Days?: number;
     lastRaceDistanceKm?: number;
     lastRaceTimeMins?: number;
     lastRaceDate?: string;
@@ -472,18 +472,21 @@ export function buildRacePredictionPayload(activities: Activity[]): RacePredicti
     const last90Days = getActivitiesInWindowEndingAt(activities, new Date(), 90);
     const prior90Days = getPriorWindowActivities(activities, new Date(), 90);
     const currentResult = calcVDOTFromActivities(last90Days);
-    const priorResult = calcVDOTFromActivities(prior90Days);
+    if (!currentResult) {
+        return {};
+    }
 
-    const vdot = currentResult?.vdot ?? 0;
+    const priorResult = calcVDOTFromActivities(prior90Days);
+    const vdot = currentResult.vdot;
     const priorVdot = priorResult?.vdot ?? vdot;
     const vdotChange = roundTo(vdot - priorVdot, 1);
     const vdotTrend: RacePredictionPayload['vdotTrend'] =
         vdotChange > 0.5 ? 'improving' : vdotChange < -0.5 ? 'declining' : 'stable';
 
-    const racePredictions = currentResult?.racePredictions ?? [];
-    const findTime = (...labels: string[]) => {
+    const racePredictions = currentResult.racePredictions ?? [];
+    const findTime = (...labels: string[]): number | undefined => {
         const match = racePredictions.find((prediction) => labels.includes(prediction.label));
-        return match ? Math.round(match.timeS / 60) : 0;
+        return match ? Math.round(match.timeS / 60) : undefined;
     };
 
     const latestRace = findLatestRaceLikeRun(last90Days);
