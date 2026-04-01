@@ -1,3 +1,4 @@
+import type { Auth } from './auth';
 import type { Env } from './index';
 
 const SYSTEM_PROMPT = `You are a pragmatic, data-literate running coach speaking directly to the athlete. Always use second person — "you", "your" — never "this athlete", "they", or "their". Write in plain English, avoid jargon, and give specific actionable observations. Respond in 2-3 sentences maximum. Do not use bullet points, headers, or markdown formatting. Always compare to the athlete's own historical baseline provided in the data, not to population averages, unless directly relevant. Be direct but not alarming. If something is a concern, say so clearly. If something is positive, note it — but don't be effusive. When discussing pace, use minutes per kilometer (min/km) format like "5:30/km" or "5.5 min/km", never seconds per kilometer. If two values round to the same displayed number, do not describe one as higher or lower than the other. Only reason about fields that are present in the data. If a metric is absent, treat it as unavailable rather than zero or evidence of decline.`;
@@ -39,6 +40,10 @@ Data:
 ${formatPayload(payload)}`,
 };
 
+interface InsightModelResponse {
+    response?: string;
+}
+
 function formatPayload(payload: Record<string, unknown>): string {
     return Object.entries(payload)
         .filter(([, value]) => value !== undefined && value !== null)
@@ -74,41 +79,48 @@ function formatPace(minutesPerKm: number): string {
     return `${minutes}:${String(seconds).padStart(2, '0')}/km`;
 }
 
-export async function handleInsightRequest(request: Request, env: Env, origin: string): Promise<Response> {
+export async function handleInsightRequest(request: Request, env: Env, origin: string, auth: Auth): Promise<Response> {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!session?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        });
+    }
+
     if (request.method === 'POST') {
-        return await handleGenerateInsight(request, env, origin);
+        return await handleGenerateInsight(request, env, origin, session.user.id);
     }
 
     if (request.method === 'DELETE' && request.url.includes('/api/insights/cache')) {
-        return await handleDeleteCache(request, env, origin);
+        return await handleDeleteCache(request, env, origin, session.user.id);
     }
 
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
-        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
     });
 }
 
-async function handleGenerateInsight(request: Request, env: Env, origin: string): Promise<Response> {
+async function handleGenerateInsight(request: Request, env: Env, origin: string, userId: string): Promise<Response> {
     const body = await request.json() as {
         insightType: string;
         mostRecentActivityId: number;
         payloadHash?: string;
         forceRefresh?: boolean;
         payload: Record<string, unknown>;
-        athleteId?: string;
     };
 
-    const { insightType, mostRecentActivityId, payloadHash = 'default', forceRefresh = false, payload, athleteId = 'default' } = body;
+    const { insightType, mostRecentActivityId, payloadHash = 'default', forceRefresh = false, payload } = body;
 
     if (!INSIGHT_PROMPTS[insightType]) {
         return new Response(JSON.stringify({ error: `Unknown insight type: ${insightType}` }), {
             status: 400,
-            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+            headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         });
     }
 
-    const cacheKey = `insight:${athleteId}:${insightType}:${mostRecentActivityId}:${payloadHash}`;
+    const cacheKey = `insight:${userId}:${insightType}:${mostRecentActivityId}:${payloadHash}`;
 
     // Check cache unless force refresh
     if (!forceRefresh) {
@@ -119,7 +131,7 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string)
                 fromCache: true,
                 insightType,
             }), {
-                headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+                headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
             });
         }
     }
@@ -134,9 +146,12 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string)
                 { role: 'user', content: userPrompt },
             ],
             max_tokens: 120,
-        });
+        }) as InsightModelResponse;
 
-        const insight = (response as any).response as string;
+        const insight = response.response;
+        if (!insight) {
+            throw new Error('AI response missing insight text');
+        }
 
         // Store in cache (no TTL - relies on KV LRU)
         await env.RUNVIZ_KV.put(cacheKey, insight);
@@ -146,43 +161,58 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string)
             fromCache: false,
             insightType,
         }), {
-            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+            headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         });
     } catch (error) {
         console.error('AI insight generation failed:', error);
         return new Response(JSON.stringify({ error: 'Failed to generate insight' }), {
             status: 500,
-            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+            headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         });
     }
 }
 
-async function handleDeleteCache(request: Request, env: Env, origin: string): Promise<Response> {
+async function handleDeleteCache(request: Request, env: Env, origin: string, userId: string): Promise<Response> {
     const url = new URL(request.url);
     const key = url.searchParams.get('key');
+    const insightType = url.searchParams.get('insightType');
+    const mostRecentActivityId = url.searchParams.get('mostRecentActivityId');
+    const payloadHash = url.searchParams.get('payloadHash') ?? 'default';
+    const resolvedKey = key ?? (
+        insightType && mostRecentActivityId
+            ? `insight:${userId}:${insightType}:${mostRecentActivityId}:${payloadHash}`
+            : null
+    );
 
-    if (!key) {
+    if (!resolvedKey) {
         return new Response(JSON.stringify({ error: 'Missing cache key' }), {
             status: 400,
-            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+            headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        });
+    }
+
+    if (!resolvedKey.startsWith(`insight:${userId}:`)) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+            status: 403,
+            headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         });
     }
 
     try {
-        await env.RUNVIZ_KV.delete(key);
+        await env.RUNVIZ_KV.delete(resolvedKey);
         return new Response(JSON.stringify({ success: true }), {
-            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+            headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         });
     } catch (error) {
         console.error('Cache deletion failed:', error);
         return new Response(JSON.stringify({ error: 'Failed to delete cache' }), {
             status: 500,
-            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+            headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         });
     }
 }
 
-function corsHeaders(origin: string, env: Env): HeadersInit {
+function corsHeaders(origin: string): HeadersInit {
     return {
         'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',

@@ -22,7 +22,12 @@ export interface Env {
     DB: D1Database;
     TOKENS: KVNamespace;
     RUNVIZ_KV: KVNamespace;
-    AI: any;
+    AI: {
+        run(model: string, options: {
+            messages: Array<{ role: 'system' | 'user'; content: string }>;
+            max_tokens: number;
+        }): Promise<unknown>;
+    };
     BETTER_AUTH_SECRET: string;
     RESEND_API_KEY: string;
     FRONTEND_URL: string;
@@ -32,6 +37,7 @@ export interface Env {
     GOOGLE_CLIENT_ID: string;
     GOOGLE_CLIENT_SECRET: string;
     GOOGLE_REDIRECT_URI: string;
+    ENVIRONMENT?: string;
 }
 
 function getConfiguredOrigins(env: Env): string[] {
@@ -40,10 +46,13 @@ function getConfiguredOrigins(env: Env): string[] {
         .map((value) => value.trim())
         .filter(Boolean);
 
+    const localOrigins = env.ENVIRONMENT !== 'production'
+        ? ['http://localhost:5173', 'http://127.0.0.1:5173']
+        : [];
+
     return [
         ...configured,
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
+        ...localOrigins,
     ];
 }
 
@@ -74,7 +83,7 @@ export function corsHeaders(origin: string, env: Env): HeadersInit {
 
     return {
         'Access-Control-Allow-Origin': allowedOrigin,
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Credentials': 'true',
         'Vary': 'Origin',
@@ -190,19 +199,19 @@ export default {
 
             // Google OAuth endpoints
             if (url.pathname === '/auth/google') {
-                return handleGoogleAuthStart(env);
+                return await handleGoogleAuthStart(request, env, origin, auth);
             }
 
             if (url.pathname === '/auth/google/callback') {
-                return await handleGoogleAuthCallback(request, env, origin);
+                return await handleGoogleAuthCallback(request, env, origin, auth);
             }
 
             if (url.pathname === '/auth/google/session') {
-                return await handleGoogleSession(request, env, origin);
+                return await handleGoogleSession(request, env, origin, auth);
             }
 
             if (url.pathname === '/auth/google/token') {
-                return await handleGoogleToken(request, env, origin);
+                return await handleGoogleToken(request, env, origin, auth);
             }
 
             // Protected API routes
@@ -221,7 +230,7 @@ export default {
             }
 
             if (url.pathname === '/api/insights' || url.pathname.startsWith('/api/insights/')) {
-                return await handleInsightRequest(request, env, origin);
+                return await handleInsightRequest(request, env, origin, auth);
             }
 
             // Support PUT /api/activities/:id for form analysis write-back
@@ -364,6 +373,7 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
         access_token: string;
         refresh_token: string;
         expires_at: number;
+        scope?: string;
         athlete: { id: number; firstname: string; lastname: string; profile: string };
     };
 
@@ -374,7 +384,7 @@ async function handleAuthCallback(request: Request, env: Env, origin: string): P
         athleteId: tokenData.athlete.id,
         athleteName: `${tokenData.athlete.firstname} ${tokenData.athlete.lastname}`,
         athleteProfile: tokenData.athlete.profile,
-        scopes: (tokenData as any).scope, // Strava returns scope in token response
+        scopes: tokenData.scope,
     };
 
     const athlete = buildAthleteSummary(storedData);
@@ -598,8 +608,19 @@ async function handleApiRequest(
 
 // Nominatim Geocoding Proxy
 async function handleSearchGeocoding(url: URL, env: Env, origin: string): Promise<Response> {
-    const q = url.searchParams.get('q');
-    if (!q) return new Response('Missing query', { status: 400 });
+    const q = url.searchParams.get('q')?.trim();
+    if (!q) {
+        return new Response(JSON.stringify({ error: 'Missing query' }), {
+            status: 400,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+    if (q.length > 200) {
+        return new Response(JSON.stringify({ error: 'Query too long' }), {
+            status: 400,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
 
     const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&countrycodes=au`;
 
@@ -616,9 +637,27 @@ async function handleSearchGeocoding(url: URL, env: Env, origin: string): Promis
 }
 
 async function handleReverseGeocoding(url: URL, env: Env, origin: string): Promise<Response> {
-    const lat = url.searchParams.get('lat');
-    const lon = url.searchParams.get('lon');
-    if (!lat || !lon) return new Response('Missing coordinates', { status: 400 });
+    const latStr = url.searchParams.get('lat');
+    const lonStr = url.searchParams.get('lon');
+    if (!latStr || !lonStr) {
+        return new Response(JSON.stringify({ error: 'Missing coordinates' }), {
+            status: 400,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    const lat = Number.parseFloat(latStr);
+    const lon = Number.parseFloat(lonStr);
+    if (
+        !Number.isFinite(lat) || !Number.isFinite(lon) ||
+        lat < -90 || lat > 90 ||
+        lon < -180 || lon > 180
+    ) {
+        return new Response(JSON.stringify({ error: 'Invalid coordinates' }), {
+            status: 400,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
 
     const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
 
@@ -640,19 +679,36 @@ const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
 async function handleStravaScopes(request: Request, env: Env, origin: string): Promise<Response> {
-    const sessionId = getSessionId(request);
-    if (!sessionId) return new Response(JSON.stringify({ scopes: '' }), { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } });
-
-    const stored = await env.TOKENS.get(`session:${sessionId}`);
-    if (!stored) return new Response(JSON.stringify({ scopes: '' }), { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } });
-
-    const tokenData = JSON.parse(stored) as TokenData;
-    return new Response(JSON.stringify({ scopes: tokenData.scopes || '' }), {
+    const auth = createAuth(env, new URL(request.url).origin);
+    const access = await resolveStravaAccess(request, env, auth);
+    const tokenData = access?.tokenData;
+    return new Response(JSON.stringify({ scopes: tokenData?.scopes || '' }), {
         headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' }
     });
 }
 
-function handleGoogleAuthStart(env: Env): Response {
+async function resolveGoogleStorageKey(
+    request: Request,
+    auth: ReturnType<typeof createAuth>,
+): Promise<string | null> {
+    const betterSession = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (betterSession?.user?.id) {
+        return `user:${betterSession.user.id}`;
+    }
+
+    const sessionId = getSessionId(request);
+    return sessionId ? `session:${sessionId}` : null;
+}
+
+async function handleGoogleAuthStart(request: Request, env: Env, origin: string, auth: ReturnType<typeof createAuth>): Promise<Response> {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!session?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
     const authUrl = new URL(GOOGLE_AUTH_URL);
     authUrl.searchParams.set('client_id', env.GOOGLE_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', env.GOOGLE_REDIRECT_URI);
@@ -664,9 +720,9 @@ function handleGoogleAuthStart(env: Env): Response {
     return Response.redirect(authUrl.toString(), 302);
 }
 
-async function handleGoogleAuthCallback(request: Request, env: Env, origin: string): Promise<Response> {
-    const sessionId = getSessionId(request);
-    if (!sessionId) return new Response('Unauthorized', { status: 401 });
+async function handleGoogleAuthCallback(request: Request, env: Env, origin: string, auth: ReturnType<typeof createAuth>): Promise<Response> {
+    const storageKey = await resolveGoogleStorageKey(request, auth);
+    if (!storageKey) return new Response('Unauthorized', { status: 401 });
 
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
@@ -688,41 +744,49 @@ async function handleGoogleAuthCallback(request: Request, env: Env, origin: stri
         return new Response('Token exchange failed', { status: 400 });
     }
 
-    const data = await tokenResponse.json() as any;
+    const data = await tokenResponse.json() as {
+        access_token: string;
+        refresh_token?: string;
+        expires_in: number;
+    };
     const googleTokenData = {
         accessToken: data.access_token,
         refreshToken: data.refresh_token,
         expiresAt: Math.floor(Date.now() / 1000) + data.expires_in,
     };
 
-    await env.TOKENS.put(`google:${sessionId}`, JSON.stringify(googleTokenData), {
+    await env.TOKENS.put(`google:${storageKey}`, JSON.stringify(googleTokenData), {
         expirationTtl: 60 * 60 * 24 * 30,
     });
 
     return new Response(
-        '<html><body><script>window.opener.postMessage("google_auth_success", "*"); window.close();</script>Success! You can close this window.</body></html>',
+        `<html><body><script>window.opener.postMessage("google_auth_success", ${JSON.stringify(env.FRONTEND_URL)}); window.close();</script>Success! You can close this window.</body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
     );
 }
 
-async function handleGoogleSession(request: Request, env: Env, origin: string): Promise<Response> {
-    const sessionId = getSessionId(request);
-    if (!sessionId) return new Response(JSON.stringify({ connected: false }), { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } });
+async function handleGoogleSession(request: Request, env: Env, origin: string, auth: ReturnType<typeof createAuth>): Promise<Response> {
+    const storageKey = await resolveGoogleStorageKey(request, auth);
+    if (!storageKey) return new Response(JSON.stringify({ connected: false }), { headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } });
 
-    const stored = await env.TOKENS.get(`google:${sessionId}`);
+    const stored = await env.TOKENS.get(`google:${storageKey}`);
     return new Response(JSON.stringify({ connected: !!stored }), {
         headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' }
     });
 }
 
-async function handleGoogleToken(request: Request, env: Env, origin: string): Promise<Response> {
-    const sessionId = getSessionId(request);
-    if (!sessionId) return new Response('Unauthorized', { status: 401, headers: corsHeaders(origin, env) });
+async function handleGoogleToken(request: Request, env: Env, origin: string, auth: ReturnType<typeof createAuth>): Promise<Response> {
+    const storageKey = await resolveGoogleStorageKey(request, auth);
+    if (!storageKey) return new Response('Unauthorized', { status: 401, headers: corsHeaders(origin, env) });
 
-    const stored = await env.TOKENS.get(`google:${sessionId}`);
+    const stored = await env.TOKENS.get(`google:${storageKey}`);
     if (!stored) return new Response('Not connected', { status: 404, headers: corsHeaders(origin, env) });
 
-    let tokenData = JSON.parse(stored);
+    let tokenData = JSON.parse(stored) as {
+        accessToken: string;
+        refreshToken?: string;
+        expiresAt: number;
+    };
 
     if (tokenData.expiresAt < Math.floor(Date.now() / 1000) + 60) {
         const refreshResponse = await fetch(GOOGLE_TOKEN_URL, {
@@ -737,7 +801,11 @@ async function handleGoogleToken(request: Request, env: Env, origin: string): Pr
         });
 
         if (refreshResponse.ok) {
-            const data = await refreshResponse.json() as any;
+            const data = await refreshResponse.json() as {
+                access_token: string;
+                refresh_token?: string;
+                expires_in: number;
+            };
             tokenData = {
                 ...tokenData,
                 accessToken: data.access_token,
@@ -745,7 +813,7 @@ async function handleGoogleToken(request: Request, env: Env, origin: string): Pr
             };
             if (data.refresh_token) tokenData.refreshToken = data.refresh_token;
 
-            await env.TOKENS.put(`google:${sessionId}`, JSON.stringify(tokenData), {
+            await env.TOKENS.put(`google:${storageKey}`, JSON.stringify(tokenData), {
                 expirationTtl: 60 * 60 * 24 * 30,
             });
         } else {
@@ -774,7 +842,12 @@ async function handleStravaActivityUpdate(request: Request, env: Env, origin: st
 
     const url = new URL(request.url);
     const activityId = url.pathname.split('/').pop();
-    if (!activityId) return new Response('Missing activity ID', { status: 400, headers: corsHeaders(origin, env) });
+    if (!activityId || !/^\d+$/.test(activityId)) {
+        return new Response(JSON.stringify({ error: 'Invalid activity ID' }), {
+            status: 400,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
 
     const body = await request.json() as { description: string };
 

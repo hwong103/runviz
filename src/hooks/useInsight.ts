@@ -54,8 +54,7 @@ export function useInsight({
     const [dismissed, setDismissed] = useState(false);
 
     const payloadHash = hashString(stableSerialize(payload));
-    const cacheKey = `insight:default:${insightType}:${mostRecentActivityId}:${payloadHash}`;
-    const dismissKey = `dismissed:${cacheKey}`;
+    const dismissKey = `dismissed:${insightType}:${mostRecentActivityId}:${payloadHash}`;
 
     const fetchInsight = useCallback(
         async (forceRefresh = false) => {
@@ -117,7 +116,12 @@ export function useInsight({
 
         // Delete cache first
         try {
-            await fetch(`/api/insights/cache?key=${encodeURIComponent(cacheKey)}`, {
+            const params = new URLSearchParams({
+                insightType,
+                mostRecentActivityId: String(mostRecentActivityId),
+                payloadHash,
+            });
+            await fetch(`/api/insights/cache?${params.toString()}`, {
                 method: 'DELETE',
             });
         } catch {
@@ -125,7 +129,7 @@ export function useInsight({
         }
 
         await fetchInsight(true);
-    }, [cacheKey, fetchInsight]);
+    }, [dismissKey, fetchInsight, insightType, mostRecentActivityId, payloadHash]);
 
     const dismiss = useCallback(() => {
         localStorage.setItem(dismissKey, 'true');

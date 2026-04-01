@@ -5,6 +5,9 @@ import type { Env } from "./index";
 
 export function createAuth(env: Env, baseURL: string) {
   const resend = new Resend(env.RESEND_API_KEY);
+  const localOrigins = env.ENVIRONMENT !== "production"
+    ? ["http://localhost:5173", "http://127.0.0.1:5173"]
+    : [];
 
   return betterAuth({
     secret: env.BETTER_AUTH_SECRET,
@@ -49,8 +52,7 @@ export function createAuth(env: Env, baseURL: string) {
     trustedOrigins: [
       env.FRONTEND_URL,
       ...(env.ADDITIONAL_FRONTEND_URLS ? env.ADDITIONAL_FRONTEND_URLS.split(",").map((value) => value.trim()).filter(Boolean) : []),
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
+      ...localOrigins,
     ],
     advanced: {
       defaultCookieAttributes: {

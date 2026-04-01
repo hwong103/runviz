@@ -11,6 +11,25 @@ interface RouteRequest {
     targetDistanceMeters: number;
 }
 
+interface OrsRouteResponse {
+    error?: { message?: string };
+    features?: Array<{
+        properties: {
+            summary: {
+                distance: number;
+                duration: number;
+            };
+            ascent?: number;
+        };
+        geometry: {
+            coordinates: Array<[number, number, number?]>;
+        };
+    }>;
+}
+
+const MIN_DISTANCE_METERS = 1_000;
+const MAX_DISTANCE_METERS = 100_000;
+
 export async function handleRouteGeneration(
     request: Request,
     env: Env,
@@ -29,9 +48,15 @@ export async function handleRouteGeneration(
         const body = await request.json() as RouteRequest;
         const { startLat, startLng, targetDistanceMeters } = body;
 
-        if (!startLat || !startLng || !targetDistanceMeters) {
+        if (
+            typeof startLat !== 'number' || typeof startLng !== 'number' || typeof targetDistanceMeters !== 'number' ||
+            !Number.isFinite(startLat) || startLat < -90 || startLat > 90 ||
+            !Number.isFinite(startLng) || startLng < -180 || startLng > 180 ||
+            !Number.isFinite(targetDistanceMeters) ||
+            targetDistanceMeters < MIN_DISTANCE_METERS || targetDistanceMeters > MAX_DISTANCE_METERS
+        ) {
             return new Response(
-                JSON.stringify({ error: 'Missing required parameters' }),
+                JSON.stringify({ error: 'Invalid parameters' }),
                 { status: 400, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
             );
         }
@@ -39,7 +64,7 @@ export async function handleRouteGeneration(
         // Generate 5 different routes using different seeds for round trips
         const seeds = Array.from({ length: 5 }, (_, i) => Math.floor(Math.random() * 100) + (i * 100));
 
-        const routePromises = seeds.map(seed =>
+        const routePromises: Array<Promise<OrsRouteResponse>> = seeds.map(seed =>
             fetch('https://api.openrouteservice.org/v2/directions/foot-walking/geojson', {
                 method: 'POST',
                 headers: {
@@ -59,13 +84,13 @@ export async function handleRouteGeneration(
                     elevation: true,
                     units: 'm'
                 })
-            }).then(res => res.json())
+            }).then(res => res.json() as Promise<OrsRouteResponse>)
         );
 
         const results = await Promise.all(routePromises);
 
         // Process results into our GeneratedRoute format
-        const routes = results.map((data: any, index) => {
+        const routes = results.map((data, index) => {
             if (data.error || !data.features || data.features.length === 0) {
                 console.error(`ORS Error for seed ${seeds[index]}:`, data.error);
                 return null;
@@ -93,7 +118,7 @@ export async function handleRouteGeneration(
         if (routes.length === 0) {
             // Find the first error message to help debug
             const firstError =
-                (results.find((r) => (r as any).error) as any)?.error?.message ||
+                results.find((result) => result.error)?.error?.message ||
                 'No routes could be generated for this location. Try a different distance or start point.';
             return new Response(
                 JSON.stringify({ error: firstError }),
