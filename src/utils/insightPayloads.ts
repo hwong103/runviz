@@ -481,8 +481,8 @@ export function buildRacePredictionPayload(activities: Activity[]): RacePredicti
         vdotChange > 0.5 ? 'improving' : vdotChange < -0.5 ? 'declining' : 'stable';
 
     const racePredictions = currentResult?.racePredictions ?? [];
-    const findTime = (label: string) => {
-        const match = racePredictions.find((prediction) => prediction.label === label);
+    const findTime = (...labels: string[]) => {
+        const match = racePredictions.find((prediction) => labels.includes(prediction.label));
         return match ? Math.round(match.timeS / 60) : 0;
     };
 
@@ -491,7 +491,7 @@ export function buildRacePredictionPayload(activities: Activity[]): RacePredicti
     return {
         vdot: roundTo(vdot, 1),
         predictedMarathonMins: findTime('Marathon'),
-        predictedHalfMins: findTime('Half Marathon'),
+        predictedHalfMins: findTime('Half Marathon', 'HM'),
         predicted10kMins: findTime('10K'),
         predicted5kMins: findTime('5K'),
         vdotTrend,
