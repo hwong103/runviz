@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -94,6 +94,7 @@ function formatPace(paceMinKm: number) {
     if (!paceMinKm || isNaN(paceMinKm) || !isFinite(paceMinKm)) return '--:--';
     const min = Math.floor(paceMinKm);
     const sec = Math.round((paceMinKm - min) * 60);
+    if (sec === 60) return `${min + 1}:00`;
     return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
@@ -111,6 +112,30 @@ function formatDuration(seconds: number) {
 
 function formatDistanceKm(meters: number) {
     return (meters / 1000).toFixed(2);
+}
+
+function formatWholeKmTick(value: number | string) {
+    const numericValue = typeof value === 'string' ? Number(value) : value;
+    if (!Number.isFinite(numericValue)) return '';
+
+    const roundedValue = Math.round(numericValue);
+    return Math.abs(numericValue - roundedValue) < 0.001 ? `${roundedValue}` : '';
+}
+
+function average(values: number[]) {
+    if (values.length === 0) return 0;
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function getRankBadgeStyle(binIndex: number, binCount: number, binValue: number, peakValue: number): CSSProperties {
+    const centerPercent = ((binIndex + 0.5) / Math.max(binCount, 1)) * 100;
+    const heightPercent = peakValue > 0 ? (binValue / peakValue) * 100 : 0;
+
+    return {
+        left: `${Math.min(86, Math.max(14, centerPercent))}%`,
+        bottom: `${Math.min(68, Math.max(12, heightPercent + 4))}%`,
+        transform: 'translate(-50%, 0)',
+    };
 }
 
 export function RunDetails({ activity: initialActivity, allActivities, shoes, onClose, onSelect }: RunDetailsProps) {
@@ -286,6 +311,48 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
     const pacePeak = Math.max(...stats.paceBins, 1);
     const averageHeartrate = activity.average_heartrate ? Math.round(activity.average_heartrate) : null;
     const runInsightPayload = useMemo(() => buildRunDetailPayload(activity, allActivities), [activity, allActivities]);
+    const distanceAxisMax = useMemo(() => Math.max(1, Math.ceil(activity.distance / 1000)), [activity.distance]);
+    const heartRateSummary = useMemo(() => {
+        const hrSamples = streams?.heartrate?.data?.filter((hr): hr is number => hr > 0) ?? [];
+        if (hrSamples.length === 0) {
+            return null;
+        }
+
+        const sampleWindow = Math.max(3, Math.floor(hrSamples.length / 3));
+        const openingAverage = Math.round(average(hrSamples.slice(0, sampleWindow)));
+        const closingAverage = Math.round(average(hrSamples.slice(-sampleWindow)));
+        const averageHr = Math.round(average(hrSamples));
+        const peakHr = Math.round(Math.max(...hrSamples));
+        const drift = closingAverage - openingAverage;
+
+        if (drift >= 8) {
+            return {
+                title: 'Late-run drift',
+                description: `Your effort climbed from ${openingAverage} bpm early to ${closingAverage} bpm late, a +${drift} bpm rise that points to a harder finish or accumulating fatigue.`,
+                averageHr,
+                peakHr,
+                driftLabel: `+${drift} bpm`,
+            };
+        }
+
+        if (drift <= -6) {
+            return {
+                title: 'Settled after the start',
+                description: `Your heart rate eased from ${openingAverage} bpm early to ${closingAverage} bpm later, which usually means the effort came under control as the run progressed.`,
+                averageHr,
+                peakHr,
+                driftLabel: `${drift} bpm`,
+            };
+        }
+
+        return {
+            title: 'Steady effort profile',
+            description: `Your heart rate held fairly even from ${openingAverage} bpm to ${closingAverage} bpm, with a peak of ${peakHr} bpm instead of a big late spike.`,
+            averageHr,
+            peakHr,
+            driftLabel: `${drift > 0 ? '+' : ''}${drift} bpm`,
+        };
+    }, [streams?.heartrate?.data]);
 
     const chartData = useMemo(() => {
         if (!streams?.velocity_smooth?.data || !streams.distance?.data) return null;
@@ -361,9 +428,9 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
         } else {
             const rawPoints = streams.velocity_smooth.data.length;
             const step = Math.max(1, Math.floor(rawPoints / 120));
-            const velocityData = [];
-            const hrData = [];
-            const distances = [];
+            const velocityData: number[] = [];
+            const hrData: Array<number | null> = [];
+            const distances: number[] = [];
 
             for (let i = 0; i < rawPoints; i += step) {
                 const dist = streams.distance.data[i];
@@ -380,12 +447,11 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
             }
 
             return {
-                labels: distances,
                 datasets: [
                     {
                         type: 'bar' as const,
                         label: 'Pace',
-                        data: velocityData,
+                        data: velocityData.map((pace, index) => ({ x: distances[index], y: pace })),
                         backgroundColor: chartTheme.primaryFill,
                         hoverBackgroundColor: chartTheme.accentBg,
                         borderColor: chartTheme.primaryLine,
@@ -399,7 +465,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                     {
                         type: 'line' as const,
                         label: 'Heart Rate',
-                        data: hrData,
+                        data: hrData.map((hr, index) => ({ x: distances[index], y: hr })),
                         borderColor: chartTheme.secondaryLine,
                         backgroundColor: 'transparent',
                         fill: false,
@@ -419,8 +485,8 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
 
         const rawPoints = streams.heartrate.data.length;
         const step = Math.max(1, Math.floor(rawPoints / 120));
-        const hrData = [];
-        const distances = [];
+        const hrData: number[] = [];
+        const distances: number[] = [];
 
         for (let i = 0; i < rawPoints; i += step) {
             const dist = streams.distance.data[i];
@@ -433,11 +499,10 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
         }
 
         return {
-            labels: distances,
             datasets: [{
                 type: 'line' as const,
                 label: 'Heart Rate',
-                data: hrData,
+                data: hrData.map((hr, index) => ({ x: distances[index], y: hr })),
                 borderColor: chartTheme.secondaryLine,
                 backgroundColor: chartTheme.secondaryFill,
                 fill: true,
@@ -451,7 +516,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
     const hrChartOptions = useMemo(() => {
         if (!hrChartData) return {};
 
-        const hrValues = hrChartData.datasets[0].data.filter((hr): hr is number => hr !== null && hr > 0);
+        const hrValues = streams?.heartrate?.data?.filter((hr): hr is number => hr > 0) ?? [];
         const minHr = hrValues.length > 0 ? Math.min(...hrValues) : 0;
         const maxHr = hrValues.length > 0 ? Math.max(...hrValues) : 200;
         const hrMin = Math.max(0, Math.floor(minHr) - 10);
@@ -481,10 +546,19 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
             },
             scales: {
                 x: {
+                    type: 'linear' as const,
                     display: true,
+                    min: 0,
+                    max: distanceAxisMax,
                     title: { display: true, text: 'Distance (km)', color: chartTheme.axisColor, font: { size: 10, weight: 'bold' } },
-                    ticks: { color: chartTheme.tickColor, font: { size: 10, weight: 'bold' } },
+                    ticks: {
+                        color: chartTheme.tickColor,
+                        font: { size: 10, weight: 'bold' },
+                        stepSize: 1,
+                        callback: (value: number | string) => formatWholeKmTick(value),
+                    },
                     grid: { display: false },
+                    border: { display: false },
                 },
                 y: {
                     display: true,
@@ -496,7 +570,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                 },
             },
         };
-    }, [chartTheme, hrChartData]);
+    }, [chartTheme, distanceAxisMax, hrChartData, streams?.heartrate?.data]);
 
     const chartOptions = useMemo(() => {
         if (!chartData) return {};
@@ -538,10 +612,18 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                 x: {
                     type: viewMode === 'stream' ? 'linear' : 'category',
                     display: true,
+                    min: viewMode === 'stream' ? 0 : undefined,
+                    max: viewMode === 'stream' ? distanceAxisMax : undefined,
                     grid: { color: chartTheme.gridColor },
                     border: { display: false },
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    ticks: { color: chartTheme.tickColor, font: { size: 10, weight: 'bold' }, maxTicksLimit: 12, callback: (value: any) => viewMode === 'stream' ? Math.round(value) : value },
+                    ticks: {
+                        color: chartTheme.tickColor,
+                        font: { size: 10, weight: 'bold' },
+                        stepSize: viewMode === 'stream' ? 1 : undefined,
+                        maxTicksLimit: viewMode === 'stream' ? distanceAxisMax + 1 : 12,
+                        callback: (value: number | string) => viewMode === 'stream' ? formatWholeKmTick(value) : value,
+                    },
                     title: { display: true, text: 'KILOMETERS', color: chartTheme.axisColor, font: { size: 10, weight: 'bold' }, padding: { top: 10 } }
                 },
                 y: {
@@ -565,7 +647,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                 }
             }
         };
-    }, [chartData, chartTheme, viewMode]);
+    }, [chartData, chartTheme, distanceAxisMax, viewMode]);
 
     return (
         <div className="fixed inset-0 z-[100] overflow-y-auto bg-[color-mix(in_srgb,var(--rv-bg)_90%,transparent)] p-4 backdrop-blur-xl">
@@ -728,16 +810,27 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                 </div>
                             </section>
 
-                            {hrChartData && (
+                            {hrChartData && heartRateSummary && (
                                 <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6">
                                     <div className="mb-5">
-                                        <p className="rv-kicker mb-2">Heart Rate</p>
+                                        <p className="rv-kicker mb-2">Effort Lens</p>
                                         <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">
-                                            Heart rate trace
+                                            {heartRateSummary.title}
                                         </h2>
                                         <p className="rv-body-copy-sm mt-2 max-w-2xl">
-                                            Your heart rate progression across the run, showing effort distribution and any drift over distance.
+                                            {heartRateSummary.description}
                                         </p>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            <span className="rv-chip rv-chip-micro border-[var(--rv-green)]/20 bg-[var(--rv-green)]/10 text-[var(--rv-green)]">
+                                                Avg {heartRateSummary.averageHr} bpm
+                                            </span>
+                                            <span className="rv-chip rv-chip-micro border-[var(--rv-yellow)]/20 bg-[var(--rv-yellow)]/10 text-[var(--rv-yellow)]">
+                                                Peak {heartRateSummary.peakHr} bpm
+                                            </span>
+                                            <span className="rv-chip rv-chip-micro border-[var(--rv-blue)]/20 bg-[var(--rv-blue)]/10 text-[var(--rv-blue)]">
+                                                Drift {heartRateSummary.driftLabel}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <div
@@ -771,6 +864,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                             }}
                                             options={{
                                                 maintainAspectRatio: false,
+                                                layout: { padding: { top: 22, left: 10, right: 10, bottom: 0 } },
                                                 plugins: { legend: { display: false }, tooltip: { enabled: false } },
                                                 scales: {
                                                     y: { display: false },
@@ -785,13 +879,9 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                         />
                                         <div
                                             className="pointer-events-none absolute"
-                                            style={{
-                                                left: `${Math.min(92, Math.max(8, (stats.myDistBin / Math.max(stats.distBins.length - 1, 1)) * 100))}%`,
-                                                bottom: `${Math.min(92, Math.max(10, (stats.distBins[stats.myDistBin] / distancePeak) * 100))}%`,
-                                                transform: 'translate(-50%, -18px)'
-                                            }}
+                                            style={getRankBadgeStyle(stats.myDistBin, stats.distBins.length, stats.distBins[stats.myDistBin], distancePeak)}
                                         >
-                                            <div className="rounded-full border border-[var(--rv-yellow)]/25 bg-[var(--rv-yellow)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-yellow)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+                                            <div className="whitespace-nowrap rounded-full border border-[var(--rv-yellow)]/25 bg-[var(--rv-yellow)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-yellow)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
                                                 {stats.distanceRankText}
                                             </div>
                                         </div>
@@ -817,6 +907,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                             }}
                                             options={{
                                                 maintainAspectRatio: false,
+                                                layout: { padding: { top: 22, left: 10, right: 10, bottom: 0 } },
                                                 plugins: { legend: { display: false }, tooltip: { enabled: false } },
                                                 scales: {
                                                     y: { display: false },
@@ -831,13 +922,9 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                         />
                                         <div
                                             className="pointer-events-none absolute"
-                                            style={{
-                                                left: `${Math.min(92, Math.max(8, (stats.myPaceBin / Math.max(stats.paceBins.length - 1, 1)) * 100))}%`,
-                                                bottom: `${Math.min(92, Math.max(10, (stats.paceBins[stats.myPaceBin] / pacePeak) * 100))}%`,
-                                                transform: 'translate(-50%, -18px)'
-                                            }}
+                                            style={getRankBadgeStyle(stats.myPaceBin, stats.paceBins.length, stats.paceBins[stats.myPaceBin], pacePeak)}
                                         >
-                                            <div className="rounded-full border border-[var(--rv-blue)]/22 bg-[var(--rv-blue)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-blue)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+                                            <div className="whitespace-nowrap rounded-full border border-[var(--rv-blue)]/22 bg-[var(--rv-blue)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-blue)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
                                                 {stats.paceRankText}
                                             </div>
                                         </div>
@@ -847,6 +934,19 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                         </div>
 
                         <aside className="space-y-4">
+                            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                                <SummaryTile
+                                    label="Moving time"
+                                    value={formatDuration(activity.moving_time)}
+                                    icon={<ArrowRight className="h-4 w-4" />}
+                                />
+                                <SummaryTile
+                                    label="Elevation gain"
+                                    value={activity.total_elevation_gain > 0 ? `${Math.round(activity.total_elevation_gain)}m` : 'Flat route'}
+                                    icon={<Mountain className="h-4 w-4" />}
+                                />
+                            </section>
+
                             <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6">
                                 <div className="mb-5">
                                     <p className="rv-kicker mb-2">Nearby Efforts</p>
@@ -897,19 +997,6 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                         </div>
                                     )}
                                 </div>
-                            </section>
-
-                            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                                <SummaryTile
-                                    label="Moving time"
-                                    value={formatDuration(activity.moving_time)}
-                                    icon={<ArrowRight className="h-4 w-4" />}
-                                />
-                                <SummaryTile
-                                    label="Elevation gain"
-                                    value={activity.total_elevation_gain > 0 ? `${Math.round(activity.total_elevation_gain)}m` : 'Flat route'}
-                                    icon={<Mountain className="h-4 w-4" />}
-                                />
                             </section>
                         </aside>
                     </div>

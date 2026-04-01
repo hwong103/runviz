@@ -43,9 +43,34 @@ function formatPayload(payload: Record<string, unknown>): string {
     return Object.entries(payload)
         .map(([key, value]) => {
             const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
-            return `- ${formattedKey}: ${value}`;
+            return `- ${formattedKey}: ${formatValue(key, value)}`;
         })
         .join('\n');
+}
+
+function formatValue(key: string, value: unknown): string {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        if (key.toLowerCase().includes('pace')) {
+            return formatPace(value);
+        }
+        return String(value);
+    }
+
+    return String(value);
+}
+
+function formatPace(minutesPerKm: number): string {
+    if (!Number.isFinite(minutesPerKm) || minutesPerKm <= 0) {
+        return 'n/a';
+    }
+
+    const minutes = Math.floor(minutesPerKm);
+    const seconds = Math.round((minutesPerKm - minutes) * 60);
+    if (seconds === 60) {
+        return `${minutes + 1}:00/km`;
+    }
+
+    return `${minutes}:${String(seconds).padStart(2, '0')}/km`;
 }
 
 export async function handleInsightRequest(request: Request, env: Env, origin: string): Promise<Response> {
