@@ -6,12 +6,14 @@ interface UseInsightOptions {
     insightType: InsightType;
     payload: Record<string, unknown>;
     mostRecentActivityId: number;
+    enabled?: boolean;
 }
 
 interface UseInsightReturn {
     insight: string | null;
     loading: boolean;
     error: Error | null;
+    dismissed: boolean;
     refresh: () => Promise<void>;
     dismiss: () => void;
 }
@@ -20,23 +22,33 @@ export function useInsight({
     insightType,
     payload,
     mostRecentActivityId,
+    enabled = true,
 }: UseInsightOptions): UseInsightReturn {
     const [insight, setInsight] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(enabled);
     const [error, setError] = useState<Error | null>(null);
+    const [dismissed, setDismissed] = useState(false);
 
     const cacheKey = `insight:default:${insightType}:${mostRecentActivityId}`;
     const dismissKey = `dismissed:${cacheKey}`;
 
     const fetchInsight = useCallback(
         async (forceRefresh = false) => {
+            if (!enabled) {
+                setLoading(false);
+                setDismissed(false);
+                return;
+            }
+
             // Check if dismissed
-            const dismissed = localStorage.getItem(dismissKey);
-            if (dismissed && !forceRefresh) {
+            const hasDismissedKey = localStorage.getItem(dismissKey);
+            if (hasDismissedKey && !forceRefresh) {
+                setDismissed(true);
                 setLoading(false);
                 return;
             }
 
+            setDismissed(false);
             setLoading(true);
             setError(null);
 
@@ -70,10 +82,13 @@ export function useInsight({
                 setLoading(false);
             }
         },
-        [insightType, mostRecentActivityId, payload, dismissKey]
+        [dismissKey, enabled, insightType, mostRecentActivityId, payload]
     );
 
     const refresh = useCallback(async () => {
+        localStorage.removeItem(dismissKey);
+        setDismissed(false);
+
         // Delete cache first
         try {
             await fetch(`/api/insights/cache?key=${encodeURIComponent(cacheKey)}`, {
@@ -88,6 +103,7 @@ export function useInsight({
 
     const dismiss = useCallback(() => {
         localStorage.setItem(dismissKey, 'true');
+        setDismissed(true);
         setInsight(null);
     }, [dismissKey]);
 
@@ -99,6 +115,7 @@ export function useInsight({
         insight,
         loading,
         error,
+        dismissed,
         refresh,
         dismiss,
     };

@@ -1,39 +1,39 @@
 import type { Env } from './index';
 
-const SYSTEM_PROMPT = `You are a pragmatic, data-literate running coach speaking directly to the athlete. Always use second person — "you", "your" — never "this athlete", "they", or "their". Write in plain English, avoid jargon, and give specific actionable observations. Respond in 2-3 sentences maximum. Do not use bullet points, headers, or markdown formatting. Always compare to the athlete's own historical baseline provided in the data, not to population averages, unless directly relevant. Be direct but not alarming. If something is a concern, say so clearly. If something is positive, note it — but don't be effusive. When discussing pace, use minutes per kilometer (min/km) format like "5:30/km" or "5.5 min/km", never seconds per kilometer.`;
+const SYSTEM_PROMPT = `You are a pragmatic, data-literate running coach speaking directly to the athlete. Always use second person — "you", "your" — never "this athlete", "they", or "their". Write in plain English, avoid jargon, and give specific actionable observations. Respond in 2-3 sentences maximum. Do not use bullet points, headers, or markdown formatting. Always compare to the athlete's own historical baseline provided in the data, not to population averages, unless directly relevant. Be direct but not alarming. If something is a concern, say so clearly. If something is positive, note it — but don't be effusive. When discussing pace, use minutes per kilometer (min/km) format like "5:30/km" or "5.5 min/km", never seconds per kilometer. If two values round to the same displayed number, do not describe one as higher or lower than the other.`;
 
 const INSIGHT_PROMPTS: Record<string, (payload: Record<string, unknown>) => string> = {
-    overview: (payload) => `Analyse this athlete's current training block — specifically their load ratio, routine consistency, weekly change trend, and aerobic efficiency. Give a coaching observation about the state of the block and any risk or opportunity you see. Do not restate the numbers; interpret them.
+    overview: (payload) => `Analyse your current training block - specifically your load ratio, routine consistency, weekly change trend, and aerobic efficiency. Give a coaching observation about the state of the block and any risk or opportunity you see. Do not restate the numbers; interpret them.
 
 Data:
 ${formatPayload(payload)}`,
 
-    'training-health': (payload) => `Analyse this athlete's training stress, monotony, and strain metrics. Give a coaching observation about the quality of their training stress distribution and what it suggests about readiness or risk.
+    'training-health': (payload) => `Analyse your training stress, monotony, and strain metrics. Give a coaching observation about the quality of your training stress distribution and what it suggests about readiness or risk.
 
 Data:
 ${formatPayload(payload)}`,
 
-    fitness: (payload) => `Analyse this athlete's fitness (CTL), fatigue (ATL), and training stress balance (TSB). Give a coaching observation about their current form state and what it means for training or racing in the near term.
+    fitness: (payload) => `Analyse your fitness (CTL), fatigue (ATL), and training stress balance (TSB). Give a coaching observation about your current form state and what it means for training or racing in the near term.
 
 Data:
 ${formatPayload(payload)}`,
 
-    volume: (payload) => `Analyse this athlete's weekly volume trend over the last 6 weeks, including ramp rate. Give a coaching observation about the sustainability of the current trajectory.
+    volume: (payload) => `Analyse your weekly volume trend over the supplied analysis window, including ramp rate. Give a coaching observation about the sustainability of the current trajectory.
 
 Data:
 ${formatPayload(payload)}`,
 
-    'injury-risk': (payload) => `This athlete's load metrics have crossed a risk threshold. Give a direct, calm coaching observation about the injury risk pattern you see and one specific action they can take this week to reduce it.
+    'injury-risk': (payload) => `Your load metrics have crossed a risk threshold. Give a direct, calm coaching observation about the injury risk pattern you see and one specific action you can take this week to reduce it.
 
 Data:
 ${formatPayload(payload)}`,
 
-    'race-prediction': (payload) => `Analyse this athlete's VDOT trend and race time predictions. Give a coaching observation about the direction their fitness is heading and what it realistically suggests about near-term race potential.
+    'race-prediction': (payload) => `Analyse your VDOT trend and race time predictions. Give a coaching observation about the direction your fitness is heading and what it realistically suggests about near-term race potential.
 
 Data:
 ${formatPayload(payload)}`,
 
-    'run-detail': (payload) => `Analyse this specific run in the context of the athlete's recent history. Something notable happened on this run — focus on what the data suggests it means for their training or fitness trajectory.
+    'run-detail': (payload) => `Analyse this specific run in the context of your recent history. Something notable happened on this run - focus on what the data suggests it means for your training or fitness trajectory.
 
 Data:
 ${formatPayload(payload)}`,

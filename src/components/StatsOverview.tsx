@@ -8,7 +8,7 @@ import type { Activity } from '../types';
 import { isRun } from '../types';
 import { TrainingHealthTrendChart, type TrainingHealthMetricKey } from './TrainingHealthTrendChart';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
-import { buildOverviewPayload, buildTrainingHealthPayload, buildInjuryRiskPayload } from '@/utils/insightPayloads';
+import { buildOverviewPayload, buildTrainingHealthPayload, buildInjuryRiskPayload, getInsightWindowLabel, viewPeriodToDays } from '@/utils/insightPayloads';
 import {
     calculateAcwr,
     calculateWeeklyRamp,
@@ -173,6 +173,9 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
     };
 
     const isOverview = variant === 'overview';
+    const overviewWindowLabel = getInsightWindowLabel(viewPeriodToDays(period));
+    const trainingHealthWindowLabel = getInsightWindowLabel(viewPeriodToDays(period));
+    const injuryRiskPayload = useMemo(() => buildInjuryRiskPayload(allActivities, 30), [allActivities]);
 
     return (
         <div className="space-y-4">
@@ -233,21 +236,21 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                         <section style={reveal(180)}>
                             <AIInsightCard
                                 insightType="overview"
-                                payload={buildOverviewPayload(allActivities)}
+                                payload={buildOverviewPayload(allActivities, period)}
                                 mostRecentActivityId={mostRecentActivityId}
-                                windowLabel="Based on last 90 days"
+                                windowLabel={overviewWindowLabel}
                             />
                         </section>
                     )}
 
-                    {mostRecentActivityId && buildInjuryRiskPayload(allActivities).shouldShow && (
+                    {mostRecentActivityId && injuryRiskPayload.shouldShow && (
                         <section style={reveal(200)}>
                             <AIInsightCard
                                 insightType="injury-risk"
-                                payload={buildInjuryRiskPayload(allActivities)}
+                                payload={injuryRiskPayload}
                                 mostRecentActivityId={mostRecentActivityId}
                                 className="border-amber-500/40"
-                                windowLabel="Based on last 42 days"
+                                windowLabel={getInsightWindowLabel(30)}
                             />
                         </section>
                     )}
@@ -406,9 +409,9 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                         <div className="mt-4">
                             <AIInsightCard
                                 insightType="training-health"
-                                payload={buildTrainingHealthPayload(allActivities)}
+                                payload={buildTrainingHealthPayload(allActivities, period)}
                                 mostRecentActivityId={mostRecentActivityId}
-                                windowLabel="Based on last 90 days"
+                                windowLabel={trainingHealthWindowLabel}
                             />
                         </div>
                     )}

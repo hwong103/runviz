@@ -30,10 +30,11 @@ export function AIInsightCard({
     conditionMet = true,
     windowLabel,
 }: AIInsightCardProps) {
-    const { insight, loading, error, refresh, dismiss } = useInsight({
+    const { insight, loading, error, dismissed, refresh, dismiss } = useInsight({
         insightType,
         payload,
         mostRecentActivityId,
+        enabled: conditionMet,
     });
 
     // If condition not met, don't render anything
@@ -43,6 +44,10 @@ export function AIInsightCard({
 
     // Silent error - return null
     if (error) {
+        return null;
+    }
+
+    if (dismissed) {
         return null;
     }
 

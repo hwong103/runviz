@@ -1,5 +1,10 @@
-import type { Activity } from '@/types';
+import { calculateAcwr, calculateConsistencyScore, calculateEfficiencyIndex, calculateMonotony, calculateStrainScore, calculateWeeklyRamp } from '@/analytics/trainingHealth';
+import { activitiesToDailyLoads, calculateActivityTRIMP, calculateTrainingLoadHistory } from '@/analytics/trainingLoad';
 import { calcVDOTFromActivities } from '@/analytics/vdot';
+import type { ViewPeriod } from '@/lib/dashboard';
+import type { Activity, TrainingLoadMetrics } from '@/types';
+import { isRun } from '@/types';
+import { parseActivityLocalDate } from '@/utils/activityDate';
 
 export interface OverviewPayload {
     runCount: number;
@@ -80,286 +85,420 @@ export interface RunDetailPayload {
     baselineAvgPaceMinPerKm: number;
     baselineEfficiency: number;
     baselineCadence: number;
-    personalBestEfficiency: number;
+    priorBestEfficiency: number;
+    efficiencyDeltaVsPriorBest: number;
+    efficiencyComparison: 'new-best' | 'near-best' | 'below-best' | 'no-baseline';
     longestRunKmLast60Days: number;
     isPbEffort: boolean;
     isFastForEffort: boolean;
     isLongest60Days: boolean;
 }
 
-// Helper functions
-function getActivitiesInWindow(activities: Activity[], days: number): Activity[] {
-    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-    return activities.filter((a) => new Date(a.start_date).getTime() >= cutoff);
+function roundTo(value: number, digits = 1): number {
+    if (!Number.isFinite(value)) return 0;
+    const factor = 10 ** digits;
+    return Math.round(value * factor) / factor;
 }
 
-function calculateLoadRatio(activities: Activity[]): number {
-    // Simplified acute:chronic workload ratio calculation
-    const now = Date.now();
-    const acuteCutoff = now - 7 * 24 * 60 * 60 * 1000; // 7 days
-    const chronicCutoff = now - 42 * 24 * 60 * 60 * 1000; // 42 days
-
-    const acuteActivities = activities.filter((a) => new Date(a.start_date).getTime() >= acuteCutoff);
-    const chronicActivities = activities.filter((a) => new Date(a.start_date).getTime() >= chronicCutoff);
-
-    const acuteLoad = acuteActivities.reduce((sum, a) => sum + (a.distance / 1000), 0);
-    const chronicLoad = chronicActivities.reduce((sum, a) => sum + (a.distance / 1000), 0) / 6;
-
-    return chronicLoad > 0 ? acuteLoad / chronicLoad : 1.0;
+function toRunActivities(activities: Activity[]): Activity[] {
+    return activities
+        .filter(isRun)
+        .sort((a, b) => parseActivityLocalDate(a.start_date_local).getTime() - parseActivityLocalDate(b.start_date_local).getTime());
 }
 
-function calculateRoutineScore(activities: Activity[]): number {
-    // Score based on consistency of running schedule
-    const last90Days = getActivitiesInWindow(activities, 90);
-    const weeksWithActivity = new Set(
-        last90Days.map((a) => {
-            const date = new Date(a.start_date);
-            return `${date.getFullYear()}-W${Math.ceil(date.getDate() / 7)}`;
+function getSelectedPeriodEnd(period?: ViewPeriod): Date {
+    const now = new Date();
+    if (!period || period.mode === 'all') return now;
+
+    if (period.mode === 'year') {
+        if (period.year === now.getFullYear()) return now;
+        return new Date(period.year, 11, 31, 23, 59, 59, 999);
+    }
+
+    if (period.mode === 'month' && period.month !== null) {
+        const isCurrentMonth = period.year === now.getFullYear() && period.month === now.getMonth();
+        if (isCurrentMonth) return now;
+        return new Date(period.year, period.month + 1, 0, 23, 59, 59, 999);
+    }
+
+    return now;
+}
+
+export function viewPeriodToDays(viewPeriod: ViewPeriod): number {
+    if (viewPeriod.mode === '30d') return 30;
+    if (viewPeriod.mode === '365d') return 365;
+    if (viewPeriod.mode === 'year') return 365;
+    if (viewPeriod.mode === 'month') return 30;
+    return 90;
+}
+
+export function getInsightWindowLabel(days: number): string {
+    return `Based on last ${days} days`;
+}
+
+function getWindowBounds(anchorDate: Date, days: number): { start: Date; end: Date } {
+    const end = new Date(anchorDate);
+    end.setHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setDate(end.getDate() - (days - 1));
+    start.setHours(0, 0, 0, 0);
+    return { start, end };
+}
+
+function getActivitiesInWindowEndingAt(activities: Activity[], anchorDate: Date, days: number): Activity[] {
+    const { start, end } = getWindowBounds(anchorDate, days);
+    return toRunActivities(activities).filter((activity) => {
+        const date = parseActivityLocalDate(activity.start_date_local);
+        return date >= start && date <= end;
+    });
+}
+
+function getPriorWindowActivities(activities: Activity[], anchorDate: Date, days: number): Activity[] {
+    const priorEnd = getPriorWindowEnd(anchorDate, days);
+    return getActivitiesInWindowEndingAt(activities, priorEnd, days);
+}
+
+function getPriorWindowEnd(anchorDate: Date, days: number): Date {
+    const currentWindow = getWindowBounds(anchorDate, days);
+    const priorEnd = new Date(currentWindow.start);
+    priorEnd.setDate(priorEnd.getDate() - 1);
+    priorEnd.setHours(23, 59, 59, 999);
+    return priorEnd;
+}
+
+function getAveragePaceMinPerKm(activities: Activity[]): number {
+    const totals = activities.reduce(
+        (acc, activity) => {
+            acc.distance += activity.distance;
+            acc.time += activity.moving_time;
+            return acc;
+        },
+        { distance: 0, time: 0 }
+    );
+
+    if (totals.distance <= 0 || totals.time <= 0) return 0;
+    return (totals.time / totals.distance) * 1000 / 60;
+}
+
+function getAverageOutingMinutes(activities: Activity[]): number {
+    if (activities.length === 0) return 0;
+    return activities.reduce((sum, activity) => sum + activity.moving_time / 60, 0) / activities.length;
+}
+
+function getTotalDistanceKm(activities: Activity[]): number {
+    return activities.reduce((sum, activity) => sum + activity.distance / 1000, 0);
+}
+
+function countActiveWeeks(activities: Activity[]): number {
+    const weeks = new Set(
+        activities.map((activity) => {
+            const date = parseActivityLocalDate(activity.start_date_local);
+            const year = date.getFullYear();
+            const startOfYear = new Date(year, 0, 1);
+            const dayOfYear = Math.floor((date.getTime() - startOfYear.getTime()) / 86400000);
+            return `${year}-${Math.floor(dayOfYear / 7)}`;
         })
-    ).size;
-
-    return Math.min(100, Math.round((weeksWithActivity / 13) * 100));
+    );
+    return weeks.size;
 }
 
-function calculateEfficiency(activities: Activity[]): number {
-    const runsWithHR = activities.filter((a) => a.average_heartrate && a.average_speed && a.distance);
-    if (runsWithHR.length === 0) return 0;
+function getWeeklyTotalsEndingAt(activities: Activity[], anchorDate: Date, weeks: number): number[] {
+    const totals: number[] = [];
 
-    const totalMeters = runsWithHR.reduce((sum, a) => sum + a.distance, 0);
-    const totalBeats = runsWithHR.reduce((sum, a) => sum + (a.average_heartrate || 0) * ((a.distance / 1000) / (a.average_speed || 1) * 60), 0);
+    for (let index = weeks - 1; index >= 0; index -= 1) {
+        const weekEnd = new Date(anchorDate);
+        weekEnd.setHours(23, 59, 59, 999);
+        weekEnd.setDate(weekEnd.getDate() - index * 7);
 
-    return totalBeats > 0 ? totalMeters / totalBeats : 0;
+        const weekStart = new Date(weekEnd);
+        weekStart.setDate(weekEnd.getDate() - 6);
+        weekStart.setHours(0, 0, 0, 0);
+
+        const total = toRunActivities(activities).reduce((sum, activity) => {
+            const date = parseActivityLocalDate(activity.start_date_local);
+            if (date < weekStart || date > weekEnd) return sum;
+            return sum + activity.distance / 1000;
+        }, 0);
+
+        totals.push(roundTo(total, 1));
+    }
+
+    return totals;
 }
 
-// Payload builders
-export function buildOverviewPayload(activities: Activity[]): OverviewPayload {
-    const last90Days = getActivitiesInWindow(activities, 90);
+function get3WeekRampRate(weeklyTotals: number[]): number {
+    if (weeklyTotals.length < 4) return 0;
+    const recent = weeklyTotals.slice(-3);
+    const previous = weeklyTotals.slice(-6, -3);
+    if (recent.length === 0 || previous.length === 0) return 0;
 
-    const runs = last90Days.filter((a) => a.type === 'Run');
-    const totalDistanceKm = runs.reduce((sum, a) => sum + (a.distance / 1000), 0);
-    const avgPaceMinPerKm = runs.length > 0
-        ? (runs.reduce((sum, a) => sum + (a.average_speed || 1), 0) / runs.length) / 1000 * 60
-        : 0;
-    const loadRatio = calculateLoadRatio(last90Days);
-    const routineScore = calculateRoutineScore(last90Days);
-    const efficiencyMPerBeat = calculateEfficiency(runs);
+    const recentAvg = recent.reduce((sum, value) => sum + value, 0) / recent.length;
+    const previousAvg = previous.reduce((sum, value) => sum + value, 0) / previous.length;
+    if (previousAvg <= 0) return 0;
 
-    // Baseline from 6 months
-    const baselineAvgWeeklyKm = totalDistanceKm / 13; // 90 days ≈ 13 weeks
+    return ((recentAvg - previousAvg) / previousAvg) * 100;
+}
+
+function getLatestTrainingMetrics(activities: Activity[], endDate: Date, days: number): TrainingLoadMetrics[] {
+    const runs = toRunActivities(activities);
+    if (runs.length === 0) return [];
+
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - (days - 1));
+    startDate.setHours(0, 0, 0, 0);
+
+    const dailyLoads = activitiesToDailyLoads(runs, 185, 60);
+    return calculateTrainingLoadHistory(dailyLoads, startDate, endDate);
+}
+
+function getConsecutiveRunDays(activities: Activity[], anchorDate: Date): number {
+    const runDays = new Set(
+        toRunActivities(activities)
+            .filter((activity) => parseActivityLocalDate(activity.start_date_local) <= anchorDate)
+            .map((activity) => parseActivityLocalDate(activity.start_date_local).toDateString())
+    );
+
+    let streak = 0;
+    const cursor = new Date(anchorDate);
+    cursor.setHours(0, 0, 0, 0);
+
+    while (runDays.has(cursor.toDateString())) {
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 1);
+    }
+
+    return streak;
+}
+
+function hasExtendedGap(activities: Activity[], gapDays = 21): boolean {
+    const runs = toRunActivities(activities);
+    for (let index = 1; index < runs.length; index += 1) {
+        const previous = parseActivityLocalDate(runs[index - 1].start_date_local);
+        const current = parseActivityLocalDate(runs[index].start_date_local);
+        const diffDays = Math.floor((current.getTime() - previous.getTime()) / 86400000);
+        if (diffDays >= gapDays) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function findLatestRaceLikeRun(activities: Activity[]): Activity | null {
+    const raceDistances = [5000, 10000, 21097.5, 42195];
+    const tolerance = 0.1;
+    const candidates = toRunActivities(activities).filter((activity) =>
+        raceDistances.some((distance) => Math.abs(activity.distance - distance) <= distance * tolerance)
+    );
+    return candidates.length > 0 ? candidates[candidates.length - 1] : null;
+}
+
+function getActivityEfficiency(activity: Activity): number {
+    if (!activity.average_heartrate || !activity.moving_time || !activity.distance) return 0;
+    return activity.distance / ((activity.average_heartrate / 60) * activity.moving_time);
+}
+
+function getSimilarEffortBaselineRuns(activity: Activity, activities: Activity[], days: number): Activity[] {
+    const anchorDate = parseActivityLocalDate(activity.start_date_local);
+    const candidates = getActivitiesInWindowEndingAt(activities, anchorDate, days).filter((candidate) => candidate.id !== activity.id);
+
+    if (!activity.average_heartrate) {
+        return candidates;
+    }
+
+    const lowerBound = activity.average_heartrate * 0.95;
+    const upperBound = activity.average_heartrate * 1.05;
+    const similar = candidates.filter((candidate) => {
+        if (!candidate.average_heartrate) return false;
+        return candidate.average_heartrate >= lowerBound && candidate.average_heartrate <= upperBound;
+    });
+
+    return similar.length > 0 ? similar : candidates;
+}
+
+export function buildOverviewPayload(activities: Activity[], viewPeriod?: ViewPeriod): OverviewPayload {
+    const anchorDate = getSelectedPeriodEnd(viewPeriod);
+    const windowDays = viewPeriod ? viewPeriodToDays(viewPeriod) : 90;
+    const windowActivities = getActivitiesInWindowEndingAt(activities, anchorDate, windowDays);
+    const baselineActivities = getActivitiesInWindowEndingAt(activities, anchorDate, 180);
+    const weeklyRamp = calculateWeeklyRamp(windowActivities, anchorDate);
+    const loadRatio = calculateAcwr(windowActivities, anchorDate) ?? 0;
+    const baselineLoadRatio = calculateAcwr(baselineActivities, anchorDate) ?? loadRatio;
+    const efficiency = calculateEfficiencyIndex(windowActivities, anchorDate, Math.min(windowDays, 28)) ?? 0;
+    const baselineEfficiency = calculateEfficiencyIndex(baselineActivities, anchorDate, 28) ?? efficiency;
 
     return {
-        runCount: runs.length,
-        totalDistanceKm: Math.round(totalDistanceKm * 10) / 10,
-        avgPaceMinPerKm: Math.round(avgPaceMinPerKm * 100) / 100,
-        loadRatio: Math.round(loadRatio * 100) / 100,
-        weeklyChange: 0, // Would need comparison to prior period
-        routineScore,
-        efficiencyMPerBeat: Math.round(efficiencyMPerBeat * 100) / 100,
-        avgOutingMins: 0,
-        baselineAvgWeeklyKm: Math.round(baselineAvgWeeklyKm * 10) / 10,
-        baselineLoadRatio: 1.0,
-        baselineEfficiency: efficiencyMPerBeat,
+        runCount: windowActivities.length,
+        totalDistanceKm: roundTo(getTotalDistanceKm(windowActivities), 1),
+        avgPaceMinPerKm: roundTo(getAveragePaceMinPerKm(windowActivities), 2),
+        loadRatio: roundTo(loadRatio, 2),
+        weeklyChange: roundTo(weeklyRamp.rampPercent ?? 0, 1),
+        routineScore: calculateConsistencyScore(windowActivities, anchorDate),
+        efficiencyMPerBeat: roundTo(efficiency, 2),
+        avgOutingMins: roundTo(getAverageOutingMinutes(windowActivities), 1),
+        baselineAvgWeeklyKm: roundTo(getTotalDistanceKm(baselineActivities) / Math.max(180 / 7, 1), 1),
+        baselineLoadRatio: roundTo(baselineLoadRatio, 2),
+        baselineEfficiency: roundTo(baselineEfficiency, 2),
     };
 }
 
-export function buildTrainingHealthPayload(activities: Activity[]): TrainingHealthPayload {
-    const last90Days = getActivitiesInWindow(activities, 90);
-    const runs = last90Days.filter((a) => a.type === 'Run' || a.sport_type === 'Run');
+export function buildTrainingHealthPayload(activities: Activity[], viewPeriod?: ViewPeriod): TrainingHealthPayload {
+    const anchorDate = getSelectedPeriodEnd(viewPeriod);
+    const windowDays = viewPeriod ? viewPeriodToDays(viewPeriod) : 90;
+    const windowActivities = getActivitiesInWindowEndingAt(activities, anchorDate, windowDays);
+    const baselineAnchor = getPriorWindowEnd(anchorDate, windowDays);
+    const baselineActivities = getPriorWindowActivities(activities, anchorDate, windowDays);
+    const acuteRuns = getActivitiesInWindowEndingAt(windowActivities, anchorDate, Math.min(7, windowDays));
+    const chronicRuns = getActivitiesInWindowEndingAt(windowActivities, anchorDate, Math.min(42, windowDays));
+    const totalTrimp = windowActivities.reduce((sum, activity) => sum + calculateActivityTRIMP(activity, 185, 60), 0);
+    const baselineTrimp = baselineActivities.reduce((sum, activity) => sum + calculateActivityTRIMP(activity, 185, 60), 0);
 
-    // Calculate daily TRIMPs for last 7 days for monotony/strain
-    const now = new Date();
-    const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
-
-    const dailyTrimps: Record<string, number> = {};
-    const cursor = new Date(sevenDaysAgo);
-    while (cursor <= now) {
-        const key = cursor.toISOString().split('T')[0];
-        dailyTrimps[key] = 0;
-        cursor.setDate(cursor.getDate() + 1);
-    }
-
-    runs.forEach((a) => {
-        const dateKey = new Date(a.start_date).toISOString().split('T')[0];
-        if (dailyTrimps.hasOwnProperty(dateKey)) {
-            const duration = (a.moving_time || 0) / 60;
-            const hrFactor = a.average_heartrate ? (a.average_heartrate - 60) / 100 : 0.3;
-            dailyTrimps[dateKey] += duration * Math.max(hrFactor, 0);
-        }
-    });
-
-    const trimpValues = Object.values(dailyTrimps);
-    const meanTrimp = trimpValues.reduce((sum, v) => sum + v, 0) / trimpValues.length;
-    const variance = trimpValues.reduce((sum, v) => sum + Math.pow(v - meanTrimp, 2), 0) / trimpValues.length;
-    const stdDev = Math.sqrt(variance);
-    const monotony = stdDev > 0 ? meanTrimp / stdDev : 0;
-
-    const weeklyTrimp = trimpValues.reduce((sum, v) => sum + v, 0);
-    const strain = weeklyTrimp * monotony;
-
-    // Acute (last 7 days) and Chronic (last 42 days / 6 weeks) load in km/week
-    const acuteKm = getActivitiesInWindow(activities, 7)
-        .filter((a) => a.type === 'Run' || a.sport_type === 'Run')
-        .reduce((sum, a) => sum + a.distance / 1000, 0);
-    const chronicKm = getActivitiesInWindow(activities, 42)
-        .filter((a) => a.type === 'Run' || a.sport_type === 'Run')
-        .reduce((sum, a) => sum + a.distance / 1000, 0) / 6;
-
-    const loadRatio = chronicKm > 0 ? Math.round((acuteKm / chronicKm) * 100) / 100 : 1.0;
-
-    // Total TRIMP for last 90 days
-    const totalTrimp = runs.reduce((sum, a) => {
-        const duration = (a.moving_time || 0) / 60;
-        const hrFactor = a.average_heartrate ? (a.average_heartrate - 60) / 100 : 0.3;
-        return sum + duration * Math.max(hrFactor, 0);
-    }, 0);
+    const acuteLoad = getTotalDistanceKm(acuteRuns);
+    const chronicLoad = chronicRuns.length > 0 ? getTotalDistanceKm(chronicRuns) / Math.max(Math.min(42, windowDays) / 7, 1) : 0;
 
     return {
         trimp: Math.round(totalTrimp),
-        monotony: Math.round(monotony * 100) / 100,
-        strain: Math.round(strain),
-        acuteLoad: Math.round(acuteKm * 10) / 10,
-        chronicLoad: Math.round(chronicKm * 10) / 10,
-        loadRatio,
-        weekCount: 13,
-        baselineMonotony: monotony,
-        baselineStrain: strain,
-        baselineTrimp: Math.round(totalTrimp),
+        monotony: roundTo(calculateMonotony(windowActivities, anchorDate), 2),
+        strain: Math.round(calculateStrainScore(windowActivities, anchorDate)),
+        acuteLoad: roundTo(acuteLoad, 1),
+        chronicLoad: roundTo(chronicLoad, 1),
+        loadRatio: roundTo(calculateAcwr(windowActivities, anchorDate) ?? 0, 2),
+        weekCount: countActiveWeeks(windowActivities),
+        baselineMonotony: roundTo(calculateMonotony(baselineActivities, baselineAnchor), 2),
+        baselineStrain: Math.round(calculateStrainScore(baselineActivities, baselineAnchor)),
+        baselineTrimp: Math.round(baselineTrimp),
     };
 }
 
 export function buildFitnessPayload(activities: Activity[]): FitnessPayload {
-    const last60Days = getActivitiesInWindow(activities, 60);
+    const endDate = new Date();
+    const metrics60 = getLatestTrainingMetrics(activities, endDate, 60);
+    const metrics90 = getLatestTrainingMetrics(activities, endDate, 90);
+    const latest = metrics60[metrics60.length - 1];
+    const first = metrics60[0];
 
-    // Simplified CTL/ATL calculation
-    const ctl = last60Days.reduce((sum, a) => sum + (a.distance / 1000), 0) / 60;
-    const atl = last60Days.slice(0, 7).reduce((sum, a) => sum + (a.distance / 1000), 0) / 7;
-    const tsb = ctl - atl;
+    if (!latest) {
+        return {
+            currentCTL: 0,
+            currentATL: 0,
+            tsb: 0,
+            ctlTrend: 'flat',
+            ctlPeak90Days: 0,
+            daysSincePeak: 0,
+            baselineCTL: 0,
+        };
+    }
+
+    const ctlDelta = latest.ctl - (first?.ctl ?? latest.ctl);
+    let ctlTrend: FitnessPayload['ctlTrend'] = 'flat';
+    if (ctlDelta > 1) ctlTrend = 'rising';
+    if (ctlDelta < -1) ctlTrend = 'falling';
+
+    const peakMetric = metrics90.reduce((peak, metric) => (metric.ctl > peak.ctl ? metric : peak), metrics90[0] ?? latest);
+    const peakDate = peakMetric ? new Date(peakMetric.date) : endDate;
+    const daysSincePeak = Math.max(0, Math.floor((endDate.getTime() - peakDate.getTime()) / 86400000));
+    const baselineCtl = metrics60.reduce((sum, metric) => sum + metric.ctl, 0) / metrics60.length;
 
     return {
-        currentCTL: Math.round(ctl * 10) / 10,
-        currentATL: Math.round(atl * 10) / 10,
-        tsb: Math.round(tsb),
-        ctlTrend: 'rising' as const,
-        ctlPeak90Days: ctl,
-        daysSincePeak: 0,
-        baselineCTL: ctl,
+        currentCTL: roundTo(latest.ctl, 1),
+        currentATL: roundTo(latest.atl, 1),
+        tsb: roundTo(latest.tsb, 1),
+        ctlTrend,
+        ctlPeak90Days: roundTo(peakMetric?.ctl ?? latest.ctl, 1),
+        daysSincePeak,
+        baselineCTL: roundTo(baselineCtl, 1),
     };
 }
 
-export function buildVolumePayload(activities: Activity[]): VolumePayload {
-    const last6Weeks = getActivitiesInWindow(activities, 42);
+export function buildVolumePayload(activities: Activity[], viewPeriod?: ViewPeriod): VolumePayload {
+    const anchorDate = getSelectedPeriodEnd(viewPeriod);
+    const windowDays = viewPeriod ? viewPeriodToDays(viewPeriod) : 42;
+    const weeks = Math.max(4, Math.ceil(windowDays / 7));
+    const recentWeeklyKm = getWeeklyTotalsEndingAt(activities, anchorDate, weeks);
 
-    // Group by week
-    const weeklyKm: Record<string, number> = {};
-    last6Weeks
-        .filter((a) => a.type === 'Run')
-        .forEach((a) => {
-            const weekStart = new Date(a.start_date);
-            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-            const key = weekStart.toISOString().split('T')[0];
-            weeklyKm[key] = (weeklyKm[key] || 0) + (a.distance / 1000);
-        });
-
-    const recentWeeklyKm = Object.values(weeklyKm).slice(-6);
     const avgWeeklyKm = recentWeeklyKm.length > 0
-        ? recentWeeklyKm.reduce((a, b) => a + b, 0) / recentWeeklyKm.length
+        ? recentWeeklyKm.reduce((sum, value) => sum + value, 0) / recentWeeklyKm.length
         : 0;
+    const maxWeeklyKm = recentWeeklyKm.length > 0 ? Math.max(...recentWeeklyKm) : 0;
+    const latestWeek = recentWeeklyKm[recentWeeklyKm.length - 1] ?? 0;
+    const previousWeek = recentWeeklyKm[recentWeeklyKm.length - 2] ?? 0;
+    const weekOverWeekChange = previousWeek > 0 ? ((latestWeek - previousWeek) / previousWeek) * 100 : 0;
+
+    const baselineAnchor = new Date(anchorDate);
+    baselineAnchor.setDate(baselineAnchor.getDate() - weeks * 7);
+    const baselineWeeklyKm = getWeeklyTotalsEndingAt(activities, baselineAnchor, weeks);
+    const baselineAvgWeeklyKm = baselineWeeklyKm.length > 0
+        ? baselineWeeklyKm.reduce((sum, value) => sum + value, 0) / baselineWeeklyKm.length
+        : avgWeeklyKm;
+    const baselinePeakWeeklyKm = baselineWeeklyKm.length > 0 ? Math.max(...baselineWeeklyKm) : maxWeeklyKm;
 
     return {
         recentWeeklyKm,
-        avgWeeklyKm: Math.round(avgWeeklyKm * 10) / 10,
-        maxWeeklyKm: Math.round(Math.max(...recentWeeklyKm, 0) * 10) / 10,
-        weekOverWeekChange: 0,
-        rampRate3Week: 0,
-        baselineAvgWeeklyKm: avgWeeklyKm,
-        baselinePeakWeeklyKm: Math.max(...recentWeeklyKm, 0),
+        avgWeeklyKm: roundTo(avgWeeklyKm, 1),
+        maxWeeklyKm: roundTo(maxWeeklyKm, 1),
+        weekOverWeekChange: roundTo(weekOverWeekChange, 1),
+        rampRate3Week: roundTo(get3WeekRampRate(recentWeeklyKm), 1),
+        baselineAvgWeeklyKm: roundTo(baselineAvgWeeklyKm, 1),
+        baselinePeakWeeklyKm: roundTo(baselinePeakWeeklyKm, 1),
     };
 }
 
-export function buildInjuryRiskPayload(activities: Activity[]): InjuryRiskPayload & { shouldShow: boolean } {
-    const last42Days = getActivitiesInWindow(activities, 42);
-    const last14Days = getActivitiesInWindow(activities, 14);
-
-    const loadRatio = calculateLoadRatio(last42Days);
-
-    // Calculate ramp rate
-    const weeklyDistances: number[] = [];
-    for (let i = 0; i < 6; i++) {
-        const weekStart = new Date();
-        weekStart.setDate(weekStart.getDate() - (5 - i) * 7);
-        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekEnd.getDate() + 7);
-
-        const weekDistance = last42Days
-            .filter((a) => {
-                const date = new Date(a.start_date);
-                return date >= weekStart && date < weekEnd;
-            })
-            .reduce((sum, a) => sum + (a.distance / 1000), 0);
-
-        weeklyDistances.push(weekDistance);
-    }
-
-    const rampRate3Week = weeklyDistances.length >= 3
-        ? ((weeklyDistances[weeklyDistances.length - 1] - weeklyDistances[0]) / weeklyDistances[0]) * 100
-        : 0;
-
-    // Check if should show
+export function buildInjuryRiskPayload(activities: Activity[], windowDays = 30): InjuryRiskPayload & { shouldShow: boolean } {
+    const anchorDate = new Date();
+    const lastWindowDays = getActivitiesInWindowEndingAt(activities, anchorDate, windowDays);
+    const last14Days = getActivitiesInWindowEndingAt(activities, anchorDate, 14);
+    const weeklyTotals = getWeeklyTotalsEndingAt(activities, anchorDate, Math.max(4, Math.ceil(windowDays / 7)));
+    const loadRatio = calculateAcwr(lastWindowDays, anchorDate) ?? 0;
+    const rampRate3Week = get3WeekRampRate(weeklyTotals);
+    const daysWithActivity = new Set(
+        last14Days.map((activity) => parseActivityLocalDate(activity.start_date_local).toDateString())
+    ).size;
+    const baselineAnchor = getPriorWindowEnd(anchorDate, windowDays);
+    const baselineActivities = getPriorWindowActivities(activities, anchorDate, windowDays);
+    const baselineLoadRatio = calculateAcwr(baselineActivities, baselineAnchor) ?? loadRatio;
     const shouldShow = loadRatio > 1.5 || rampRate3Week > 30;
 
-    // Count rest days
-    const daysWithActivity = new Set(
-        last14Days.map((a) => new Date(a.start_date).toDateString())
-    ).size;
-    const recentRestDays = 14 - daysWithActivity;
-
     return {
-        loadRatio: Math.round(loadRatio * 100) / 100,
-        rampRate3Week: Math.round(rampRate3Week),
-        recentRestDays,
-        consecutiveRunDays: daysWithActivity,
-        baselineLoadRatio: 1.0,
-        injuryHistoryFlag: false,
+        loadRatio: roundTo(loadRatio, 2),
+        rampRate3Week: roundTo(rampRate3Week, 1),
+        recentRestDays: Math.max(0, 14 - daysWithActivity),
+        consecutiveRunDays: getConsecutiveRunDays(activities, anchorDate),
+        baselineLoadRatio: roundTo(baselineLoadRatio, 2),
+        injuryHistoryFlag: hasExtendedGap(activities),
         shouldShow,
     };
 }
 
 export function buildRacePredictionPayload(activities: Activity[]): RacePredictionPayload {
-    const last90Days = getActivitiesInWindow(activities, 90);
-    const prior90Days = activities.filter((a) => {
-        const t = new Date(a.start_date).getTime();
-        const now = Date.now();
-        return t >= now - 180 * 86400000 && t < now - 90 * 86400000;
-    });
-
-    // Use the real VDOT calculation
+    const last90Days = getActivitiesInWindowEndingAt(activities, new Date(), 90);
+    const prior90Days = getPriorWindowActivities(activities, new Date(), 90);
     const currentResult = calcVDOTFromActivities(last90Days);
     const priorResult = calcVDOTFromActivities(prior90Days);
 
     const vdot = currentResult?.vdot ?? 0;
     const priorVdot = priorResult?.vdot ?? vdot;
-    const vdotChange = Math.round((vdot - priorVdot) * 10) / 10;
-    const vdotTrend: 'improving' | 'declining' | 'stable' =
+    const vdotChange = roundTo(vdot - priorVdot, 1);
+    const vdotTrend: RacePredictionPayload['vdotTrend'] =
         vdotChange > 0.5 ? 'improving' : vdotChange < -0.5 ? 'declining' : 'stable';
 
-    // Pull predicted times from VDOT race predictions if available
     const racePredictions = currentResult?.racePredictions ?? [];
     const findTime = (label: string) => {
-        const match = racePredictions.find((r) => r.label === label);
+        const match = racePredictions.find((prediction) => prediction.label === label);
         return match ? Math.round(match.timeS / 60) : 0;
     };
 
+    const latestRace = findLatestRaceLikeRun(last90Days);
+
     return {
-        vdot: Math.round(vdot * 10) / 10,
+        vdot: roundTo(vdot, 1),
         predictedMarathonMins: findTime('Marathon'),
         predictedHalfMins: findTime('Half Marathon'),
         predicted10kMins: findTime('10K'),
         predicted5kMins: findTime('5K'),
         vdotTrend,
         vdotChangeSince90Days: vdotChange,
+        lastRaceDistanceKm: latestRace ? roundTo(latestRace.distance / 1000, 1) : undefined,
+        lastRaceTimeMins: latestRace ? Math.round(latestRace.moving_time / 60) : undefined,
+        lastRaceDate: latestRace ? latestRace.start_date_local.split('T')[0] : undefined,
     };
 }
 
@@ -367,46 +506,62 @@ export function buildRunDetailPayload(
     activity: Activity,
     allActivities: Activity[]
 ): RunDetailPayload & { shouldShow: boolean } {
-    const last60Days = getActivitiesInWindow(allActivities, 60);
-    const last90Days = getActivitiesInWindow(allActivities, 90);
+    const anchorDate = parseActivityLocalDate(activity.start_date_local);
+    const similarEffortRuns = getSimilarEffortBaselineRuns(activity, allActivities, 30);
+    const baselineRuns90 = getActivitiesInWindowEndingAt(allActivities, anchorDate, 90).filter((candidate) => candidate.id !== activity.id);
+    const previous60Runs = getActivitiesInWindowEndingAt(allActivities, anchorDate, 60).filter((candidate) => candidate.id !== activity.id);
 
-    const baselineRuns = last90Days.filter((a) => a.type === 'Run' && a.id !== activity.id);
-
-    const baselineAvgPace = baselineRuns.reduce((sum, a) => sum + (a.average_speed || 1), 0) / baselineRuns.length;
-    const baselineEfficiency = calculateEfficiency(baselineRuns);
-    const baselineCadence = baselineRuns.reduce((sum, a) => sum + (a.average_cadence || 0), 0) / baselineRuns.length;
-
-    const efficiencyMPerBeat = activity.average_heartrate && activity.distance
-        ? activity.distance / (activity.average_heartrate * (activity.moving_time / 60))
+    const activityEfficiency = getActivityEfficiency(activity);
+    const baselineAvgPace = getAveragePaceMinPerKm(similarEffortRuns);
+    const baselineEfficiency = calculateEfficiencyIndex(baselineRuns90, anchorDate, 90) ?? 0;
+    const baselineCadence = baselineRuns90.length > 0
+        ? baselineRuns90.reduce((sum, run) => sum + (run.average_cadence ?? 0), 0) / baselineRuns90.length
         : 0;
+    const priorBestEfficiency = baselineRuns90.reduce((best, run) => Math.max(best, getActivityEfficiency(run)), 0);
+    const longestRunKmLast60Days = previous60Runs.reduce((best, run) => Math.max(best, run.distance / 1000), 0);
+    const activityPace = getAveragePaceMinPerKm([activity]);
 
-    const longestRunKmLast60Days = Math.max(
-        ...last60Days.filter((a) => a.type === 'Run').map((a) => a.distance / 1000),
-        0
-    );
-
-    const isPbEffort = efficiencyMPerBeat > baselineEfficiency * 1.05;
-    const isFastForEffort = (activity.average_speed || 0) > baselineAvgPace * 1.05;
-    const isLongest60Days = (activity.distance / 1000) >= longestRunKmLast60Days;
-
-    const shouldShow = isPbEffort || isFastForEffort || isLongest60Days ||
-        (activity.average_cadence && Math.abs(activity.average_cadence - baselineCadence) > baselineCadence * 0.05);
+    const efficiencyDeltaVsPriorBest = priorBestEfficiency > 0
+        ? ((activityEfficiency - priorBestEfficiency) / priorBestEfficiency) * 100
+        : 0;
+    const isPbEffort = priorBestEfficiency > 0
+        ? activityEfficiency > priorBestEfficiency * 1.01
+        : false;
+    const isFastForEffort = baselineAvgPace > 0 && activityPace > 0 && activityPace <= baselineAvgPace * 0.95;
+    const cadenceDeviation = baselineCadence > 0 && activity.average_cadence
+        ? Math.abs(activity.average_cadence - baselineCadence) / baselineCadence
+        : 0;
+    const isLongest60Days = activity.distance / 1000 > longestRunKmLast60Days;
+    const isNearPriorBest = priorBestEfficiency > 0
+        ? !isPbEffort && activityEfficiency >= priorBestEfficiency * 0.97
+        : false;
+    const efficiencyComparison: RunDetailPayload['efficiencyComparison'] =
+        priorBestEfficiency <= 0
+            ? 'no-baseline'
+            : isPbEffort
+                ? 'new-best'
+                : isNearPriorBest
+                    ? 'near-best'
+                    : 'below-best';
+    const shouldShow = isFastForEffort || isPbEffort || isNearPriorBest || cadenceDeviation > 0.05 || isLongest60Days;
 
     return {
-        distanceKm: Math.round((activity.distance / 1000) * 10) / 10,
-        avgPaceMinPerKm: Math.round((1000 / (activity.average_speed || 1)) / 60 * 100) / 100,
-        avgHR: activity.average_heartrate || 0,
-        efficiencyMPerBeat: Math.round(efficiencyMPerBeat * 100) / 100,
-        cadenceAvg: activity.average_cadence || 0,
+        distanceKm: roundTo(activity.distance / 1000, 1),
+        avgPaceMinPerKm: roundTo(activityPace, 2),
+        avgHR: activity.average_heartrate ?? 0,
+        efficiencyMPerBeat: roundTo(activityEfficiency, 2),
+        cadenceAvg: roundTo(activity.average_cadence ?? 0, 1),
         elevationGainM: Math.round(activity.total_elevation_gain || 0),
-        baselineAvgPaceMinPerKm: Math.round((1000 / baselineAvgPace) / 60 * 100) / 100,
-        baselineEfficiency: Math.round(baselineEfficiency * 100) / 100,
-        baselineCadence: Math.round(baselineCadence),
-        personalBestEfficiency: efficiencyMPerBeat,
-        longestRunKmLast60Days: Math.round(longestRunKmLast60Days * 10) / 10,
+        baselineAvgPaceMinPerKm: roundTo(baselineAvgPace, 2),
+        baselineEfficiency: roundTo(baselineEfficiency, 2),
+        baselineCadence: roundTo(baselineCadence, 1),
+        priorBestEfficiency: roundTo(priorBestEfficiency, 3),
+        efficiencyDeltaVsPriorBest: roundTo(efficiencyDeltaVsPriorBest, 1),
+        efficiencyComparison,
+        longestRunKmLast60Days: roundTo(longestRunKmLast60Days, 1),
         isPbEffort,
         isFastForEffort,
         isLongest60Days,
-        shouldShow: !!shouldShow,
+        shouldShow,
     };
 }

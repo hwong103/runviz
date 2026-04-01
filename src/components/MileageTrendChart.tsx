@@ -19,7 +19,7 @@ import type { Activity } from '../types';
 import { parseActivityLocalDate } from '../utils/activityDate';
 import { useChartTheme } from '../hooks/useChartTheme';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
-import { buildVolumePayload } from '@/utils/insightPayloads';
+import { buildVolumePayload, getInsightWindowLabel, viewPeriodToDays } from '@/utils/insightPayloads';
 
 ChartJS.register(
     CategoryScale,
@@ -231,9 +231,9 @@ export function MileageTrendChart({ activities, allActivities, period, mostRecen
                 <div className="mt-6 shrink-0">
                     <AIInsightCard
                         insightType="volume"
-                        payload={buildVolumePayload(allActivities)}
+                        payload={buildVolumePayload(allActivities, period)}
                         mostRecentActivityId={mostRecentActivityId}
-                        windowLabel="Based on last 6 weeks"
+                        windowLabel={getInsightWindowLabel(viewPeriodToDays(period))}
                     />
                 </div>
             )}

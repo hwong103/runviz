@@ -26,6 +26,7 @@ import type { Activity, ActivityStreams, Gear } from '../types';
 import { isRun } from '../types';
 import { format } from 'date-fns';
 import { activities as activitiesApi, gear as gearApi } from '../services/api';
+import { useChartTheme } from '../hooks/useChartTheme';
 import { getBrandLogoUrl, getBrandFallbackEmoji } from '../services/logoService';
 import { parseActivityLocalDate } from '../utils/activityDate';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
@@ -121,6 +122,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
     const [loadingStreams, setLoadingStreams] = useState(false);
     const [viewMode, setViewMode] = useState<'stream' | 'splits'>('stream');
     const [fetchedShoe, setFetchedShoe] = useState<Gear | null>(null);
+    const chartTheme = useChartTheme();
 
     // Navigation Logic
     const currentIndex = allActivities.findIndex(a => a.id === initialActivity.id);
@@ -283,6 +285,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
     const distancePeak = Math.max(...stats.distBins, 1);
     const pacePeak = Math.max(...stats.paceBins, 1);
     const averageHeartrate = activity.average_heartrate ? Math.round(activity.average_heartrate) : null;
+    const runInsightPayload = useMemo(() => buildRunDetailPayload(activity, allActivities), [activity, allActivities]);
 
     const chartData = useMemo(() => {
         if (!streams?.velocity_smooth?.data || !streams.distance?.data) return null;
@@ -331,9 +334,9 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                         type: 'bar' as const,
                         label: 'Pace',
                         data: splits.map(s => s.pace),
-                        backgroundColor: 'rgba(74, 122, 255, 0.46)',
-                        hoverBackgroundColor: 'rgba(74, 122, 255, 0.62)',
-                        borderColor: 'rgba(74, 122, 255, 0.8)',
+                        backgroundColor: chartTheme.primaryFill,
+                        hoverBackgroundColor: chartTheme.accentBg,
+                        borderColor: chartTheme.primaryLine,
                         borderWidth: 1,
                         borderRadius: 10,
                         yAxisID: 'y',
@@ -343,12 +346,12 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                         type: 'line' as const,
                         label: 'Heart Rate',
                         data: splits.map(s => s.hr),
-                        borderColor: '#d9b36a',
+                        borderColor: chartTheme.secondaryLine,
                         backgroundColor: 'transparent',
                         fill: false,
                         tension: 0.28,
                         pointRadius: 4,
-                        pointBackgroundColor: '#d9b36a',
+                        pointBackgroundColor: chartTheme.secondaryLine,
                         borderWidth: 2,
                         yAxisID: 'y1',
                     }
@@ -383,9 +386,9 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                         type: 'bar' as const,
                         label: 'Pace',
                         data: velocityData,
-                        backgroundColor: 'rgba(74, 122, 255, 0.34)',
-                        hoverBackgroundColor: 'rgba(74, 122, 255, 0.52)',
-                        borderColor: 'rgba(74, 122, 255, 0.7)',
+                        backgroundColor: chartTheme.primaryFill,
+                        hoverBackgroundColor: chartTheme.accentBg,
+                        borderColor: chartTheme.primaryLine,
                         borderWidth: 1,
                         borderRadius: 6,
                         barPercentage: 1.0,
@@ -397,7 +400,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                         type: 'line' as const,
                         label: 'Heart Rate',
                         data: hrData,
-                        borderColor: '#d9b36a',
+                        borderColor: chartTheme.secondaryLine,
                         backgroundColor: 'transparent',
                         fill: false,
                         tension: 0.4,
@@ -409,7 +412,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                 paces: velocityData
             };
         }
-    }, [streams, viewMode]);
+    }, [chartTheme, streams, viewMode]);
 
     const hrChartData = useMemo(() => {
         if (!streams?.heartrate?.data || !streams.distance?.data) return null;
@@ -435,15 +438,15 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                 type: 'line' as const,
                 label: 'Heart Rate',
                 data: hrData,
-                borderColor: '#d9b36a',
-                backgroundColor: 'rgba(217, 179, 106, 0.1)',
+                borderColor: chartTheme.secondaryLine,
+                backgroundColor: chartTheme.secondaryFill,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 0,
                 borderWidth: 2,
             }]
         };
-    }, [streams]);
+    }, [chartTheme, streams]);
 
     const hrChartOptions = useMemo(() => {
         if (!hrChartData) return {};
@@ -462,9 +465,11 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                 legend: { display: false },
                 tooltip: {
                     enabled: true,
-                    backgroundColor: 'rgba(4, 23, 35, 0.94)',
-                    borderColor: 'rgba(217, 179, 106, 0.16)',
+                    backgroundColor: chartTheme.tooltipBg,
+                    borderColor: chartTheme.tooltipBorder,
                     borderWidth: 1,
+                    titleColor: chartTheme.tooltipTitle,
+                    bodyColor: chartTheme.tooltipBody,
                     titleFont: { size: 11, weight: 'bold' },
                     bodyFont: { size: 11 },
                     padding: 12,
@@ -477,21 +482,21 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
             scales: {
                 x: {
                     display: true,
-                    title: { display: true, text: 'Distance (km)', color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' } },
-                    ticks: { color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' } },
+                    title: { display: true, text: 'Distance (km)', color: chartTheme.axisColor, font: { size: 10, weight: 'bold' } },
+                    ticks: { color: chartTheme.tickColor, font: { size: 10, weight: 'bold' } },
                     grid: { display: false },
                 },
                 y: {
                     display: true,
-                    title: { display: true, text: 'Heart Rate (bpm)', color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' } },
+                    title: { display: true, text: 'Heart Rate (bpm)', color: chartTheme.axisColor, font: { size: 10, weight: 'bold' } },
                     min: hrMin,
                     max: hrMax,
-                    ticks: { color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' } },
-                    grid: { color: 'rgba(245, 239, 227, 0.06)' },
+                    ticks: { color: chartTheme.tickColor, font: { size: 10, weight: 'bold' } },
+                    grid: { color: chartTheme.gridColor },
                 },
             },
         };
-    }, [hrChartData]);
+    }, [chartTheme, hrChartData]);
 
     const chartOptions = useMemo(() => {
         if (!chartData) return {};
@@ -509,9 +514,11 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                 legend: { display: false },
                 tooltip: {
                     enabled: true,
-                    backgroundColor: 'rgba(4, 23, 35, 0.94)',
-                    borderColor: 'rgba(217, 179, 106, 0.16)',
+                    backgroundColor: chartTheme.tooltipBg,
+                    borderColor: chartTheme.tooltipBorder,
                     borderWidth: 1,
+                    titleColor: chartTheme.tooltipTitle,
+                    bodyColor: chartTheme.tooltipBody,
                     titleFont: { size: 11, weight: 'bold' },
                     bodyFont: { size: 11 },
                     padding: 12,
@@ -531,21 +538,21 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                 x: {
                     type: viewMode === 'stream' ? 'linear' : 'category',
                     display: true,
-                    grid: { color: 'rgba(245, 239, 227, 0.05)' },
+                    grid: { color: chartTheme.gridColor },
                     border: { display: false },
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    ticks: { color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' }, maxTicksLimit: 12, callback: (value: any) => viewMode === 'stream' ? Math.round(value) : value },
-                    title: { display: true, text: 'KILOMETERS', color: 'rgba(245, 239, 227, 0.52)', font: { size: 10, weight: 'bold' }, padding: { top: 10 } }
+                    ticks: { color: chartTheme.tickColor, font: { size: 10, weight: 'bold' }, maxTicksLimit: 12, callback: (value: any) => viewMode === 'stream' ? Math.round(value) : value },
+                    title: { display: true, text: 'KILOMETERS', color: chartTheme.axisColor, font: { size: 10, weight: 'bold' }, padding: { top: 10 } }
                 },
                 y: {
                     reverse: true,
                     position: 'left' as const,
                     min: paceMin,
                     max: paceMax,
-                    grid: { color: 'rgba(245, 239, 227, 0.05)', drawTicks: false },
+                    grid: { color: chartTheme.gridColor, drawTicks: false },
                     border: { display: false },
-                    ticks: { color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' }, padding: 10, callback: (value: number | string) => formatPace(typeof value === 'string' ? parseFloat(value) : value) },
-                    title: { display: true, text: 'PACE', color: 'rgba(245, 239, 227, 0.52)', font: { size: 10, weight: 'bold' }, padding: { bottom: 10 } }
+                    ticks: { color: chartTheme.tickColor, font: { size: 10, weight: 'bold' }, padding: 10, callback: (value: number | string) => formatPace(typeof value === 'string' ? parseFloat(value) : value) },
+                    title: { display: true, text: 'PACE', color: chartTheme.axisColor, font: { size: 10, weight: 'bold' }, padding: { bottom: 10 } }
                 },
                 y1: {
                     position: 'right' as const,
@@ -553,12 +560,12 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                     min: 80,
                     max: 200,
                     border: { display: false },
-                    ticks: { color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' }, padding: 10 },
-                    title: { display: true, text: 'HEART RATE', color: 'rgba(245, 239, 227, 0.52)', font: { size: 10, weight: 'bold' }, padding: { bottom: 10 } }
+                    ticks: { color: chartTheme.tickColor, font: { size: 10, weight: 'bold' }, padding: 10 },
+                    title: { display: true, text: 'HEART RATE', color: chartTheme.axisColor, font: { size: 10, weight: 'bold' }, padding: { bottom: 10 } }
                 }
             }
         };
-    }, [chartData, viewMode]);
+    }, [chartData, chartTheme, viewMode]);
 
     return (
         <div className="fixed inset-0 z-[100] overflow-y-auto bg-[color-mix(in_srgb,var(--rv-bg)_90%,transparent)] p-4 backdrop-blur-xl">
@@ -662,11 +669,11 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                 />
                             </section>
 
-                            {buildRunDetailPayload(activity, allActivities).shouldShow && (
+                            {runInsightPayload.shouldShow && (
                                 <section>
                                     <AIInsightCard
                                         insightType="run-detail"
-                                        payload={buildRunDetailPayload(activity, allActivities)}
+                                        payload={runInsightPayload}
                                         mostRecentActivityId={activity.id}
                                     />
                                 </section>
@@ -696,7 +703,10 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                     </button>
                                 </div>
 
-                                <div className="rounded-[1.6rem] border border-white/[0.06] bg-black/[0.16] p-3 sm:p-4">
+                                <div
+                                    className="rounded-[1.6rem] p-3 sm:p-4"
+                                    style={{ border: `1px solid ${chartTheme.panelBorder}`, background: chartTheme.panelBg }}
+                                >
                                     <div className="h-72 sm:h-80">
                                         {loadingStreams ? (
                                             <div className="flex h-full items-center justify-center">
@@ -730,7 +740,10 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                         </p>
                                     </div>
 
-                                    <div className="rounded-[1.6rem] border border-white/[0.06] bg-black/[0.16] p-3 sm:p-4">
+                                    <div
+                                        className="rounded-[1.6rem] p-3 sm:p-4"
+                                        style={{ border: `1px solid ${chartTheme.panelBorder}`, background: chartTheme.panelBg }}
+                                    >
                                         <div className="h-56 sm:h-64">
                                             <Chart type="line" data={hrChartData as any} options={hrChartOptions as any} />
                                         </div>
@@ -750,10 +763,10 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                                 labels: stats.distLabels,
                                                 datasets: [{
                                                     data: stats.distBins,
-                                                    backgroundColor: 'rgba(74, 122, 255, 0.42)',
+                                                    backgroundColor: chartTheme.primaryFill,
                                                     borderRadius: 8,
                                                     borderWidth: 1,
-                                                    borderColor: 'rgba(74, 122, 255, 0.7)'
+                                                    borderColor: chartTheme.primaryLine
                                                 }]
                                             }}
                                             options={{
@@ -763,7 +776,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                                     y: { display: false },
                                                     x: {
                                                         display: true,
-                                                        ticks: { color: 'rgba(245, 239, 227, 0.42)', font: { size: 9, weight: 'bold' } },
+                                                        ticks: { color: chartTheme.tickColor, font: { size: 9, weight: 'bold' } },
                                                         grid: { display: false },
                                                         border: { display: false }
                                                     }
@@ -773,11 +786,12 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                         <div
                                             className="pointer-events-none absolute"
                                             style={{
-                                                left: `${(stats.myDistBin / 10) * 100 + 5}%`,
-                                                bottom: `${(stats.distBins[stats.myDistBin] / distancePeak) * 100}%`
+                                                left: `${Math.min(92, Math.max(8, (stats.myDistBin / Math.max(stats.distBins.length - 1, 1)) * 100))}%`,
+                                                bottom: `${Math.min(92, Math.max(10, (stats.distBins[stats.myDistBin] / distancePeak) * 100))}%`,
+                                                transform: 'translate(-50%, -18px)'
                                             }}
                                         >
-                                            <div className="-ml-5 -mt-10 rounded-full border border-[var(--rv-yellow)]/25 bg-[var(--rv-yellow)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-yellow)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+                                            <div className="rounded-full border border-[var(--rv-yellow)]/25 bg-[var(--rv-yellow)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-yellow)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
                                                 {stats.distanceRankText}
                                             </div>
                                         </div>
@@ -795,10 +809,10 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                                 labels: stats.paceLabels,
                                                 datasets: [{
                                                     data: stats.paceBins,
-                                                    backgroundColor: 'rgba(217, 179, 106, 0.36)',
+                                                    backgroundColor: chartTheme.secondaryFill,
                                                     borderRadius: 8,
                                                     borderWidth: 1,
-                                                    borderColor: 'rgba(217, 179, 106, 0.65)'
+                                                    borderColor: chartTheme.secondaryLine
                                                 }]
                                             }}
                                             options={{
@@ -808,7 +822,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                                     y: { display: false },
                                                     x: {
                                                         display: true,
-                                                        ticks: { color: 'rgba(245, 239, 227, 0.42)', font: { size: 9, weight: 'bold' } },
+                                                        ticks: { color: chartTheme.tickColor, font: { size: 9, weight: 'bold' } },
                                                         grid: { display: false },
                                                         border: { display: false }
                                                     }
@@ -818,11 +832,12 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                         <div
                                             className="pointer-events-none absolute"
                                             style={{
-                                                left: `${(stats.myPaceBin / 6) * 100 + 8}%`,
-                                                bottom: `${(stats.paceBins[stats.myPaceBin] / pacePeak) * 100}%`
+                                                left: `${Math.min(92, Math.max(8, (stats.myPaceBin / Math.max(stats.paceBins.length - 1, 1)) * 100))}%`,
+                                                bottom: `${Math.min(92, Math.max(10, (stats.paceBins[stats.myPaceBin] / pacePeak) * 100))}%`,
+                                                transform: 'translate(-50%, -18px)'
                                             }}
                                         >
-                                            <div className="-ml-5 -mt-10 rounded-full border border-[var(--rv-blue)]/22 bg-[var(--rv-blue)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-blue)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+                                            <div className="rounded-full border border-[var(--rv-blue)]/22 bg-[var(--rv-blue)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-blue)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
                                                 {stats.paceRankText}
                                             </div>
                                         </div>
