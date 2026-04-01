@@ -1,20 +1,10 @@
 import type { Activity } from '@/types';
 import { calcVDOTFromActivities } from '@/analytics/vdot';
-import type { ViewPeriod } from '@/lib/dashboard';
-
-function viewPeriodToDays(viewPeriod: ViewPeriod): number {
-    if (viewPeriod.mode === '30d') return 30;
-    if (viewPeriod.mode === '365d') return 365;
-    if (viewPeriod.mode === 'year') return 365;
-    if (viewPeriod.mode === 'month') return 30;
-    // Default: 90d and 'all'
-    return 90;
-}
 
 export interface OverviewPayload {
     runCount: number;
     totalDistanceKm: number;
-    avgPaceSecPerKm: number;
+    avgPaceMinPerKm: number;
     loadRatio: number;
     weeklyChange: number;
     routineScore: number;
@@ -82,12 +72,12 @@ export interface RacePredictionPayload {
 
 export interface RunDetailPayload {
     distanceKm: number;
-    avgPaceSecPerKm: number;
+    avgPaceMinPerKm: number;
     avgHR: number;
     efficiencyMPerBeat: number;
     cadenceAvg: number;
     elevationGainM: number;
-    baselineAvgPaceSecPerKm: number;
+    baselineAvgPaceMinPerKm: number;
     baselineEfficiency: number;
     baselineCadence: number;
     personalBestEfficiency: number;
@@ -142,26 +132,25 @@ function calculateEfficiency(activities: Activity[]): number {
 }
 
 // Payload builders
-export function buildOverviewPayload(activities: Activity[], viewPeriod?: ViewPeriod): OverviewPayload {
-    const days = viewPeriod ? viewPeriodToDays(viewPeriod) : 90;
-    const lastWindow = getActivitiesInWindow(activities, days);
+export function buildOverviewPayload(activities: Activity[]): OverviewPayload {
+    const last90Days = getActivitiesInWindow(activities, 90);
 
-    const runs = lastWindow.filter((a) => a.type === 'Run');
+    const runs = last90Days.filter((a) => a.type === 'Run');
     const totalDistanceKm = runs.reduce((sum, a) => sum + (a.distance / 1000), 0);
-    const avgPaceSecPerKm = runs.length > 0
-        ? (runs.reduce((sum, a) => sum + (a.average_speed || 1), 0) / runs.length)
+    const avgPaceMinPerKm = runs.length > 0
+        ? (runs.reduce((sum, a) => sum + (a.average_speed || 1), 0) / runs.length) / 1000 * 60
         : 0;
-    const loadRatio = calculateLoadRatio(lastWindow);
-    const routineScore = calculateRoutineScore(lastWindow);
+    const loadRatio = calculateLoadRatio(last90Days);
+    const routineScore = calculateRoutineScore(last90Days);
     const efficiencyMPerBeat = calculateEfficiency(runs);
 
     // Baseline from 6 months
-    const baselineAvgWeeklyKm = totalDistanceKm / (days / 7);
+    const baselineAvgWeeklyKm = totalDistanceKm / 13; // 90 days ≈ 13 weeks
 
     return {
         runCount: runs.length,
         totalDistanceKm: Math.round(totalDistanceKm * 10) / 10,
-        avgPaceSecPerKm: Math.round(avgPaceSecPerKm),
+        avgPaceMinPerKm: Math.round(avgPaceMinPerKm * 100) / 100,
         loadRatio: Math.round(loadRatio * 100) / 100,
         weeklyChange: 0, // Would need comparison to prior period
         routineScore,
@@ -173,47 +162,41 @@ export function buildOverviewPayload(activities: Activity[], viewPeriod?: ViewPe
     };
 }
 
-export function buildTrainingHealthPayload(activities: Activity[], viewPeriod?: ViewPeriod): TrainingHealthPayload {
-    const days = viewPeriod ? viewPeriodToDays(viewPeriod) : 90;
-    const lastWindow = getActivitiesInWindow(activities, days);
-    const runs = lastWindow.filter((a) => a.type === 'Run' || a.sport_type === 'Run');
+export function buildTrainingHealthPayload(activities: Activity[]): TrainingHealthPayload {
+    const last90Days = getActivitiesInWindow(activities, 90);
+    const runs = last90Days.filter((a) => a.type === 'Run' || a.sport_type === 'Run');
 
-    // Weekly distances for monotony and strain
-    const weeklyDistances: number[] = [];
-    const weekCount = Math.floor(days / 7);
-    for (let i = weekCount - 1; i >= 0; i--) {
-        const weekEnd = new Date();
-        weekEnd.setDate(weekEnd.getDate() - i * 7);
-        const weekStart = new Date(weekEnd);
-        weekStart.setDate(weekStart.getDate() - 7);
-        const weekKm = runs
-            .filter((a) => {
-                const d = new Date(a.start_date);
-                return d >= weekStart && d < weekEnd;
-            })
-            .reduce((sum, a) => sum + a.distance / 1000, 0);
-        weeklyDistances.push(weekKm);
+    // Calculate daily TRIMPs for last 7 days for monotony/strain
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const dailyTrimps: Record<string, number> = {};
+    const cursor = new Date(sevenDaysAgo);
+    while (cursor <= now) {
+        const key = cursor.toISOString().split('T')[0];
+        dailyTrimps[key] = 0;
+        cursor.setDate(cursor.getDate() + 1);
     }
 
-    const nonZeroWeeks = weeklyDistances.filter((w) => w > 0);
+    runs.forEach((a) => {
+        const dateKey = new Date(a.start_date).toISOString().split('T')[0];
+        if (dailyTrimps.hasOwnProperty(dateKey)) {
+            const duration = (a.moving_time || 0) / 60;
+            const hrFactor = a.average_heartrate ? (a.average_heartrate - 60) / 100 : 0.3;
+            dailyTrimps[dateKey] += duration * Math.max(hrFactor, 0);
+        }
+    });
 
-    // Monotony: mean / std dev of daily distances (lower = more varied)
-    const dailyDistances = runs.reduce<Record<string, number>>((acc, a) => {
-        const key = new Date(a.start_date).toDateString();
-        acc[key] = (acc[key] || 0) + a.distance / 1000;
-        return acc;
-    }, {});
-    const dailyValues = Object.values(dailyDistances);
-    const dailyMean = dailyValues.length > 0
-        ? dailyValues.reduce((a, b) => a + b, 0) / dailyValues.length
-        : 0;
-    const dailyStd = dailyValues.length > 1
-        ? Math.sqrt(dailyValues.reduce((sum, v) => sum + Math.pow(v - dailyMean, 2), 0) / dailyValues.length)
-        : 1;
-    const monotony = dailyStd > 0 ? Math.round((dailyMean / dailyStd) * 100) / 100 : 0;
+    const trimpValues = Object.values(dailyTrimps);
+    const meanTrimp = trimpValues.reduce((sum, v) => sum + v, 0) / trimpValues.length;
+    const variance = trimpValues.reduce((sum, v) => sum + Math.pow(v - meanTrimp, 2), 0) / trimpValues.length;
+    const stdDev = Math.sqrt(variance);
+    const monotony = stdDev > 0 ? meanTrimp / stdDev : 0;
 
-    const totalKm = runs.reduce((sum, a) => sum + a.distance / 1000, 0);
-    const strain = Math.round(totalKm * monotony * 10) / 10;
+    const weeklyTrimp = trimpValues.reduce((sum, v) => sum + v, 0);
+    const strain = weeklyTrimp * monotony;
 
     // Acute (last 7 days) and Chronic (last 42 days / 6 weeks) load in km/week
     const acuteKm = getActivitiesInWindow(activities, 7)
@@ -225,24 +208,24 @@ export function buildTrainingHealthPayload(activities: Activity[], viewPeriod?: 
 
     const loadRatio = chronicKm > 0 ? Math.round((acuteKm / chronicKm) * 100) / 100 : 1.0;
 
-    // TRIMP
-    const trimp = runs.reduce((sum, a) => {
+    // Total TRIMP for last 90 days
+    const totalTrimp = runs.reduce((sum, a) => {
         const duration = (a.moving_time || 0) / 60;
         const hrFactor = a.average_heartrate ? (a.average_heartrate - 60) / 100 : 0.3;
         return sum + duration * Math.max(hrFactor, 0);
     }, 0);
 
     return {
-        trimp: Math.round(trimp),
-        monotony,
-        strain,
+        trimp: Math.round(totalTrimp),
+        monotony: Math.round(monotony * 100) / 100,
+        strain: Math.round(strain),
         acuteLoad: Math.round(acuteKm * 10) / 10,
         chronicLoad: Math.round(chronicKm * 10) / 10,
         loadRatio,
-        weekCount: nonZeroWeeks.length,
+        weekCount: 13,
         baselineMonotony: monotony,
         baselineStrain: strain,
-        baselineTrimp: Math.round(trimp),
+        baselineTrimp: Math.round(totalTrimp),
     };
 }
 
@@ -265,13 +248,12 @@ export function buildFitnessPayload(activities: Activity[]): FitnessPayload {
     };
 }
 
-export function buildVolumePayload(activities: Activity[], viewPeriod?: ViewPeriod): VolumePayload {
-    const days = viewPeriod ? viewPeriodToDays(viewPeriod) : 42;
-    const lastWindow = getActivitiesInWindow(activities, days);
+export function buildVolumePayload(activities: Activity[]): VolumePayload {
+    const last6Weeks = getActivitiesInWindow(activities, 42);
 
     // Group by week
     const weeklyKm: Record<string, number> = {};
-    lastWindow
+    last6Weeks
         .filter((a) => a.type === 'Run')
         .forEach((a) => {
             const weekStart = new Date(a.start_date);
@@ -412,12 +394,12 @@ export function buildRunDetailPayload(
 
     return {
         distanceKm: Math.round((activity.distance / 1000) * 10) / 10,
-        avgPaceSecPerKm: Math.round(1000 / (activity.average_speed || 1)),
+        avgPaceMinPerKm: Math.round((1000 / (activity.average_speed || 1)) / 60 * 100) / 100,
         avgHR: activity.average_heartrate || 0,
         efficiencyMPerBeat: Math.round(efficiencyMPerBeat * 100) / 100,
         cadenceAvg: activity.average_cadence || 0,
         elevationGainM: Math.round(activity.total_elevation_gain || 0),
-        baselineAvgPaceSecPerKm: Math.round(1000 / baselineAvgPace),
+        baselineAvgPaceMinPerKm: Math.round((1000 / baselineAvgPace) / 60 * 100) / 100,
         baselineEfficiency: Math.round(baselineEfficiency * 100) / 100,
         baselineCadence: Math.round(baselineCadence),
         personalBestEfficiency: efficiencyMPerBeat,

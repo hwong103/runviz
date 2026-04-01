@@ -411,6 +411,88 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
         }
     }, [streams, viewMode]);
 
+    const hrChartData = useMemo(() => {
+        if (!streams?.heartrate?.data || !streams.distance?.data) return null;
+
+        const rawPoints = streams.heartrate.data.length;
+        const step = Math.max(1, Math.floor(rawPoints / 120));
+        const hrData = [];
+        const distances = [];
+
+        for (let i = 0; i < rawPoints; i += step) {
+            const dist = streams.distance.data[i];
+            const hr = streams.heartrate.data[i];
+
+            if (!hr || hr <= 0) continue;
+
+            hrData.push(hr);
+            distances.push(dist / 1000);
+        }
+
+        return {
+            labels: distances,
+            datasets: [{
+                type: 'line' as const,
+                label: 'Heart Rate',
+                data: hrData,
+                borderColor: '#d9b36a',
+                backgroundColor: 'rgba(217, 179, 106, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                borderWidth: 2,
+            }]
+        };
+    }, [streams]);
+
+    const hrChartOptions = useMemo(() => {
+        if (!hrChartData) return {};
+
+        const hrValues = hrChartData.datasets[0].data.filter((hr): hr is number => hr !== null && hr > 0);
+        const minHr = hrValues.length > 0 ? Math.min(...hrValues) : 0;
+        const maxHr = hrValues.length > 0 ? Math.max(...hrValues) : 200;
+        const hrMin = Math.max(0, Math.floor(minHr) - 10);
+        const hrMax = Math.ceil(maxHr) + 10;
+
+        return {
+            maintainAspectRatio: false,
+            layout: { padding: { left: 12, right: 12, top: 16, bottom: 0 } },
+            interaction: { mode: 'index' as const, intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(4, 23, 35, 0.94)',
+                    borderColor: 'rgba(217, 179, 106, 0.16)',
+                    borderWidth: 1,
+                    titleFont: { size: 11, weight: 'bold' },
+                    bodyFont: { size: 11 },
+                    padding: 12,
+                    callbacks: {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        label: (context: any) => `${context.dataset.label || ''}: ${Math.round(context.parsed.y)} bpm`,
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    display: true,
+                    title: { display: true, text: 'Distance (km)', color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' } },
+                    ticks: { color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' } },
+                    grid: { display: false },
+                },
+                y: {
+                    display: true,
+                    title: { display: true, text: 'Heart Rate (bpm)', color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' } },
+                    min: hrMin,
+                    max: hrMax,
+                    ticks: { color: 'rgba(245, 239, 227, 0.46)', font: { size: 10, weight: 'bold' } },
+                    grid: { color: 'rgba(245, 239, 227, 0.06)' },
+                },
+            },
+        };
+    }, [hrChartData]);
+
     const chartOptions = useMemo(() => {
         if (!chartData) return {};
         const paces = chartData.paces.filter(p => !isNaN(p) && isFinite(p));
@@ -635,6 +717,26 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                     </div>
                                 </div>
                             </section>
+
+                            {hrChartData && (
+                                <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6">
+                                    <div className="mb-5">
+                                        <p className="rv-kicker mb-2">Heart Rate</p>
+                                        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">
+                                            Heart rate trace
+                                        </h2>
+                                        <p className="rv-body-copy-sm mt-2 max-w-2xl">
+                                            Your heart rate progression across the run, showing effort distribution and any drift over distance.
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-[1.6rem] border border-white/[0.06] bg-black/[0.16] p-3 sm:p-4">
+                                        <div className="h-56 sm:h-64">
+                                            <Chart type="line" data={hrChartData as any} options={hrChartOptions as any} />
+                                        </div>
+                                    </div>
+                                </section>
+                            )}
 
                             <section className="grid gap-4 xl:grid-cols-2">
                                 <InsightCard

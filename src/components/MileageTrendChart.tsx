@@ -231,9 +231,9 @@ export function MileageTrendChart({ activities, allActivities, period, mostRecen
                 <div className="mt-6 shrink-0">
                     <AIInsightCard
                         insightType="volume"
-                        payload={buildVolumePayload(allActivities, period)}
+                        payload={buildVolumePayload(allActivities)}
                         mostRecentActivityId={mostRecentActivityId}
-                        windowLabel={`Based on last ${period.mode === '30d' ? '30 days' : period.mode === '90d' ? '90 days' : period.mode === '365d' || period.mode === 'year' ? 'year' : '6 weeks'}`}
+                        windowLabel="Based on last 6 weeks"
                     />
                 </div>
             )}
