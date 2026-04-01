@@ -485,7 +485,9 @@ function App() {
                 )}
               </div>
             </div>
-            <p className="rv-mini-label mt-6">Connect Strava during setup after sign-in.</p>
+            <p className="rv-mini-label mt-6 text-[0.68rem] sm:text-[0.7rem] lg:whitespace-nowrap">
+              Connect Strava during setup after sign-in.
+            </p>
             <div className="mt-6 pt-4 text-center">
               <Link
                 to="/privacy"
