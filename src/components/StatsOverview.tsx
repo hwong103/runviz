@@ -55,6 +55,7 @@ function getSelectedPeriodEnd(period: StatsOverviewProps['period']) {
         return new Date(period.year, period.month + 1, 0, 23, 59, 59, 999);
     }
 
+    // For relative date modes, use now as the end date
     return now;
 }
 
@@ -95,6 +96,24 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
             if (period.mode === 'all') return true;
             if (period.mode === 'year') return year === period.year;
             if (period.mode === 'month') return year === period.year && month === period.month;
+            if (period.mode === '30d') {
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - 30);
+                cutoff.setHours(0, 0, 0, 0);
+                return date >= cutoff;
+            }
+            if (period.mode === '90d') {
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - 90);
+                cutoff.setHours(0, 0, 0, 0);
+                return date >= cutoff;
+            }
+            if (period.mode === '365d') {
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - 365);
+                cutoff.setHours(0, 0, 0, 0);
+                return date >= cutoff;
+            }
 
             return false;
         });

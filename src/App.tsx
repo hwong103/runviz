@@ -136,12 +136,12 @@ function App() {
     logout,
   } = useAuth();
   const { activities, syncing, sync, lastSync } = useActivities(isAuthenticated && !needsStravaConnect);
+  const [filterStyle, setFilterStyle] = useState<'relative' | 'calendar'>('relative');
   const [viewPeriod, setViewPeriod] = useState<ViewPeriod>({
-    mode: 'month',
+    mode: '90d',
     year: new Date().getFullYear(),
     month: new Date().getMonth(),
   });
-  const [filterStyle, setFilterStyle] = useState<'relative' | 'calendar'>('relative');
   const [dashboardWorkspace, setDashboardWorkspace] = useState<DashboardWorkspace>('overview');
   const [trainingWorkspace, setTrainingWorkspace] = useState<TrainingWorkspace>('health');
   const [raceWorkspace, setRaceWorkspace] = useState<RaceWorkspace>('predictions');
