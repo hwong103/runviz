@@ -18,6 +18,30 @@ interface UseInsightReturn {
     dismiss: () => void;
 }
 
+function stableSerialize(value: unknown): string {
+    if (Array.isArray(value)) {
+        return `[${value.map(stableSerialize).join(',')}]`;
+    }
+
+    if (value && typeof value === 'object') {
+        const entries = Object.entries(value as Record<string, unknown>)
+            .sort(([left], [right]) => left.localeCompare(right))
+            .map(([key, nestedValue]) => `${JSON.stringify(key)}:${stableSerialize(nestedValue)}`);
+        return `{${entries.join(',')}}`;
+    }
+
+    return JSON.stringify(value);
+}
+
+function hashString(value: string): string {
+    let hash = 5381;
+    for (let index = 0; index < value.length; index += 1) {
+        hash = ((hash << 5) + hash) ^ value.charCodeAt(index);
+    }
+
+    return (hash >>> 0).toString(36);
+}
+
 export function useInsight({
     insightType,
     payload,
@@ -29,7 +53,8 @@ export function useInsight({
     const [error, setError] = useState<Error | null>(null);
     const [dismissed, setDismissed] = useState(false);
 
-    const cacheKey = `insight:default:${insightType}:${mostRecentActivityId}`;
+    const payloadHash = hashString(stableSerialize(payload));
+    const cacheKey = `insight:default:${insightType}:${mostRecentActivityId}:${payloadHash}`;
     const dismissKey = `dismissed:${cacheKey}`;
 
     const fetchInsight = useCallback(
@@ -59,6 +84,7 @@ export function useInsight({
                     body: JSON.stringify({
                         insightType,
                         mostRecentActivityId,
+                        payloadHash,
                         forceRefresh,
                         payload,
                     }),
@@ -82,7 +108,7 @@ export function useInsight({
                 setLoading(false);
             }
         },
-        [dismissKey, enabled, insightType, mostRecentActivityId, payload]
+        [dismissKey, enabled, insightType, mostRecentActivityId, payload, payloadHash]
     );
 
     const refresh = useCallback(async () => {

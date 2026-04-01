@@ -93,12 +93,13 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string)
     const body = await request.json() as {
         insightType: string;
         mostRecentActivityId: number;
+        payloadHash?: string;
         forceRefresh?: boolean;
         payload: Record<string, unknown>;
         athleteId?: string;
     };
 
-    const { insightType, mostRecentActivityId, forceRefresh = false, payload, athleteId = 'default' } = body;
+    const { insightType, mostRecentActivityId, payloadHash = 'default', forceRefresh = false, payload, athleteId = 'default' } = body;
 
     if (!INSIGHT_PROMPTS[insightType]) {
         return new Response(JSON.stringify({ error: `Unknown insight type: ${insightType}` }), {
@@ -107,7 +108,7 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string)
         });
     }
 
-    const cacheKey = `insight:${athleteId}:${insightType}:${mostRecentActivityId}`;
+    const cacheKey = `insight:${athleteId}:${insightType}:${mostRecentActivityId}:${payloadHash}`;
 
     // Check cache unless force refresh
     if (!forceRefresh) {
