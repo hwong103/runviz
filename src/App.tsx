@@ -686,7 +686,7 @@ function App() {
             <TabsContent value="mechanics" className="mt-0">
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
                 <Suspense fallback={<PanelFallback title="Cadence" subtitle="Loading run mechanics" />}>
-                  <CadenceTrendChart activities={filteredActivities} />
+                  <CadenceTrendChart activities={activities} />
                 </Suspense>
                 <Suspense fallback={<PanelFallback title="Shoes" subtitle="Loading equipment log" />}>
                   <ShoeTracker

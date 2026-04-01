@@ -172,7 +172,7 @@ export function AppShell({
                     loop
                     muted
                     playsInline
-                    className="absolute inset-0 h-full w-full object-cover"
+                    className="absolute inset-0 h-full w-full object-cover scale-[1.8] -translate-y-1"
                   >
                     <source
                       src={resolvedTheme === 'dark' ? '/running-man-dark.webm' : '/running-man.webm'}
