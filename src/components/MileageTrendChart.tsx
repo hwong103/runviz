@@ -57,6 +57,18 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
             startDate = startOfYear(new Date(period.year, 0));
             endDate = endOfYear(startDate);
             trailingDays = 90;
+        } else if (period.mode === '30d') {
+            endDate = startOfDay(new Date());
+            startDate = subDays(endDate, 30);
+            trailingDays = 7;
+        } else if (period.mode === '90d') {
+            endDate = startOfDay(new Date());
+            startDate = subDays(endDate, 90);
+            trailingDays = 21;
+        } else if (period.mode === '365d') {
+            endDate = startOfDay(new Date());
+            startDate = subDays(endDate, 365);
+            trailingDays = 90;
         } else {
             // All time - show last 2 years from now
             endDate = startOfDay(new Date());

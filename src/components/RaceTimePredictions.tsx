@@ -92,6 +92,21 @@ export function RaceTimePredictions({
             currentEnd = isCurrentYear ? today : endOfYear(currentStart);
             previousStart = startOfYear(new Date(period.year - 1, 0));
             previousEnd = endOfYear(previousStart);
+        } else if (period.mode === '30d') {
+            currentEnd = today;
+            currentStart = subDays(currentEnd, 30);
+            previousEnd = subDays(currentStart, 1);
+            previousStart = subDays(previousEnd, 30);
+        } else if (period.mode === '90d') {
+            currentEnd = today;
+            currentStart = subDays(currentEnd, 90);
+            previousEnd = subDays(currentStart, 1);
+            previousStart = subDays(previousEnd, 90);
+        } else if (period.mode === '365d') {
+            currentEnd = today;
+            currentStart = subDays(currentEnd, 365);
+            previousEnd = subDays(currentStart, 1);
+            previousStart = subDays(previousEnd, 365);
         } else {
             // All time - compare last 90 days to previous 90 days
             currentEnd = today;

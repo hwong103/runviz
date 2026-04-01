@@ -59,13 +59,22 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
         } else if (period.mode === 'year') {
             startDate = startOfYear(new Date(period.year, 0));
             endDate = endOfYear(startDate);
+        } else if (period.mode === '30d') {
+            endDate = startOfDay(new Date());
+            startDate = subDays(endDate, 30);
+        } else if (period.mode === '90d') {
+            endDate = startOfDay(new Date());
+            startDate = subDays(endDate, 90);
+        } else if (period.mode === '365d') {
+            endDate = startOfDay(new Date());
+            startDate = subDays(endDate, 365);
         } else {
             // All time - show last 180 days for clarity (CTL needs long history but display doesn't have to)
             endDate = startOfDay(new Date());
             startDate = subDays(endDate, 180);
         }
 
-        // We calculate from the beginning of time to ensure CTL is accurate, 
+        // We calculate from the beginning of time to ensure CTL is accurate,
         // but we only display the requested window.
         // Actually calculateTrainingLoadHistory handles the rolling calculation.
         // We just need to give it a start date.

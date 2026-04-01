@@ -177,11 +177,28 @@ function getTrendStartDate(period: ViewPeriod, selectedPeriodEnd: Date) {
         return startOfYear(new Date(period.year, 0));
     }
 
+    if (period.mode === '30d') {
+        return subDays(startOfDay(selectedPeriodEnd), 30);
+    }
+
+    if (period.mode === '90d') {
+        return subDays(startOfDay(selectedPeriodEnd), 90);
+    }
+
+    if (period.mode === '365d') {
+        return subDays(startOfDay(selectedPeriodEnd), 365);
+    }
+
     return subDays(startOfDay(selectedPeriodEnd), 180);
 }
 
 function getTrendAnchors(period: ViewPeriod, startDate: Date, selectedPeriodEnd: Date) {
     if (period.mode === 'month') {
+        return eachDayOfInterval({ start: startDate, end: selectedPeriodEnd });
+    }
+
+    if (period.mode === '30d' || period.mode === '90d') {
+        // Use daily anchors for shorter relative periods
         return eachDayOfInterval({ start: startDate, end: selectedPeriodEnd });
     }
 
