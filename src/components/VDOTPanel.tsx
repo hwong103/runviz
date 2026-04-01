@@ -1,9 +1,13 @@
 import { useMemo } from 'react';
 import type { Activity } from '../types';
 import { calcVDOTFromActivities } from '../analytics/vdot';
+import { AIInsightCard } from '@/components/ui/AIInsightCard';
+import { buildRacePredictionPayload } from '@/utils/insightPayloads';
 
 interface VDOTPanelProps {
     activities: Activity[];
+    allActivities?: Activity[];
+    mostRecentActivityId?: number;
 }
 
 const ZONE_META: Array<{ key: 'E' | 'M' | 'T' | 'I' | 'R'; label: string; color: string }> = [
@@ -14,7 +18,7 @@ const ZONE_META: Array<{ key: 'E' | 'M' | 'T' | 'I' | 'R'; label: string; color:
     { key: 'R', label: 'Repetition', color: '#EF4444' },
 ];
 
-export function VDOTPanel({ activities }: VDOTPanelProps) {
+export function VDOTPanel({ activities, allActivities, mostRecentActivityId }: VDOTPanelProps) {
     const result = useMemo(() => calcVDOTFromActivities(activities), [activities]);
 
     return (
@@ -80,6 +84,17 @@ export function VDOTPanel({ activities }: VDOTPanelProps) {
                             ))}
                         </div>
                     </div>
+                </div>
+            )}
+
+            {result && mostRecentActivityId && allActivities && (
+                <div className="mt-6">
+                    <AIInsightCard
+                        insightType="race-prediction"
+                        payload={buildRacePredictionPayload(allActivities)}
+                        mostRecentActivityId={mostRecentActivityId}
+                        windowLabel="Based on last 90 days"
+                    />
                 </div>
             )}
         </div>

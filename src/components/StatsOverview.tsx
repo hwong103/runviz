@@ -233,9 +233,9 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                         <section style={reveal(180)}>
                             <AIInsightCard
                                 insightType="overview"
-                                payload={buildOverviewPayload(allActivities)}
+                                payload={buildOverviewPayload(allActivities, period)}
                                 mostRecentActivityId={mostRecentActivityId}
-                                windowLabel="Based on last 90 days"
+                                windowLabel={`Based on last ${period.mode === '30d' ? '30 days' : period.mode === '90d' ? '90 days' : period.mode === '365d' || period.mode === 'year' ? 'year' : '90 days'}`}
                             />
                         </section>
                     )}
@@ -406,9 +406,9 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                         <div className="mt-4">
                             <AIInsightCard
                                 insightType="training-health"
-                                payload={buildTrainingHealthPayload(allActivities)}
+                                payload={buildTrainingHealthPayload(allActivities, period)}
                                 mostRecentActivityId={mostRecentActivityId}
-                                windowLabel="Based on last 90 days"
+                                windowLabel={`Based on last ${period.mode === '30d' ? '30 days' : period.mode === '90d' ? '90 days' : period.mode === '365d' || period.mode === 'year' ? 'year' : '90 days'}`}
                             />
                         </div>
                     )}

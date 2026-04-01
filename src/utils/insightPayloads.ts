@@ -1,4 +1,15 @@
 import type { Activity } from '@/types';
+import { calcVDOTFromActivities } from '@/analytics/vdot';
+import type { ViewPeriod } from '@/lib/dashboard';
+
+function viewPeriodToDays(viewPeriod: ViewPeriod): number {
+    if (viewPeriod.mode === '30d') return 30;
+    if (viewPeriod.mode === '365d') return 365;
+    if (viewPeriod.mode === 'year') return 365;
+    if (viewPeriod.mode === 'month') return 30;
+    // Default: 90d and 'all'
+    return 90;
+}
 
 export interface OverviewPayload {
     runCount: number;
@@ -131,20 +142,21 @@ function calculateEfficiency(activities: Activity[]): number {
 }
 
 // Payload builders
-export function buildOverviewPayload(activities: Activity[]): OverviewPayload {
-    const last90Days = getActivitiesInWindow(activities, 90);
+export function buildOverviewPayload(activities: Activity[], viewPeriod?: ViewPeriod): OverviewPayload {
+    const days = viewPeriod ? viewPeriodToDays(viewPeriod) : 90;
+    const lastWindow = getActivitiesInWindow(activities, days);
 
-    const runs = last90Days.filter((a) => a.type === 'Run');
+    const runs = lastWindow.filter((a) => a.type === 'Run');
     const totalDistanceKm = runs.reduce((sum, a) => sum + (a.distance / 1000), 0);
     const avgPaceSecPerKm = runs.length > 0
         ? (runs.reduce((sum, a) => sum + (a.average_speed || 1), 0) / runs.length)
         : 0;
-    const loadRatio = calculateLoadRatio(last90Days);
-    const routineScore = calculateRoutineScore(last90Days);
+    const loadRatio = calculateLoadRatio(lastWindow);
+    const routineScore = calculateRoutineScore(lastWindow);
     const efficiencyMPerBeat = calculateEfficiency(runs);
 
     // Baseline from 6 months
-    const baselineAvgWeeklyKm = totalDistanceKm / 13; // 90 days ≈ 13 weeks
+    const baselineAvgWeeklyKm = totalDistanceKm / (days / 7);
 
     return {
         runCount: runs.length,
@@ -161,28 +173,76 @@ export function buildOverviewPayload(activities: Activity[]): OverviewPayload {
     };
 }
 
-export function buildTrainingHealthPayload(activities: Activity[]): TrainingHealthPayload {
-    const last90Days = getActivitiesInWindow(activities, 90);
-    const runs = last90Days.filter((a) => a.type === 'Run');
+export function buildTrainingHealthPayload(activities: Activity[], viewPeriod?: ViewPeriod): TrainingHealthPayload {
+    const days = viewPeriod ? viewPeriodToDays(viewPeriod) : 90;
+    const lastWindow = getActivitiesInWindow(activities, days);
+    const runs = lastWindow.filter((a) => a.type === 'Run' || a.sport_type === 'Run');
 
-    // Simplified TRIMP calculation
+    // Weekly distances for monotony and strain
+    const weeklyDistances: number[] = [];
+    const weekCount = Math.floor(days / 7);
+    for (let i = weekCount - 1; i >= 0; i--) {
+        const weekEnd = new Date();
+        weekEnd.setDate(weekEnd.getDate() - i * 7);
+        const weekStart = new Date(weekEnd);
+        weekStart.setDate(weekStart.getDate() - 7);
+        const weekKm = runs
+            .filter((a) => {
+                const d = new Date(a.start_date);
+                return d >= weekStart && d < weekEnd;
+            })
+            .reduce((sum, a) => sum + a.distance / 1000, 0);
+        weeklyDistances.push(weekKm);
+    }
+
+    const nonZeroWeeks = weeklyDistances.filter((w) => w > 0);
+
+    // Monotony: mean / std dev of daily distances (lower = more varied)
+    const dailyDistances = runs.reduce<Record<string, number>>((acc, a) => {
+        const key = new Date(a.start_date).toDateString();
+        acc[key] = (acc[key] || 0) + a.distance / 1000;
+        return acc;
+    }, {});
+    const dailyValues = Object.values(dailyDistances);
+    const dailyMean = dailyValues.length > 0
+        ? dailyValues.reduce((a, b) => a + b, 0) / dailyValues.length
+        : 0;
+    const dailyStd = dailyValues.length > 1
+        ? Math.sqrt(dailyValues.reduce((sum, v) => sum + Math.pow(v - dailyMean, 2), 0) / dailyValues.length)
+        : 1;
+    const monotony = dailyStd > 0 ? Math.round((dailyMean / dailyStd) * 100) / 100 : 0;
+
+    const totalKm = runs.reduce((sum, a) => sum + a.distance / 1000, 0);
+    const strain = Math.round(totalKm * monotony * 10) / 10;
+
+    // Acute (last 7 days) and Chronic (last 42 days / 6 weeks) load in km/week
+    const acuteKm = getActivitiesInWindow(activities, 7)
+        .filter((a) => a.type === 'Run' || a.sport_type === 'Run')
+        .reduce((sum, a) => sum + a.distance / 1000, 0);
+    const chronicKm = getActivitiesInWindow(activities, 42)
+        .filter((a) => a.type === 'Run' || a.sport_type === 'Run')
+        .reduce((sum, a) => sum + a.distance / 1000, 0) / 6;
+
+    const loadRatio = chronicKm > 0 ? Math.round((acuteKm / chronicKm) * 100) / 100 : 1.0;
+
+    // TRIMP
     const trimp = runs.reduce((sum, a) => {
-        const duration = (a.moving_time || 0) / 60; // minutes
-        const hrFactor = ((a.average_heartrate || 0) - 60) / 100;
-        return sum + duration * hrFactor;
+        const duration = (a.moving_time || 0) / 60;
+        const hrFactor = a.average_heartrate ? (a.average_heartrate - 60) / 100 : 0.3;
+        return sum + duration * Math.max(hrFactor, 0);
     }, 0);
 
     return {
         trimp: Math.round(trimp),
-        monotony: 0,
-        strain: 0,
-        acuteLoad: 0,
-        chronicLoad: 0,
-        loadRatio: calculateLoadRatio(last90Days),
-        weekCount: 13,
-        baselineMonotony: 0,
-        baselineStrain: 0,
-        baselineTrimp: trimp,
+        monotony,
+        strain,
+        acuteLoad: Math.round(acuteKm * 10) / 10,
+        chronicLoad: Math.round(chronicKm * 10) / 10,
+        loadRatio,
+        weekCount: nonZeroWeeks.length,
+        baselineMonotony: monotony,
+        baselineStrain: strain,
+        baselineTrimp: Math.round(trimp),
     };
 }
 
@@ -205,12 +265,13 @@ export function buildFitnessPayload(activities: Activity[]): FitnessPayload {
     };
 }
 
-export function buildVolumePayload(activities: Activity[]): VolumePayload {
-    const last6Weeks = getActivitiesInWindow(activities, 42);
+export function buildVolumePayload(activities: Activity[], viewPeriod?: ViewPeriod): VolumePayload {
+    const days = viewPeriod ? viewPeriodToDays(viewPeriod) : 42;
+    const lastWindow = getActivitiesInWindow(activities, days);
 
     // Group by week
     const weeklyKm: Record<string, number> = {};
-    last6Weeks
+    lastWindow
         .filter((a) => a.type === 'Run')
         .forEach((a) => {
             const weekStart = new Date(a.start_date);
@@ -286,20 +347,37 @@ export function buildInjuryRiskPayload(activities: Activity[]): InjuryRiskPayloa
 
 export function buildRacePredictionPayload(activities: Activity[]): RacePredictionPayload {
     const last90Days = getActivitiesInWindow(activities, 90);
-    const runs = last90Days.filter((a) => a.type === 'Run');
+    const prior90Days = activities.filter((a) => {
+        const t = new Date(a.start_date).getTime();
+        const now = Date.now();
+        return t >= now - 180 * 86400000 && t < now - 90 * 86400000;
+    });
 
-    // Simplified VDOT calculation
-    const avgPace = runs.reduce((sum, a) => sum + (a.average_speed || 1), 0) / runs.length;
-    const vdot = avgPace * 3.5; // Simplified
+    // Use the real VDOT calculation
+    const currentResult = calcVDOTFromActivities(last90Days);
+    const priorResult = calcVDOTFromActivities(prior90Days);
+
+    const vdot = currentResult?.vdot ?? 0;
+    const priorVdot = priorResult?.vdot ?? vdot;
+    const vdotChange = Math.round((vdot - priorVdot) * 10) / 10;
+    const vdotTrend: 'improving' | 'declining' | 'stable' =
+        vdotChange > 0.5 ? 'improving' : vdotChange < -0.5 ? 'declining' : 'stable';
+
+    // Pull predicted times from VDOT race predictions if available
+    const racePredictions = currentResult?.racePredictions ?? [];
+    const findTime = (label: string) => {
+        const match = racePredictions.find((r) => r.label === label);
+        return match ? Math.round(match.timeS / 60) : 0;
+    };
 
     return {
         vdot: Math.round(vdot * 10) / 10,
-        predictedMarathonMins: 240,
-        predictedHalfMins: 110,
-        predicted10kMins: 50,
-        predicted5kMins: 24,
-        vdotTrend: 'stable' as const,
-        vdotChangeSince90Days: 0,
+        predictedMarathonMins: findTime('Marathon'),
+        predictedHalfMins: findTime('Half Marathon'),
+        predicted10kMins: findTime('10K'),
+        predicted5kMins: findTime('5K'),
+        vdotTrend,
+        vdotChangeSince90Days: vdotChange,
     };
 }
 

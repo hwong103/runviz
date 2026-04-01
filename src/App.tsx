@@ -740,7 +740,11 @@ function App() {
             </TabsContent>
             <TabsContent value="vdot" className="mt-0">
               <Suspense fallback={<PanelFallback title="VDOT" subtitle="Loading training pace zones" />}>
-                <VDOTPanel activities={activities} />
+                <VDOTPanel
+                    activities={activities}
+                    allActivities={activities}
+                    mostRecentActivityId={mostRecentActivityId}
+                />
               </Suspense>
             </TabsContent>
           </Tabs>
