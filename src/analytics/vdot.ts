@@ -16,6 +16,38 @@ export function calcVDOT(distanceM: number, timeS: number): number {
     return vo2 / pct;
 }
 
+export function predictRaceTime(distanceM: number, vdot: number): number {
+    if (!Number.isFinite(distanceM) || distanceM <= 0 || !Number.isFinite(vdot) || vdot <= 0) {
+        return 0;
+    }
+
+    // Daniels' VDOT equation maps race distance + time -> VDOT.
+    // To get an equivalent race prediction for a target distance, solve the
+    // inverse problem numerically until the calculated VDOT matches the source VDOT.
+    let lowSeconds = Math.max(60, distanceM / 8);
+    let highSeconds = Math.max(lowSeconds * 1.5, distanceM / 0.5);
+
+    while (calcVDOT(distanceM, highSeconds) > vdot) {
+        highSeconds *= 1.5;
+        if (highSeconds > 24 * 60 * 60) {
+            break;
+        }
+    }
+
+    for (let iteration = 0; iteration < 60; iteration += 1) {
+        const midSeconds = (lowSeconds + highSeconds) / 2;
+        const midVdot = calcVDOT(distanceM, midSeconds);
+
+        if (midVdot > vdot) {
+            lowSeconds = midSeconds;
+        } else {
+            highSeconds = midSeconds;
+        }
+    }
+
+    return highSeconds;
+}
+
 export function vVO2maxVelocity(vdot: number): number {
     let v = 300;
 
@@ -90,8 +122,6 @@ export function calcVDOTFromActivities(activities: Activity[]): VDOTResult | nul
             year: 'numeric',
         });
         const timeStr = formatSeconds(best.moving_time);
-        const vMax = vVO2maxVelocity(vdot);
-
         bestResult = {
             vdot,
             sourceLabel: `${target.label} – ${timeStr} on ${dateStr}${pool === runs ? ' (all-time)' : ''}`,
@@ -99,7 +129,7 @@ export function calcVDOTFromActivities(activities: Activity[]): VDOTResult | nul
             racePredictions: RACE_DISTANCES_M.map((distance) => ({
                 label: distance.label,
                 meters: distance.meters,
-                timeS: (distance.meters / vMax) * 60,
+                timeS: predictRaceTime(distance.meters, vdot),
             })),
         };
     }
