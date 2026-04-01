@@ -9,9 +9,12 @@ import {
 } from '../analytics/trainingLoad';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, startOfDay, subMonths } from 'date-fns';
 import { parseActivityLocalDate } from '../utils/activityDate';
+import { AIInsightCard } from '@/components/ui/AIInsightCard';
+import { buildRacePredictionPayload } from '@/utils/insightPayloads';
 
 interface RaceTimePredictionsProps {
     activities: Activity[];
+    allActivities?: Activity[];
     period: {
         mode: 'all' | 'year' | 'month' | '30d' | '90d' | '365d';
         year: number;
@@ -19,6 +22,7 @@ interface RaceTimePredictionsProps {
     };
     maxHR?: number;
     restHR?: number;
+    mostRecentActivityId?: number;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -63,9 +67,11 @@ function formatPace(metersPerSecond: number): string {
 
 export function RaceTimePredictions({
     activities,
+    allActivities,
     period,
     maxHR = 185,
-    restHR = 60
+    restHR = 60,
+    mostRecentActivityId
 }: RaceTimePredictionsProps) {
     const predictions = useMemo(() => {
         const runs = activities.filter(isRun);
@@ -425,6 +431,17 @@ export function RaceTimePredictions({
                     )}
                 </div>,
                 document.body
+            )}
+
+            {mostRecentActivityId && allActivities && (
+                <div className="mt-4">
+                    <AIInsightCard
+                        insightType="race-prediction"
+                        payload={buildRacePredictionPayload(allActivities)}
+                        mostRecentActivityId={mostRecentActivityId}
+                        windowLabel="Based on last 90 days"
+                    />
+                </div>
             )}
         </div>
     );

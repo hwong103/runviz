@@ -20,8 +20,15 @@
     {
       "binding": "TOKENS",
       "id": "30c9eb9422124409935de1f20bb28237"
+    },
+    {
+      "binding": "RUNVIZ_KV",
+      "id": "30c9eb9422124409935de1f20bb28237"
     }
   ],
+  "ai": {
+    "binding": "AI"
+  },
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"

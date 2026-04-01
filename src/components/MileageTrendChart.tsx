@@ -18,6 +18,8 @@ import { TrendingUp } from 'lucide-react';
 import type { Activity } from '../types';
 import { parseActivityLocalDate } from '../utils/activityDate';
 import { useChartTheme } from '../hooks/useChartTheme';
+import { AIInsightCard } from '@/components/ui/AIInsightCard';
+import { buildVolumePayload } from '@/utils/insightPayloads';
 
 ChartJS.register(
     CategoryScale,
@@ -34,14 +36,16 @@ ChartJS.register(
 
 interface MileageTrendChartProps {
     activities: Activity[];
+    allActivities?: Activity[];
     period: {
         mode: 'all' | 'year' | 'month' | '30d' | '90d' | '365d';
         year: number;
         month: number | null;
     };
+    mostRecentActivityId?: number;
 }
 
-export function MileageTrendChart({ activities, period }: MileageTrendChartProps) {
+export function MileageTrendChart({ activities, allActivities, period, mostRecentActivityId }: MileageTrendChartProps) {
     const chartTheme = useChartTheme();
 
     const data = useMemo(() => {
@@ -222,6 +226,17 @@ export function MileageTrendChart({ activities, period }: MileageTrendChartProps
             <div className="min-h-0 flex-1">
                 <Chart type="bar" data={data} options={options} />
             </div>
+
+            {mostRecentActivityId && allActivities && (
+                <div className="mt-6 shrink-0">
+                    <AIInsightCard
+                        insightType="volume"
+                        payload={buildVolumePayload(allActivities)}
+                        mostRecentActivityId={mostRecentActivityId}
+                        windowLabel="Based on last 6 weeks"
+                    />
+                </div>
+            )}
         </div>
     );
 }

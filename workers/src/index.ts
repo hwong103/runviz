@@ -1,6 +1,7 @@
 import { handleRouteGeneration } from './routeService';
 import { createAuth } from './auth';
 import { encrypt } from './crypto';
+import { handleInsightRequest } from './insights';
 import {
     buildAthleteSummary,
     getBetterAuthSessionWithHeaders,
@@ -20,6 +21,8 @@ export interface Env {
     ASSETS: Fetcher;
     DB: D1Database;
     TOKENS: KVNamespace;
+    RUNVIZ_KV: KVNamespace;
+    AI: any;
     BETTER_AUTH_SECRET: string;
     RESEND_API_KEY: string;
     FRONTEND_URL: string;
@@ -215,6 +218,10 @@ export default {
 
             if (cleanPath === '/api/geocoding/reverse') {
                 return await handleReverseGeocoding(url, env, origin);
+            }
+
+            if (url.pathname === '/api/insights' || url.pathname.startsWith('/api/insights/')) {
+                return await handleInsightRequest(request, env, origin);
             }
 
             // Support PUT /api/activities/:id for form analysis write-back

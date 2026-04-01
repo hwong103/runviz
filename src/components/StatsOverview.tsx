@@ -7,6 +7,8 @@ import { HeartPulse, Mountain, PieChart, Scale, Target, TrendingUp } from 'lucid
 import type { Activity } from '../types';
 import { isRun } from '../types';
 import { TrainingHealthTrendChart, type TrainingHealthMetricKey } from './TrainingHealthTrendChart';
+import { AIInsightCard } from '@/components/ui/AIInsightCard';
+import { buildOverviewPayload, buildTrainingHealthPayload, buildInjuryRiskPayload } from '@/utils/insightPayloads';
 import {
     calculateAcwr,
     calculateWeeklyRamp,
@@ -35,6 +37,7 @@ interface StatsOverviewProps {
         month: number | null;
     };
     variant?: 'overview' | 'training';
+    mostRecentActivityId?: number;
 }
 
 type HelpMetric = TrainingHealthMetricKey;
@@ -59,7 +62,7 @@ function getSelectedPeriodEnd(period: StatsOverviewProps['period']) {
     return now;
 }
 
-export function StatsOverview({ activities, allActivities, period, variant = 'overview' }: StatsOverviewProps) {
+export function StatsOverview({ activities, allActivities, period, variant = 'overview', mostRecentActivityId }: StatsOverviewProps) {
     const [activeHelp, setActiveHelp] = useState<HelpMetric | null>(null);
     const [activeMetric, setActiveMetric] = useState<TrainingHealthMetricKey>('efficiency');
     const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
@@ -225,6 +228,29 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                             </div>
                         </div>
                     </section>
+
+                    {mostRecentActivityId && (
+                        <section style={reveal(180)}>
+                            <AIInsightCard
+                                insightType="overview"
+                                payload={buildOverviewPayload(allActivities)}
+                                mostRecentActivityId={mostRecentActivityId}
+                                windowLabel="Based on last 90 days"
+                            />
+                        </section>
+                    )}
+
+                    {mostRecentActivityId && buildInjuryRiskPayload(allActivities).shouldShow && (
+                        <section style={reveal(200)}>
+                            <AIInsightCard
+                                insightType="injury-risk"
+                                payload={buildInjuryRiskPayload(allActivities)}
+                                mostRecentActivityId={mostRecentActivityId}
+                                className="border-amber-500/40"
+                                windowLabel="Based on last 42 days"
+                            />
+                        </section>
+                    )}
                 </>
             ) : (
                 <section className="space-y-3">
@@ -376,6 +402,16 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                         selectedPeriodEnd={selectedPeriodEnd}
                         metric={activeMetric}
                     />
+                    {mostRecentActivityId && (
+                        <div className="mt-4">
+                            <AIInsightCard
+                                insightType="training-health"
+                                payload={buildTrainingHealthPayload(allActivities)}
+                                mostRecentActivityId={mostRecentActivityId}
+                                windowLabel="Based on last 90 days"
+                            />
+                        </div>
+                    )}
                 </section>
             )}
         </div>

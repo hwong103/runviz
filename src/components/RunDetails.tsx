@@ -28,6 +28,8 @@ import { format } from 'date-fns';
 import { activities as activitiesApi, gear as gearApi } from '../services/api';
 import { getBrandLogoUrl, getBrandFallbackEmoji } from '../services/logoService';
 import { parseActivityLocalDate } from '../utils/activityDate';
+import { AIInsightCard } from '@/components/ui/AIInsightCard';
+import { buildRunDetailPayload } from '@/utils/insightPayloads';
 
 // Brand logo component with fallback support
 function BrandLogo({ brandName, className }: { brandName?: string; className?: string }) {
@@ -577,6 +579,16 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                     detail={activity.total_elevation_gain > 0 ? `${Math.round(activity.total_elevation_gain)}m climbed` : undefined}
                                 />
                             </section>
+
+                            {buildRunDetailPayload(activity, allActivities).shouldShow && (
+                                <section>
+                                    <AIInsightCard
+                                        insightType="run-detail"
+                                        payload={buildRunDetailPayload(activity, allActivities)}
+                                        mostRecentActivityId={activity.id}
+                                    />
+                                </section>
+                            )}
 
                             <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6">
                                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

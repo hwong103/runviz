@@ -198,6 +198,15 @@ function App() {
     return [...profileShoes, ...extraShoes.filter(s => !knownIds.has(s.id))];
   }, [athlete?.shoes, athlete?.gear, additionalGear]);
 
+  // Get most recent activity ID for AI insights cache key
+  const mostRecentActivityId = useMemo(() => {
+    if (activities.length === 0) return undefined;
+    const sorted = [...activities].sort((a, b) => 
+      new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+    );
+    return sorted[0]?.id;
+  }, [activities]);
+
   // Effect: Identify and fetch missing gear IDs
   useEffect(() => {
     if (activities.length === 0) return;
@@ -527,7 +536,7 @@ function App() {
             ) : null}
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-[auto_auto] xl:flex xl:flex-wrap xl:justify-end">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <div className="flex items-center gap-1 rounded-md border border-input bg-transparent p-0.5">
               <Toggle
                 pressed={filterStyle === 'relative'}
@@ -556,7 +565,7 @@ function App() {
             {filterStyle === 'relative' ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="h-8 justify-between gap-2 px-3 sm:min-w-[120px]">
+                  <Button variant="outline" className="h-8 justify-between gap-2 px-3 min-w-[120px]">
                     {viewPeriod.mode === '30d' ? 'Last 30 days' : viewPeriod.mode === '90d' ? 'Last 90 days' : 'Last 365 days'}
                     <ChevronDown className="size-4 opacity-50" />
                   </Button>
@@ -585,7 +594,7 @@ function App() {
                   }}
                   variant="outline"
                   spacing={1}
-                  className="w-full sm:w-auto"
+                  className="w-auto"
                 >
                   <ToggleGroupItem value="all" className="flex-1 sm:flex-none">
                     All
@@ -624,7 +633,7 @@ function App() {
       <div className="mx-auto max-w-[1720px] space-y-5">
         {dashboardWorkspace === 'overview' && (
           <section className="space-y-4">
-            <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="overview" />
+            <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="overview" mostRecentActivityId={mostRecentActivityId} />
             <Suspense fallback={<PanelFallback title="Year on Year" subtitle="Loading annual comparison" heightClassName="h-[400px]" />}>
               <YearOnYearChart activities={activities} />
             </Suspense>
@@ -661,12 +670,12 @@ function App() {
             </div>
 
             <TabsContent value="health" className="mt-0">
-              <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="training" />
+              <StatsOverview activities={filteredActivities} allActivities={activities} period={viewPeriod} variant="training" mostRecentActivityId={mostRecentActivityId} />
             </TabsContent>
             <TabsContent value="fitness" className="mt-0">
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
                 <Suspense fallback={<PanelFallback title="Fitness" subtitle="Loading training load" heightClassName="h-72" />}>
-                  <FitnessChart activities={activities} period={viewPeriod} />
+                  <FitnessChart activities={activities} allActivities={activities} period={viewPeriod} mostRecentActivityId={mostRecentActivityId} />
                 </Suspense>
                 <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
                   <WeeklyRampChart activities={activities} />
@@ -676,7 +685,7 @@ function App() {
             <TabsContent value="volume" className="mt-0">
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.75fr)]">
                 <Suspense fallback={<PanelFallback title="Mileage" subtitle="Loading volume trends" heightClassName="h-[400px]" />}>
-                  <MileageTrendChart activities={activities} period={viewPeriod} />
+                  <MileageTrendChart activities={activities} allActivities={activities} period={viewPeriod} mostRecentActivityId={mostRecentActivityId} />
                 </Suspense>
                 <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>
                   <WeeklyRampChart activities={activities} />
@@ -726,7 +735,7 @@ function App() {
 
             <TabsContent value="predictions" className="mt-0">
               <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
-                <RaceTimePredictions activities={activities} period={viewPeriod} />
+                <RaceTimePredictions activities={activities} allActivities={activities} period={viewPeriod} mostRecentActivityId={mostRecentActivityId} />
               </Suspense>
             </TabsContent>
             <TabsContent value="vdot" className="mt-0">

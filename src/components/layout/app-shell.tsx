@@ -9,7 +9,6 @@ import {
 } from "lucide-react"
 
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { useTheme } from "@/hooks/useTheme"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -111,7 +110,6 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const location = useLocation()
-  const { resolved: resolvedTheme } = useTheme()
 
   return (
     <SidebarProvider defaultOpen>
@@ -164,36 +162,14 @@ export function AppShell({
         <SidebarFooter className="gap-3 border-t border-sidebar-border/70 px-3 py-3">
           <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/20 p-3">
             <div className="flex items-center gap-3">
-              <div className="relative size-10 shrink-0 overflow-hidden rounded-full">
-                {syncing ? (
-                  <video
-                    key={resolvedTheme}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="absolute inset-0 h-full w-full object-cover scale-[1.8] -translate-y-1"
-                  >
-                    <source
-                      src={resolvedTheme === 'dark' ? '/running-man-dark.webm' : '/running-man.webm'}
-                      type="video/webm"
-                    />
-                    <source
-                      src={resolvedTheme === 'dark' ? '/running-man-dark.mp4' : '/running-man.mp4'}
-                      type="video/mp4"
-                    />
-                  </video>
-                ) : (
-                  <Avatar size="lg" className="size-10">
-                    {athleteImage ? (
-                      <AvatarImage src={athleteImage} alt={athleteName ?? "Athlete"} />
-                    ) : null}
-                    <AvatarFallback>
-                      {athleteName?.slice(0, 1).toUpperCase() ?? "R"}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
+              <Avatar size="lg" className="size-10">
+                {athleteImage ? (
+                  <AvatarImage src={athleteImage} alt={athleteName ?? "Athlete"} />
+                ) : null}
+                <AvatarFallback>
+                  {athleteName?.slice(0, 1).toUpperCase() ?? "R"}
+                </AvatarFallback>
+              </Avatar>
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">
                   {athleteName ?? "RunViz"}

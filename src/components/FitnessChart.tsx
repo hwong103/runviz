@@ -19,6 +19,8 @@ import {
     interpretTSB,
 } from '../analytics/trainingLoad';
 import { useChartTheme } from '../hooks/useChartTheme';
+import { AIInsightCard } from '@/components/ui/AIInsightCard';
+import { buildFitnessPayload } from '@/utils/insightPayloads';
 
 ChartJS.register(
     CategoryScale,
@@ -33,6 +35,7 @@ ChartJS.register(
 
 interface FitnessChartProps {
     activities: Activity[];
+    allActivities?: Activity[];
     period: {
         mode: 'all' | 'year' | 'month' | '30d' | '90d' | '365d';
         year: number;
@@ -40,9 +43,10 @@ interface FitnessChartProps {
     };
     maxHR?: number;
     restHR?: number;
+    mostRecentActivityId?: number;
 }
 
-export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: FitnessChartProps) {
+export function FitnessChart({ activities, allActivities, period, maxHR = 185, restHR = 60, mostRecentActivityId }: FitnessChartProps) {
     const chartTheme = useChartTheme();
 
     const metrics = useMemo(() => {
@@ -226,6 +230,17 @@ export function FitnessChart({ activities, period, maxHR = 185, restHR = 60 }: F
                     <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--rv-text-faint)]">Form (TSB)</div>
                 </div>
             </div>
+
+            {mostRecentActivityId && allActivities && (
+                <div className="mt-5">
+                    <AIInsightCard
+                        insightType="fitness"
+                        payload={buildFitnessPayload(allActivities)}
+                        mostRecentActivityId={mostRecentActivityId}
+                        windowLabel="Based on last 60 days"
+                    />
+                </div>
+            )}
         </div>
     );
 }
