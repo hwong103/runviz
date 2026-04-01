@@ -34,7 +34,7 @@ ChartJS.register(
 interface FitnessChartProps {
     activities: Activity[];
     period: {
-        mode: 'all' | 'year' | 'month';
+        mode: 'all' | 'year' | 'month' | '30d' | '90d' | '365d';
         year: number;
         month: number | null;
     };

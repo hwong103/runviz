@@ -3,9 +3,8 @@ import type { CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   CalendarIcon,
-  ReloadIcon,
 } from '@radix-ui/react-icons';
-import { Backpack, RefreshCw, Rocket } from 'lucide-react';
+import { Backpack, Rocket } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
 import { AppShell } from './components/layout/app-shell';
@@ -13,7 +12,6 @@ import { SetupPage } from './components/SetupPage';
 import { StatsOverview } from './components/StatsOverview';
 import { CalendarHeatmap } from './components/CalendarHeatmap';
 import { ActivityList } from './components/ActivityList';
-import { Button } from './components/ui/button';
 import { PeriodComboButton } from './components/ui/PeriodComboButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from './components/ui/toggle-group';
@@ -134,6 +132,7 @@ function App() {
     year: new Date().getFullYear(),
     month: new Date().getMonth(),
   });
+  const [filterStyle, setFilterStyle] = useState<'relative' | 'calendar'>('relative');
   const [dashboardWorkspace, setDashboardWorkspace] = useState<DashboardWorkspace>('overview');
   const [trainingWorkspace, setTrainingWorkspace] = useState<TrainingWorkspace>('health');
   const [raceWorkspace, setRaceWorkspace] = useState<RaceWorkspace>('predictions');
@@ -297,6 +296,21 @@ function App() {
       if (viewPeriod.mode === 'all') return true;
       if (viewPeriod.mode === 'year') return year === viewPeriod.year;
       if (viewPeriod.mode === 'month') return year === viewPeriod.year && month === viewPeriod.month;
+      if (viewPeriod.mode === '30d') {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 30);
+        return date >= cutoff;
+      }
+      if (viewPeriod.mode === '90d') {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 90);
+        return date >= cutoff;
+      }
+      if (viewPeriod.mode === '365d') {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 365);
+        return date >= cutoff;
+      }
       return false;
     }).filter(a => {
       // Secondary filter: Shoe
@@ -482,6 +496,8 @@ function App() {
       athleteName={athleteLabel}
       athleteImage={athlete?.profile ?? null}
       statusText={syncing ? 'Syncing now' : formatLastSync(lastSync)}
+      syncing={syncing}
+      onSync={() => sync({ forceFull: true })}
       onLogout={logout}
       headerActions={
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
@@ -499,49 +515,85 @@ function App() {
             ) : null}
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-[auto_auto_auto] xl:flex xl:flex-wrap xl:justify-end">
+          <div className="grid gap-2 sm:grid-cols-[auto_auto] xl:flex xl:flex-wrap xl:justify-end">
             <ToggleGroup
               type="single"
-              value={viewPeriod.mode}
+              value={filterStyle}
               onValueChange={(value) => {
                 if (!value) return;
-                setViewPeriod((prev) => ({ ...prev, mode: value as ViewPeriod['mode'] }));
+                const newStyle = value as 'relative' | 'calendar';
+                setFilterStyle(newStyle);
+                if (newStyle === 'relative') {
+                  setViewPeriod({ mode: '90d', year: viewPeriod.year, month: viewPeriod.month });
+                } else {
+                  setViewPeriod({ mode: 'year', year: new Date().getFullYear(), month: new Date().getMonth() });
+                }
               }}
               variant="outline"
               spacing={1}
               className="w-full sm:w-auto"
             >
-              <ToggleGroupItem value="all" className="flex-1 sm:flex-none">
-                All
+              <ToggleGroupItem value="relative" className="flex-1 sm:flex-none">
+                Relative
               </ToggleGroupItem>
-              <ToggleGroupItem value="year" className="flex-1 sm:flex-none">
-                Year
-              </ToggleGroupItem>
-              <ToggleGroupItem value="month" className="flex-1 sm:flex-none">
-                Month
+              <ToggleGroupItem value="calendar" className="flex-1 sm:flex-none">
+                Calendar
               </ToggleGroupItem>
             </ToggleGroup>
 
-            <PeriodComboButton
-              viewPeriod={viewPeriod}
-              availableYears={availableYears}
-              onViewPeriodChange={setViewPeriod}
-            />
+            {filterStyle === 'relative' ? (
+              <ToggleGroup
+                type="single"
+                value={viewPeriod.mode}
+                onValueChange={(value) => {
+                  if (!value) return;
+                  setViewPeriod((prev) => ({ ...prev, mode: value as ViewPeriod['mode'] }));
+                }}
+                variant="outline"
+                spacing={1}
+                className="w-full sm:w-auto"
+              >
+                <ToggleGroupItem value="30d" className="flex-1 sm:flex-none">
+                  30d
+                </ToggleGroupItem>
+                <ToggleGroupItem value="90d" className="flex-1 sm:flex-none">
+                  90d
+                </ToggleGroupItem>
+                <ToggleGroupItem value="365d" className="flex-1 sm:flex-none">
+                  365d
+                </ToggleGroupItem>
+              </ToggleGroup>
+            ) : (
+              <>
+                <ToggleGroup
+                  type="single"
+                  value={viewPeriod.mode}
+                  onValueChange={(value) => {
+                    if (!value) return;
+                    setViewPeriod((prev) => ({ ...prev, mode: value as ViewPeriod['mode'] }));
+                  }}
+                  variant="outline"
+                  spacing={1}
+                  className="w-full sm:w-auto"
+                >
+                  <ToggleGroupItem value="all" className="flex-1 sm:flex-none">
+                    All
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="year" className="flex-1 sm:flex-none">
+                    Year
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="month" className="flex-1 sm:flex-none">
+                    Month
+                  </ToggleGroupItem>
+                </ToggleGroup>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => sync({ forceFull: true })}
-              disabled={syncing}
-              className="h-8 justify-center gap-2 px-3 sm:min-w-[96px]"
-            >
-              {syncing ? (
-                <RefreshCw className="size-4 animate-spin" />
-              ) : (
-                <ReloadIcon className="h-4 w-4" />
-              )}
-              {syncing ? 'Syncing' : 'Sync'}
-            </Button>
+                <PeriodComboButton
+                  viewPeriod={viewPeriod}
+                  availableYears={availableYears}
+                  onViewPeriodChange={setViewPeriod}
+                />
+              </>
+            )}
           </div>
         </div>
       }
@@ -804,6 +856,10 @@ function formatLastSync(lastSync: Date | null) {
 function describeViewPeriod(viewPeriod: ViewPeriod) {
   if (viewPeriod.mode === 'all') return 'All time';
   if (viewPeriod.mode === 'year') return String(viewPeriod.year);
+  if (viewPeriod.mode === 'month') return `${MONTHS[viewPeriod.month ?? 0]} ${viewPeriod.year}`;
+  if (viewPeriod.mode === '30d') return 'Last 30 days';
+  if (viewPeriod.mode === '90d') return 'Last 90 days';
+  if (viewPeriod.mode === '365d') return 'Last 365 days';
   return `${MONTHS[viewPeriod.month ?? 0]} ${viewPeriod.year}`;
 }
 

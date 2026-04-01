@@ -3,11 +3,13 @@ import { Link, useLocation } from "react-router-dom"
 import {
   ChartNoAxesCombined,
   LogOut,
+  RefreshCw,
   Settings2,
   Sparkles,
 } from "lucide-react"
 
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { useTheme } from "@/hooks/useTheme"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -43,6 +45,8 @@ interface AppShellProps {
   athleteImage?: string | null
   statusText?: string
   onLogout?: () => void | Promise<void>
+  syncing?: boolean
+  onSync?: () => void
   headerActions?: ReactNode
   children: ReactNode
 }
@@ -101,10 +105,13 @@ export function AppShell({
   athleteImage,
   statusText,
   onLogout,
+  syncing,
+  onSync,
   headerActions,
   children,
 }: AppShellProps) {
   const location = useLocation()
+  const { resolved: resolvedTheme } = useTheme()
 
   return (
     <SidebarProvider defaultOpen>
@@ -157,14 +164,36 @@ export function AppShell({
         <SidebarFooter className="gap-3 border-t border-sidebar-border/70 px-3 py-3">
           <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/20 p-3">
             <div className="flex items-center gap-3">
-              <Avatar size="lg">
-                {athleteImage ? (
-                  <AvatarImage src={athleteImage} alt={athleteName ?? "Athlete"} />
-                ) : null}
-                <AvatarFallback>
-                  {athleteName?.slice(0, 1).toUpperCase() ?? "R"}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative size-10 shrink-0 overflow-hidden rounded-full">
+                {syncing ? (
+                  <video
+                    key={resolvedTheme}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="absolute inset-0 h-full w-full object-cover"
+                  >
+                    <source
+                      src={resolvedTheme === 'dark' ? '/running-man-dark.webm' : '/running-man.webm'}
+                      type="video/webm"
+                    />
+                    <source
+                      src={resolvedTheme === 'dark' ? '/running-man-dark.mp4' : '/running-man.mp4'}
+                      type="video/mp4"
+                    />
+                  </video>
+                ) : (
+                  <Avatar size="lg" className="size-10">
+                    {athleteImage ? (
+                      <AvatarImage src={athleteImage} alt={athleteName ?? "Athlete"} />
+                    ) : null}
+                    <AvatarFallback>
+                      {athleteName?.slice(0, 1).toUpperCase() ?? "R"}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+              </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">
                   {athleteName ?? "RunViz"}
@@ -176,7 +205,19 @@ export function AppShell({
             </div>
           </div>
 
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-2">
+            {onSync ? (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onSync}
+                disabled={syncing}
+                className="size-11 rounded-xl"
+                aria-label="Sync activities"
+              >
+                <RefreshCw className={cn("size-4", syncing && "animate-spin")} />
+              </Button>
+            ) : null}
             <ThemeToggle compact />
             <Button
               asChild
