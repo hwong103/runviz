@@ -127,14 +127,14 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
 
         // Streak calculation
         const streakData = calculateStreaks(filteredActivities);
-        const acwr = calculateAcwr(allActivities, selectedPeriodEnd);
-        const weeklyRamp = calculateWeeklyRamp(allActivities, selectedPeriodEnd);
-        const consistencyScore = calculateConsistencyScore(allActivities, selectedPeriodEnd);
-        const longRunRatio = calculateLongRunRatio(allActivities, selectedPeriodEnd);
-        const efficiencyIndex = calculateEfficiencyIndex(allActivities, selectedPeriodEnd);
-        const gapTrendSecPerKm = calculateGapTrend(allActivities, selectedPeriodEnd);
-        const monotony = calculateMonotony(allActivities, selectedPeriodEnd);
-        const strain = calculateStrainScore(allActivities, selectedPeriodEnd);
+        const acwr = calculateAcwr(filteredActivities, selectedPeriodEnd);
+        const weeklyRamp = calculateWeeklyRamp(filteredActivities, selectedPeriodEnd);
+        const consistencyScore = calculateConsistencyScore(filteredActivities, selectedPeriodEnd);
+        const longRunRatio = calculateLongRunRatio(filteredActivities, selectedPeriodEnd);
+        const efficiencyIndex = calculateEfficiencyIndex(filteredActivities, selectedPeriodEnd);
+        const gapTrendSecPerKm = calculateGapTrend(filteredActivities, selectedPeriodEnd);
+        const monotony = calculateMonotony(filteredActivities, selectedPeriodEnd);
+        const strain = calculateStrainScore(filteredActivities, selectedPeriodEnd);
 
         return {
             runCount: filteredActivities.length,
@@ -154,7 +154,7 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
             strain,
             ...streakData,
         };
-    }, [activities, allActivities, period, selectedPeriodEnd]);
+    }, [activities, period, selectedPeriodEnd]);
 
     const formatPace = (pace: number) => {
         const mins = Math.floor(pace);
