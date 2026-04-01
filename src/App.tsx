@@ -750,8 +750,10 @@ function App() {
                 </p>
                 <CalendarHeatmap
                   activities={filteredActivities}
-                  year={viewPeriod.mode !== 'all' ? viewPeriod.year : undefined}
+                  year={viewPeriod.mode !== 'all' && !['30d', '90d', '365d'].includes(viewPeriod.mode) ? viewPeriod.year : undefined}
                   month={viewPeriod.mode === 'month' ? (viewPeriod.month ?? undefined) : undefined}
+                  startDate={viewPeriod.mode === '30d' ? (() => { const d = new Date(); d.setDate(d.getDate() - 30); return d; })() : viewPeriod.mode === '90d' ? (() => { const d = new Date(); d.setDate(d.getDate() - 90); return d; })() : viewPeriod.mode === '365d' ? (() => { const d = new Date(); d.setDate(d.getDate() - 365); return d; })() : undefined}
+                  endDate={['30d', '90d', '365d'].includes(viewPeriod.mode) ? new Date() : undefined}
                   onSelectDay={handleSelectDay}
                   selectedDate={selectedActivity?.start_date_local.split('T')[0]}
                 />

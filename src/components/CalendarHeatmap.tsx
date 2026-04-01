@@ -7,6 +7,8 @@ interface CalendarHeatmapProps {
     activities: Activity[];
     year?: number;
     month?: number;
+    startDate?: Date;  // For relative date modes
+    endDate?: Date;    // For relative date modes
     onSelectDay?: (date: string) => void;
     selectedDate?: string | null;
 }
@@ -25,10 +27,10 @@ interface YearGridMonthProps {
 }
 
 function YearGridMonth({ mg, maxDistance, selectedDate, onSelectDay, setHoveredDay }: YearGridMonthProps) {
-    const getCellClass = (distance: number, isSelected: boolean): string => {
+    const getCellClass = (distance: number, isSelected: boolean, inRange: boolean): string => {
         const baseCell = 'border border-[var(--rv-border)] transition-transform duration-100 hover:scale-110 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
         if (isSelected) return `${baseCell} bg-[var(--rv-blue)] ring-1 ring-[var(--rv-blue)]/40`;
-        if (distance === 0) return `${baseCell} bg-[var(--rv-bg-elevated)]`;
+        if (!inRange || distance === 0) return `${baseCell} bg-[var(--rv-bg-elevated)]`;
         const intensity = maxDistance === 0 ? 0 : Math.min(distance / maxDistance, 1);
         if (intensity < 0.25) return `${baseCell} bg-[var(--rv-green)]/30`;
         if (intensity < 0.5) return `${baseCell} bg-[var(--rv-green)]/45`;
@@ -73,7 +75,7 @@ function YearGridMonth({ mg, maxDistance, selectedDate, onSelectDay, setHoveredD
                                 setHoveredDay({ date: day.date, distance: day.distance, x: clampedX, y: rect.top - 10 });
                             }}
                             onMouseLeave={() => setHoveredDay(null)}
-                            className={`aspect-square w-full rounded-[3px] ${getCellClass(day.distance, isSelected)}`}
+                            className={`aspect-square w-full rounded-[3px] ${getCellClass(day.distance, isSelected, day.inRange)}`}
                             aria-label={`${format(parseISO(day.date), 'MMMM d, yyyy')}, ${day.distance.toFixed(1)} km`}
                         />
                     );
@@ -87,13 +89,16 @@ export function CalendarHeatmap({
     activities,
     year = new Date().getFullYear(),
     month,
+    startDate,
+    endDate,
     onSelectDay,
     selectedDate
 }: CalendarHeatmapProps) {
     const [hoveredDay, setHoveredDay] = useState<{ date: string; distance: number; x: number; y: number } | null>(null);
 
-    // Check if we're in month-only view
+    // Check if we're in month-only view or relative date view
     const isMonthView = month !== undefined;
+    const isRelativeView = startDate !== undefined && endDate !== undefined;
 
     const { weeks, monthLabels, maxDistance, monthGrids } = useMemo(() => {
         // Build daily distance map
@@ -112,22 +117,26 @@ export function CalendarHeatmap({
             if (d > max) max = d;
         });
 
-        let startDate: Date;
-        let endDate: Date;
+        let rangeStart: Date;
+        let rangeEnd: Date;
 
         if (isMonthView) {
             // Month view: show only the selected month
-            startDate = new Date(year, month!, 1);
-            endDate = new Date(year, month! + 1, 0); // Last day of month
+            rangeStart = new Date(year, month!, 1);
+            rangeEnd = new Date(year, month! + 1, 0); // Last day of month
+        } else if (isRelativeView) {
+            // Relative date view: show the rolling period
+            rangeStart = startDate!;
+            rangeEnd = endDate!;
         } else {
             // Year view: show full year
-            startDate = new Date(year, 0, 1);
-            endDate = new Date(year, 11, 31);
+            rangeStart = new Date(year, 0, 1);
+            rangeEnd = new Date(year, 11, 31);
         }
 
         // Start from Sunday of the week containing the start date
-        const firstSunday = new Date(startDate);
-        firstSunday.setDate(startDate.getDate() - startDate.getDay());
+        const firstSunday = new Date(rangeStart);
+        firstSunday.setDate(rangeStart.getDate() - rangeStart.getDay());
 
         const weeks: Array<Array<{ date: string; distance: number; dayOfWeek: number; currentMonth: boolean; inRange: boolean } | null>> = [];
         const months: Array<{ label: string; weekIndex: number }> = [];
@@ -146,19 +155,19 @@ export function CalendarHeatmap({
                 const dateStr = format(current, 'yyyy-MM-dd');
                 const inYear = current.getFullYear() === year;
                 const inMonth = isMonthView ? current.getMonth() === month : true;
-                const inRange = isMonthView
-                    ? (current >= startDate && current <= endDate)
+                const inRange = isMonthView || isRelativeView
+                    ? (current >= rangeStart && current <= rangeEnd)
                     : inYear;
 
-                if (inYear || isMonthView) {
+                if (inYear || isMonthView || isRelativeView) {
                     // Track month changes for labels
                     if (current.getMonth() !== curMonth) {
                         curMonth = current.getMonth();
                         // In month view, only show the label for the selected month to avoid "DECJAN" squishing.
-                        // In year view, show all months.
+                        // In year view and relative view, show all months.
                         if (!isMonthView || curMonth === month) {
                             months.push({
-                                label: current.toLocaleString('default', { month: 'short' }).toUpperCase(),
+                                label: format(current, 'MMM').toUpperCase(),
                                 weekIndex,
                             });
                         }
@@ -182,11 +191,11 @@ export function CalendarHeatmap({
             weekIndex++;
 
             // For month view, stop when we've passed the end date
-            if (isMonthView && current > endDate) {
+            if (isMonthView && current > rangeEnd) {
                 break;
             }
-            // For year view, stop at end of year
-            if (!isMonthView && current > endDate && weeks.length >= 52) {
+            // For year view and relative view, stop at end of period
+            if ((!isMonthView || isRelativeView) && current > rangeEnd && weeks.length >= 52) {
                 break;
             }
         }
@@ -199,32 +208,69 @@ export function CalendarHeatmap({
         }> = [];
 
         if (!isMonthView) {
-            for (let m = 0; m < 12; m++) {
-                const firstOfMonth = new Date(year, m, 1);
-                const lastOfMonth = new Date(year, m + 1, 0);
-                const daysInMonth = lastOfMonth.getDate();
-                const days: Array<{ date: string; distance: number; inRange: boolean }> = [];
+            // For relative view, generate months based on the actual date range
+            if (isRelativeView) {
+                const startMonth = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
+                const endMonth = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), 1);
+                let currentMonth = new Date(startMonth);
+                let monthIdx = 0;
 
-                for (let d = 1; d <= daysInMonth; d++) {
-                    const dateStr = format(new Date(year, m, d), 'yyyy-MM-dd');
-                    days.push({
-                        date: dateStr,
-                        distance: dailyDistances.get(dateStr) ?? 0,
-                        inRange: true,
+                while (currentMonth <= endMonth) {
+                    const firstOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+                    const lastOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+                    const daysInMonth = lastOfMonth.getDate();
+                    const days: Array<{ date: string; distance: number; inRange: boolean }> = [];
+
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dateStr = format(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), d), 'yyyy-MM-dd');
+                        const dayDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), d);
+                        const inRange = dayDate >= rangeStart && dayDate <= rangeEnd;
+                        days.push({
+                            date: dateStr,
+                            distance: dailyDistances.get(dateStr) ?? 0,
+                            inRange,
+                        });
+                    }
+
+                    monthGrids.push({
+                        monthIndex: monthIdx,
+                        label: format(firstOfMonth, 'MMM').toUpperCase(),
+                        firstDow: firstOfMonth.getDay(),
+                        days,
+                    });
+
+                    currentMonth.setMonth(currentMonth.getMonth() + 1);
+                    monthIdx++;
+                }
+            } else {
+                // Year view: show full calendar year
+                for (let m = 0; m < 12; m++) {
+                    const firstOfMonth = new Date(year, m, 1);
+                    const lastOfMonth = new Date(year, m + 1, 0);
+                    const daysInMonth = lastOfMonth.getDate();
+                    const days: Array<{ date: string; distance: number; inRange: boolean }> = [];
+
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dateStr = format(new Date(year, m, d), 'yyyy-MM-dd');
+                        days.push({
+                            date: dateStr,
+                            distance: dailyDistances.get(dateStr) ?? 0,
+                            inRange: true,
+                        });
+                    }
+
+                    monthGrids.push({
+                        monthIndex: m,
+                        label: firstOfMonth.toLocaleString('default', { month: 'short' }).toUpperCase(),
+                        firstDow: firstOfMonth.getDay(),
+                        days,
                     });
                 }
-
-                monthGrids.push({
-                    monthIndex: m,
-                    label: firstOfMonth.toLocaleString('default', { month: 'short' }).toUpperCase(),
-                    firstDow: firstOfMonth.getDay(),
-                    days,
-                });
             }
         }
 
         return { weeks, monthLabels: months, maxDistance: max, monthGrids };
-    }, [activities, year, month, isMonthView]);
+    }, [activities, year, month, isMonthView, isRelativeView, startDate, endDate]);
 
     const getColor = (distance: number, isActive: boolean, isSelected: boolean): string => {
         const baseCell = 'border border-[var(--rv-border)]';
