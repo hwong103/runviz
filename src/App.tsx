@@ -143,11 +143,6 @@ function App() {
   });
   const [filterStyle, setFilterStyle] = useState<'relative' | 'calendar'>('relative');
   const [dashboardWorkspace, setDashboardWorkspace] = useState<DashboardWorkspace>('overview');
-
-  // Debug: log viewPeriod changes
-  useEffect(() => {
-    console.log('[App] viewPeriod changed:', viewPeriod);
-  }, [viewPeriod]);
   const [trainingWorkspace, setTrainingWorkspace] = useState<TrainingWorkspace>('health');
   const [raceWorkspace, setRaceWorkspace] = useState<RaceWorkspace>('predictions');
 
@@ -301,8 +296,7 @@ function App() {
 
   // Filter activities for the current view
   const filteredActivities = useMemo(() => {
-    console.log('[App] filteredActivities - viewPeriod:', viewPeriod, 'activities count:', activities.length);
-    const result = activities.filter((a) => {
+    return activities.filter((a) => {
       if (!isRun(a)) return false;
       const date = parseActivityLocalDate(a.start_date_local);
       const year = date.getFullYear();
@@ -315,25 +309,19 @@ function App() {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - 30);
         cutoff.setHours(0, 0, 0, 0);
-        const passes = date >= cutoff;
-        console.log('[App] 30d filter - date:', date.toISOString(), 'cutoff:', cutoff.toISOString(), 'passes:', passes);
-        return passes;
+        return date >= cutoff;
       }
       if (viewPeriod.mode === '90d') {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - 90);
         cutoff.setHours(0, 0, 0, 0);
-        const passes = date >= cutoff;
-        console.log('[App] 90d filter - date:', date.toISOString(), 'cutoff:', cutoff.toISOString(), 'passes:', passes);
-        return passes;
+        return date >= cutoff;
       }
       if (viewPeriod.mode === '365d') {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - 365);
         cutoff.setHours(0, 0, 0, 0);
-        const passes = date >= cutoff;
-        console.log('[App] 365d filter - date:', date.toISOString(), 'cutoff:', cutoff.toISOString(), 'passes:', passes);
-        return passes;
+        return date >= cutoff;
       }
       return false;
     }).filter(a => {
@@ -341,8 +329,6 @@ function App() {
       if (selectedShoeId) return a.gear_id === selectedShoeId;
       return true;
     });
-    console.log('[App] filteredActivities result count:', result.length);
-    return result;
   }, [activities, viewPeriod, selectedShoeId]);
 
   const handleSelectDay = useCallback((dateStr: string) => {
