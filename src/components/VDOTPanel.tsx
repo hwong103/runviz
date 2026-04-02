@@ -95,7 +95,7 @@ export function VDOTPanel({
                 <div>
                     <p className="rv-kicker mb-2">Race Prediction</p>
                     <h2 className="rv-section-title text-[1.55rem]">VDOT pace guide</h2>
-                    <p className="mt-2 max-w-[44ch] text-sm leading-6 text-[var(--rv-text-dim)]">
+                    <p className="mt-2 text-sm leading-6 text-[var(--rv-text-dim)] xl:max-w-[60ch]">
                         Race time predictions and training zones anchored to your strongest recent effort.
                     </p>
                 </div>
