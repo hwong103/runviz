@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Check, Copy, Download } from 'lucide-react';
 import { auth as authApi } from '../services/api';
 
 const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
@@ -241,30 +242,24 @@ export function SetupPage({
                     <tbody className="divide-y divide-white/8">
                       <tr>
                         <td className="px-4 py-3 font-semibold text-[var(--rv-text)]">Application Name</td>
-                        <td className="px-4 py-3 text-[var(--rv-text-dim)]">Anything you like, e.g. "RunViz"</td>
+                        <td className="px-4 py-3 text-[var(--rv-text-dim)]">
+                          <SetupValueCell value="RunViz" label="application name" />
+                        </td>
                       </tr>
                       <tr>
                         <td className="px-4 py-3 font-semibold text-[var(--rv-text)]">Category</td>
                         <td className="px-4 py-3 text-[var(--rv-text-dim)]">Visualizer</td>
                       </tr>
                       <tr>
-                        <td className="px-4 py-3 font-semibold text-[var(--rv-text)]">Club</td>
-                        <td className="px-4 py-3 text-[var(--rv-text-dim)]">leave blank</td>
-                      </tr>
-                      <tr>
                         <td className="px-4 py-3 font-semibold text-[var(--rv-text)]">Website</td>
                         <td className="px-4 py-3 text-[var(--rv-text-dim)]">
-                          <code className="rounded-lg border border-white/8 bg-white/5 px-2 py-1 text-[0.95em] text-[var(--rv-text)]">
-                            https://runviz.hwong103.work
-                          </code>
+                          <SetupValueCell value="https://runviz.hwong103.work" label="website URL" />
                         </td>
                       </tr>
                       <tr>
                         <td className="px-4 py-3 font-semibold text-[var(--rv-text)]">Authorization Callback Domain</td>
                         <td className="px-4 py-3 text-[var(--rv-text-dim)]">
-                          <code className="rounded-lg border border-white/8 bg-white/5 px-2 py-1 text-[0.95em] text-[var(--rv-text)]">
-                            runviz.hwong103.work
-                          </code>
+                          <SetupValueCell value="runviz.hwong103.work" label="callback domain" />
                         </td>
                       </tr>
                     </tbody>
@@ -283,7 +278,32 @@ export function SetupPage({
                 </p>
               </InstructionStep>
 
-              <InstructionStep index="03" title="Copy your credentials" delay={320}>
+              <InstructionStep index="03" title="Upload the app icon" delay={320}>
+                <p>Strava asks for a square app icon right after creation. You can use the RunViz mark below to save time.</p>
+                <div className="flex flex-col gap-4 rounded-[1.35rem] border border-white/8 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src="/runviz-mark.png"
+                      alt="RunViz app icon"
+                      className="h-16 w-16 rounded-2xl border border-white/10 bg-white/5 object-cover"
+                    />
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-[var(--rv-text)]">RunViz app icon</p>
+                      <p className="text-sm text-[var(--rv-text-dim)]">PNG, 256 x 256, ready to upload.</p>
+                    </div>
+                  </div>
+                  <a
+                    href="/runviz-mark.png"
+                    download="runviz-strava-icon.png"
+                    className="rv-button-secondary rv-pill-label inline-flex items-center justify-center gap-2 px-4 py-2.5"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download icon
+                  </a>
+                </div>
+              </InstructionStep>
+
+              <InstructionStep index="04" title="Copy your credentials" delay={390}>
                 <p>After creating your app, or if one already exists, you’ll land on the app detail page. Copy these two values:</p>
                 <ul className="space-y-3 text-sm leading-7 text-[var(--rv-text-dim)]">
                   <li><strong className="text-[var(--rv-text)]">Client ID</strong> — a short number, e.g. <code className="rounded-md bg-white/5 px-2 py-1 text-[var(--rv-text)]">12345</code></li>
@@ -461,8 +481,8 @@ function InstructionStep({
   return (
     <article className="rv-panel rv-reveal-subtle rv-spotlight overflow-hidden px-5 py-5 sm:px-6" style={reveal(delay)}>
       <div className="flex items-start gap-4">
-        <span className="rv-pill-label mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--rv-yellow)]/25 bg-[var(--rv-yellow)]/10 text-[var(--rv-yellow)]">
-          {index}
+        <span className="rv-pill-label mt-0.5 inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-[var(--rv-yellow)]/25 bg-[var(--rv-yellow)]/10 px-3 text-[var(--rv-yellow)]">
+          Step {index}
         </span>
         <div className="min-w-0 space-y-3">
           <h3 className="rv-section-title text-[1.45rem]">{title}</h3>
@@ -482,6 +502,42 @@ function BrandWordmark({ compact = false }: { compact?: boolean }) {
       <span className="rv-pill-label rounded-full border border-[var(--rv-yellow)]/30 bg-[var(--rv-yellow)]/10 px-3 py-1 text-[var(--rv-yellow)]">
         {compact ? 'Running Lab' : 'Running Training Lab'}
       </span>
+    </div>
+  );
+}
+
+function CopyValueButton({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1800);
+        } catch (error) {
+          console.error(`Failed to copy ${label}:`, error);
+        }
+      }}
+      className="rv-pill-label inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[var(--rv-text-dim)] transition hover:border-white/20 hover:text-[var(--rv-text)]"
+      aria-label={`Copy ${label}`}
+      title={`Copy ${label}`}
+    >
+      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  );
+}
+
+function SetupValueCell({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <code className="rounded-lg border border-white/8 bg-white/5 px-2 py-1 text-[0.95em] text-[var(--rv-text)]">
+        {value}
+      </code>
+      <CopyValueButton value={value} label={label} />
     </div>
   );
 }

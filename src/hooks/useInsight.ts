@@ -53,7 +53,8 @@ export function useInsight({
     const [error, setError] = useState<Error | null>(null);
     const [dismissed, setDismissed] = useState(false);
 
-    const payloadHash = hashString(stableSerialize(payload));
+    const serializedPayload = stableSerialize(payload);
+    const payloadHash = hashString(serializedPayload);
     const dismissKey = `dismissed:${insightType}:${mostRecentActivityId}:${payloadHash}`;
 
     const fetchInsight = useCallback(
@@ -107,7 +108,7 @@ export function useInsight({
                 setLoading(false);
             }
         },
-        [dismissKey, enabled, insightType, mostRecentActivityId, payload, payloadHash]
+        [dismissKey, enabled, insightType, mostRecentActivityId, payloadHash, serializedPayload]
     );
 
     const refresh = useCallback(async () => {
