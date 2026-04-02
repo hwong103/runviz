@@ -70,6 +70,14 @@ export interface RacePredictionPayload {
     predicted5kMins?: number;
     vdotTrend?: 'improving' | 'declining' | 'stable';
     vdotChangeSince90Days?: number;
+    currentCTL?: number;
+    currentATL?: number;
+    tsb?: number;
+    ctlTrend?: 'rising' | 'falling' | 'flat';
+    ctlPeak90Days?: number;
+    daysSincePeak?: number;
+    loadRatio30d?: number;
+    recentRestDays14d?: number;
     lastRaceDistanceKm?: number;
     lastRaceTimeMins?: number;
     lastRaceDate?: string;
@@ -469,12 +477,32 @@ export function buildInjuryRiskPayload(activities: Activity[], windowDays = 30):
 }
 
 export function buildRacePredictionPayload(activities: Activity[]): RacePredictionPayload {
-    const last90Days = getActivitiesInWindowEndingAt(activities, new Date(), 90);
-    const prior90Days = getPriorWindowActivities(activities, new Date(), 90);
+    const endDate = new Date();
+    const last90Days = getActivitiesInWindowEndingAt(activities, endDate, 90);
+    const prior90Days = getPriorWindowActivities(activities, endDate, 90);
     const currentResult = calcVDOTFromActivities(last90Days);
     if (!currentResult) {
         return {};
     }
+
+    const metrics60 = getLatestTrainingMetrics(activities, endDate, 60);
+    const metrics90 = getLatestTrainingMetrics(activities, endDate, 90);
+    const latestMetric = metrics60[metrics60.length - 1];
+    const firstMetric = metrics60[0] ?? latestMetric;
+    const ctlDelta = latestMetric ? latestMetric.ctl - (firstMetric?.ctl ?? latestMetric.ctl) : 0;
+    const ctlTrend: RacePredictionPayload['ctlTrend'] =
+        ctlDelta > 1 ? 'rising' : ctlDelta < -1 ? 'falling' : 'flat';
+    const peakMetric = metrics90.reduce((peak, metric) => (metric.ctl > peak.ctl ? metric : peak), metrics90[0] ?? latestMetric);
+    const peakDate = peakMetric ? new Date(peakMetric.date) : endDate;
+    const daysSincePeak = peakMetric
+        ? Math.max(0, Math.floor((endDate.getTime() - peakDate.getTime()) / 86400000))
+        : undefined;
+    const last30Days = getActivitiesInWindowEndingAt(activities, endDate, 30);
+    const last14Days = getActivitiesInWindowEndingAt(activities, endDate, 14);
+    const loadRatio30d = calculateAcwr(last30Days, endDate) ?? 0;
+    const daysWithActivity = new Set(
+        last14Days.map((activity) => parseActivityLocalDate(activity.start_date_local).toDateString())
+    ).size;
 
     const priorResult = calcVDOTFromActivities(prior90Days);
     const vdot = currentResult.vdot;
@@ -499,6 +527,14 @@ export function buildRacePredictionPayload(activities: Activity[]): RacePredicti
         predicted5kMins: findTime('5K'),
         vdotTrend,
         vdotChangeSince90Days: vdotChange,
+        currentCTL: latestMetric ? roundTo(latestMetric.ctl, 1) : undefined,
+        currentATL: latestMetric ? roundTo(latestMetric.atl, 1) : undefined,
+        tsb: latestMetric ? roundTo(latestMetric.tsb, 1) : undefined,
+        ctlTrend,
+        ctlPeak90Days: peakMetric ? roundTo(peakMetric.ctl, 1) : undefined,
+        daysSincePeak,
+        loadRatio30d: roundTo(loadRatio30d, 2),
+        recentRestDays14d: Math.max(0, 14 - daysWithActivity),
         lastRaceDistanceKm: latestRace ? roundTo(latestRace.distance / 1000, 1) : undefined,
         lastRaceTimeMins: latestRace ? Math.round(latestRace.moving_time / 60) : undefined,
         lastRaceDate: latestRace ? latestRace.start_date_local.split('T')[0] : undefined,

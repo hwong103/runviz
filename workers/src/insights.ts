@@ -1,40 +1,40 @@
 import type { Auth } from './auth';
 import type { Env } from './index';
 
-const SYSTEM_PROMPT = `You are a pragmatic, data-literate running coach speaking directly to the athlete. Always use second person — "you", "your" — never "this athlete", "they", or "their". Write in plain English, avoid jargon, and give specific actionable observations. Respond in 2-3 sentences maximum. Do not use bullet points, headers, or markdown formatting. Always compare to the athlete's own historical baseline provided in the data, not to population averages, unless directly relevant. Be direct but not alarming. If something is a concern, say so clearly. If something is positive, note it — but don't be effusive. When discussing pace, use minutes per kilometer (min/km) format like "5:30/km" or "5.5 min/km", never seconds per kilometer. If two values round to the same displayed number, do not describe one as higher or lower than the other. Only reason about fields that are present in the data. If a metric is absent, treat it as unavailable rather than zero or evidence of decline.`;
+const SYSTEM_PROMPT = `You are a pragmatic, data-literate running coach speaking directly to the athlete. Always use second person — "you", "your" — never "this athlete", "they", or "their". Write in plain English, avoid jargon, and give specific actionable coaching. Respond in 2-3 sentences maximum. Do not use bullet points, headers, or markdown formatting. Always compare to the athlete's own historical baseline provided in the data, not to population averages, unless directly relevant. Be direct but not alarming. If something is a concern, say so clearly. If something is positive, note it — but don't be effusive. Every response must answer these in order: what is happening, why it is likely happening based on the provided metrics, and what to do next over the next few days or 1-2 weeks. If the data supports it, end with a clear goal adjustment or training priority. Give a concrete action, not just an interpretation. Prefer specific instructions like rest, easy-only running, holding volume, or delaying intensity, and include a timeframe or condition where possible. If the cause is uncertain, say "likely" or "may" rather than sounding certain. When discussing pace, use minutes per kilometer (min/km) format like "5:30/km" or "5.5 min/km", never seconds per kilometer. If two values round to the same displayed number, do not describe one as higher or lower than the other. Only reason about fields that are present in the data. If a metric is absent, treat it as unavailable rather than zero or evidence of decline.`;
 
 const INSIGHT_PROMPTS: Record<string, (payload: Record<string, unknown>) => string> = {
-    overview: (payload) => `Analyse your current training block - specifically your load ratio, routine consistency, weekly change trend, and aerobic efficiency. Give a coaching observation about the state of the block and any risk or opportunity you see. Do not restate the numbers; interpret them.
+    overview: (payload) => `Analyse your current training block - specifically your load ratio, routine consistency, weekly change trend, and aerobic efficiency. Explain what state the block is in, what is most likely driving that state, and what you should do over the next 7-10 days. If the block is unstable, tell the runner what to reduce or avoid. Do not just restate the numbers; interpret them into a plan.
 
 Data:
 ${formatPayload(payload)}`,
 
-    'training-health': (payload) => `Analyse your training stress, monotony, and strain metrics. Give a coaching observation about the quality of your training stress distribution and what it suggests about readiness or risk.
+    'training-health': (payload) => `Analyse your training stress, monotony, and strain metrics. Explain what they suggest about stress distribution, why that pattern is likely happening, and what change to make in the next 7 days. Give one concrete coaching instruction about recovery, intensity, or session spacing.
 
 Data:
 ${formatPayload(payload)}`,
 
-    fitness: (payload) => `Analyse your fitness (CTL), fatigue (ATL), and training stress balance (TSB). Give a coaching observation about your current form state and what it means for training or racing in the near term.
+    fitness: (payload) => `Analyse your fitness (CTL), fatigue (ATL), and training stress balance (TSB). Explain your current form state, why it looks that way, and what that means for training or racing in the next 3-10 days. Be explicit about whether you should push, maintain, absorb training, or freshen up.
 
 Data:
 ${formatPayload(payload)}`,
 
-    volume: (payload) => `Analyse your weekly volume trend over the supplied analysis window, including ramp rate. Give a coaching observation about the sustainability of the current trajectory.
+    volume: (payload) => `Analyse your weekly volume trend over the supplied analysis window, including ramp rate. Explain whether the current trajectory is sustainable, what is likely driving it relative to baseline, and what to do with volume over the next 1-2 weeks. Be explicit about whether to hold, cut back, or keep building.
 
 Data:
 ${formatPayload(payload)}`,
 
-    'injury-risk': (payload) => `Your load metrics have crossed a risk threshold. Give a direct, calm coaching observation about the injury risk pattern you see and one specific action you can take this week to reduce it.
+    'injury-risk': (payload) => `Your load metrics have crossed a risk threshold. Give a direct, calm coaching read on the risk pattern, what is most likely causing it, and a specific short-term plan to reduce risk. Include a timeframe or condition for returning to normal training.
 
 Data:
 ${formatPayload(payload)}`,
 
-    'race-prediction': (payload) => `Analyse your VDOT trend and race time predictions. Give a coaching observation about the direction your fitness is heading and what it realistically suggests about near-term race potential.
+    'race-prediction': (payload) => `Analyse your VDOT trend, race time predictions, and current readiness context. Explain what your race potential looks like right now, why it is likely moving that way, and what to do over the next 7-14 days to respond. If current fatigue or freshness suggests caution, say so clearly and adjust the near-term goal accordingly.
 
 Data:
 ${formatPayload(payload)}`,
 
-    'run-detail': (payload) => `Analyse this specific run in the context of your recent history. Something notable happened on this run - focus on what the data suggests it means for your training or fitness trajectory.
+    'run-detail': (payload) => `Analyse this specific run in the context of your recent history. Explain what was notable about it, why it matters for your current fitness or fatigue, and how your next 1-2 runs should change because of it. If it was a breakthrough, say how to build on it; if it was a warning sign, say how to absorb it.
 
 Data:
 ${formatPayload(payload)}`,
