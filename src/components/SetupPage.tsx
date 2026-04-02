@@ -352,9 +352,9 @@ export function SetupPage({
 
         <aside
           className="rv-panel rv-panel-accent rv-reveal rv-spotlight flex flex-col gap-6 px-6 py-8 sm:px-8 lg:sticky lg:h-[calc(100vh-4rem)] lg:self-start lg:overflow-auto"
-          style={{ ...reveal(200), top: '32px' }}
+          style={{ ...reveal(200), top: '32px', transform: `translateY(${formLeadOffset}px)` }}
         >
-          <div style={{ paddingTop: `${formLeadOffset}px` }} className="space-y-6 transition-[padding-top] duration-200 ease-out">
+          <div className="space-y-6">
             <div className="space-y-2">
               <p className="rv-kicker">Your Strava app</p>
               <h2 className="rv-metric text-4xl sm:text-5xl">Paste and connect</h2>
