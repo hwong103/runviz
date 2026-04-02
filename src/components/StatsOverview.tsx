@@ -64,7 +64,7 @@ function getSelectedPeriodEnd(period: StatsOverviewProps['period']) {
 
 export function StatsOverview({ activities, allActivities, period, variant = 'overview', mostRecentActivityId }: StatsOverviewProps) {
     const [activeHelp, setActiveHelp] = useState<HelpMetric | null>(null);
-    const [activeMetric, setActiveMetric] = useState<TrainingHealthMetricKey>('efficiency');
+    const [activeMetric, setActiveMetric] = useState<TrainingHealthMetricKey>('acwr');
     const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
     const selectedPeriodEnd = useMemo(() => getSelectedPeriodEnd(period), [period]);
 

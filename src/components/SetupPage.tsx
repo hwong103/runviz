@@ -37,6 +37,7 @@ export function SetupPage({
   const [stravaSetupLoading, setStravaSetupLoading] = useState(false);
   const [stravaSetupSaving, setStravaSetupSaving] = useState(false);
   const [stravaSetupStatus, setStravaSetupStatus] = useState<string | null>(null);
+  const [stickyTopOffset, setStickyTopOffset] = useState(32);
 
   useEffect(() => {
     if (!needsStravaConnect) {
@@ -77,6 +78,26 @@ export function SetupPage({
       cancelled = true;
     };
   }, [needsStravaConnect]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setStickyTopOffset(32);
+      return;
+    }
+
+    const updateStickyOffset = () => {
+      const scrollY = window.scrollY;
+      const extraOffset = Math.min(112, Math.max(0, scrollY * 0.18));
+      setStickyTopOffset(32 + extraOffset);
+    };
+
+    updateStickyOffset();
+    window.addEventListener('scroll', updateStickyOffset, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', updateStickyOffset);
+    };
+  }, [isAuthenticated]);
 
   const accountLabel = useMemo(() => {
     if (user?.name) return user.name;
@@ -317,7 +338,10 @@ export function SetupPage({
           </div>
         </section>
 
-        <aside className="rv-panel rv-panel-accent rv-reveal rv-spotlight flex flex-col gap-6 px-6 py-8 sm:px-8 lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] lg:self-start lg:overflow-auto" style={reveal(200)}>
+        <aside
+          className="rv-panel rv-panel-accent rv-reveal rv-spotlight flex flex-col gap-6 px-6 py-8 sm:px-8 lg:sticky lg:h-[calc(100vh-4rem)] lg:self-start lg:overflow-auto"
+          style={{ ...reveal(200), top: `${stickyTopOffset}px` }}
+        >
           <div className="space-y-2">
             <p className="rv-kicker">Your Strava app</p>
             <h2 className="rv-metric text-4xl sm:text-5xl">Paste and connect</h2>
@@ -521,12 +545,11 @@ function CopyValueButton({ value, label }: { value: string; label: string }) {
           console.error(`Failed to copy ${label}:`, error);
         }
       }}
-      className="rv-pill-label inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[var(--rv-text-dim)] transition hover:border-white/20 hover:text-[var(--rv-text)]"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[var(--rv-text-dim)] transition hover:border-white/20 hover:text-[var(--rv-text)]"
       aria-label={`Copy ${label}`}
       title={`Copy ${label}`}
     >
-      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-      {copied ? 'Copied' : 'Copy'}
+      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
     </button>
   );
 }
