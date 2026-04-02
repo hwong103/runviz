@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Copy, Download } from 'lucide-react';
+import { ArrowUpRight, Check, Copy, Download } from 'lucide-react';
 import { auth as authApi } from '../services/api';
 
 const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
@@ -37,7 +37,7 @@ export function SetupPage({
   const [stravaSetupLoading, setStravaSetupLoading] = useState(false);
   const [stravaSetupSaving, setStravaSetupSaving] = useState(false);
   const [stravaSetupStatus, setStravaSetupStatus] = useState<string | null>(null);
-  const [formLeadOffset, setFormLeadOffset] = useState(0);
+  const [stickyCardTop, setStickyCardTop] = useState(32);
   const setupGridRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -82,29 +82,29 @@ export function SetupPage({
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setFormLeadOffset(0);
+      setStickyCardTop(32);
       return;
     }
 
-    const updateFormOffset = () => {
+    const updateStickyCardPosition = () => {
       if (window.innerWidth < 1024) {
-        setFormLeadOffset(0);
+        setStickyCardTop(32);
         return;
       }
 
-      const gridTop = setupGridRef.current?.getBoundingClientRect().top ?? 0;
-      const scrollProgress = Math.max(0, 120 - gridTop);
-      const nextOffset = Math.min(220, scrollProgress * 0.45);
-      setFormLeadOffset(nextOffset);
+      const gridTop = setupGridRef.current?.offsetTop ?? 0;
+      const relativeScroll = Math.max(0, window.scrollY - Math.max(0, gridTop - 96));
+      const nextOffset = Math.min(168, relativeScroll * 0.32);
+      setStickyCardTop(32 + nextOffset);
     };
 
-    updateFormOffset();
-    window.addEventListener('scroll', updateFormOffset, { passive: true });
-    window.addEventListener('resize', updateFormOffset);
+    updateStickyCardPosition();
+    window.addEventListener('scroll', updateStickyCardPosition, { passive: true });
+    window.addEventListener('resize', updateStickyCardPosition);
 
     return () => {
-      window.removeEventListener('scroll', updateFormOffset);
-      window.removeEventListener('resize', updateFormOffset);
+      window.removeEventListener('scroll', updateStickyCardPosition);
+      window.removeEventListener('resize', updateStickyCardPosition);
     };
   }, [isAuthenticated]);
 
@@ -254,9 +254,10 @@ export function SetupPage({
                     href="https://www.strava.com/settings/api"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[var(--rv-blue)] underline decoration-white/20 decoration-2 underline-offset-4 transition hover:text-[var(--rv-text)]"
+                    className="inline-flex items-center gap-1 font-semibold text-[var(--rv-blue)] underline decoration-[color-mix(in_srgb,var(--rv-blue)_55%,transparent)] decoration-2 underline-offset-4 transition hover:text-[color-mix(in_srgb,var(--rv-blue)_82%,black_18%)] hover:decoration-[var(--rv-blue)]"
                   >
                     strava.com/settings/api
+                    <ArrowUpRight className="h-4 w-4" />
                   </a>{' '}
                   in a new tab. Make sure you're logged in to Strava first.
                 </p>
@@ -351,8 +352,8 @@ export function SetupPage({
         </section>
 
         <aside
-          className="rv-panel rv-panel-accent rv-reveal rv-spotlight flex flex-col gap-6 px-6 py-8 sm:px-8 lg:sticky lg:h-[calc(100vh-4rem)] lg:self-start lg:overflow-auto"
-          style={{ ...reveal(200), top: '32px', transform: `translateY(${formLeadOffset}px)` }}
+          className="rv-panel rv-panel-accent rv-reveal rv-spotlight flex flex-col gap-6 px-6 py-8 sm:px-8 lg:sticky lg:self-start"
+          style={{ ...reveal(200), top: `${stickyCardTop}px` }}
         >
           <div className="space-y-6">
             <div className="space-y-2">
