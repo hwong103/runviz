@@ -352,7 +352,7 @@ export function SetupPage({
         </section>
 
         <aside
-          className="rv-panel rv-panel-accent rv-reveal rv-spotlight flex flex-col gap-6 px-6 py-8 sm:px-8 lg:sticky lg:self-start"
+          className="rv-panel rv-panel-accent rv-reveal rv-spotlight setup-sticky-card flex flex-col gap-6 px-6 py-8 sm:px-8"
           style={{ ...reveal(200), top: `${stickyCardTop}px` }}
         >
           <div className="space-y-6">
