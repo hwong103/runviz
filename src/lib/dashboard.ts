@@ -23,7 +23,6 @@ export type DashboardWorkspace =
   | "tools"
 
 export type TrainingWorkspace = "health" | "fitness" | "volume" | "mechanics"
-export type RaceWorkspace = "predictions" | "vdot"
 export type ToolPage = "route-planner" | "form-analysis"
 
 export interface DashboardWorkspaceMeta {
@@ -74,11 +73,11 @@ export const DASHBOARD_WORKSPACE_META: Record<
   },
   race: {
     label: "Race",
-    detail: "Predictions and VDOT",
+    detail: "VDOT and pacing",
     kicker: "Race",
-    title: "Prediction and pacing",
+    title: "Race prediction and pacing",
     description:
-      "Keep forecasting and training pace guidance together in one coaching-oriented view.",
+      "VDOT-anchored race time predictions and training pace zones derived from your strongest recent effort.",
     icon: Rocket,
   },
   logbook: {
