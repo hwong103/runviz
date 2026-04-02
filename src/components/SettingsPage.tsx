@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import {
   ChevronRight,
@@ -21,9 +22,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/hooks/useAuth"
 import { useTheme } from "@/hooks/useTheme"
+import { auth as authApi } from "@/services/api"
 
 export function SettingsPage() {
   const {
@@ -37,6 +41,81 @@ export function SettingsPage() {
     logout,
   } = useAuth()
   const { preference, resolved } = useTheme()
+  const [clientId, setClientId] = useState("")
+  const [clientSecret, setClientSecret] = useState("")
+  const [keyConfigured, setKeyConfigured] = useState(false)
+  const [keyUpdatedAt, setKeyUpdatedAt] = useState<number | null>(null)
+  const [keyLoading, setKeyLoading] = useState(false)
+  const [keySaving, setKeySaving] = useState(false)
+  const [keyStatus, setKeyStatus] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setClientId("")
+      setClientSecret("")
+      setKeyConfigured(false)
+      setKeyUpdatedAt(null)
+      setKeyLoading(false)
+      setKeySaving(false)
+      setKeyStatus(null)
+      return
+    }
+
+    let cancelled = false
+    setKeyLoading(true)
+    setKeyStatus(null)
+
+    void authApi
+      .getStravaKeyStatus()
+      .then((status) => {
+        if (cancelled) return
+        setKeyConfigured(status.configured)
+        setClientId(status.clientId ?? "")
+        setClientSecret("")
+        setKeyUpdatedAt(status.updatedAt ?? null)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setKeyStatus("Unable to load Strava credentials.")
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setKeyLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated])
+
+  async function handleSaveCredentials() {
+    const trimmedId = clientId.trim()
+    const trimmedSecret = clientSecret.trim()
+
+    if (!trimmedId || !trimmedSecret) {
+      setKeyStatus("Enter both your Client ID and Client Secret.")
+      return
+    }
+
+    try {
+      setKeySaving(true)
+      setKeyStatus(null)
+      await authApi.saveStravaKey(trimmedId, trimmedSecret)
+      const status = await authApi.getStravaKeyStatus()
+      setKeyConfigured(status.configured)
+      setClientId(status.clientId ?? trimmedId)
+      setKeyUpdatedAt(status.updatedAt ?? null)
+      setClientSecret("")
+      setKeyStatus("Credentials saved.")
+    } catch (error) {
+      setKeyStatus(
+        error instanceof Error ? error.message : "Failed to save credentials."
+      )
+    } finally {
+      setKeySaving(false)
+    }
+  }
 
   const athleteLabel = athlete
     ? `${athlete.firstname} ${athlete.lastname}`.trim()
@@ -191,9 +270,64 @@ export function SettingsPage() {
                         ? "Connection required before your activities can sync."
                         : "Connected and ready to sync."}
                   </p>
+                  {isAuthenticated && keyConfigured && keyUpdatedAt ? (
+                    <p className="mt-1 text-xs text-muted-foreground/70">
+                      App credentials last saved{" "}
+                      {new Date(keyUpdatedAt * 1000).toLocaleDateString()}.
+                    </p>
+                  ) : null}
                 </div>
+
+                {isAuthenticated ? (
+                  <div className="space-y-3">
+                    <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                      {keyLoading
+                        ? "Loading..."
+                        : keyConfigured
+                          ? "Update Strava app credentials"
+                          : "Enter Strava app credentials"}
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="settings-client-id" className="text-sm">
+                        Client ID
+                      </Label>
+                      <Input
+                        id="settings-client-id"
+                        value={clientId}
+                        onChange={(event) => setClientId(event.target.value)}
+                        placeholder="123456"
+                        disabled={keyLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="settings-client-secret"
+                        className="text-sm"
+                      >
+                        Client Secret
+                      </Label>
+                      <Input
+                        id="settings-client-secret"
+                        type="password"
+                        value={clientSecret}
+                        onChange={(event) => setClientSecret(event.target.value)}
+                        placeholder={
+                          keyConfigured
+                            ? "Enter new secret to rotate"
+                            : "Paste your Client Secret"
+                        }
+                        disabled={keyLoading}
+                      />
+                    </div>
+                    {keyStatus ? (
+                      <p className="text-sm text-muted-foreground">
+                        {keyStatus}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </CardContent>
-              <CardFooter className="justify-between gap-3">
+              <CardFooter className="flex-wrap justify-between gap-3">
                 <Link
                   to="/?workspace=tools"
                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -201,12 +335,45 @@ export function SettingsPage() {
                   Open tools workspace
                   <ChevronRight className="size-4" />
                 </Link>
-                {isAuthenticated && needsStravaConnect ? (
-                  <Button size="sm" onClick={connectStrava} className="shrink-0 gap-2">
-                    <MoonStar className="size-4" />
-                    Connect Strava
-                  </Button>
-                ) : null}
+                <div className="flex gap-2">
+                  {isAuthenticated ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSaveCredentials}
+                      disabled={
+                        keySaving ||
+                        keyLoading ||
+                        !clientId.trim() ||
+                        !clientSecret.trim()
+                      }
+                      className="shrink-0 gap-2"
+                    >
+                      {keySaving ? "Saving..." : "Save credentials"}
+                    </Button>
+                  ) : null}
+                  {isAuthenticated && needsStravaConnect ? (
+                    <Button
+                      size="sm"
+                      onClick={connectStrava}
+                      className="shrink-0 gap-2"
+                    >
+                      <MoonStar className="size-4" />
+                      Connect Strava
+                    </Button>
+                  ) : null}
+                  {isAuthenticated && !needsStravaConnect && keyConfigured ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={connectStrava}
+                      className="shrink-0 gap-2"
+                    >
+                      <MoonStar className="size-4" />
+                      Reconnect
+                    </Button>
+                  ) : null}
+                </div>
               </CardFooter>
             </Card>
           </div>
