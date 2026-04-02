@@ -307,6 +307,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
   const ref = React.useRef<HTMLElement>(null)
 
   useSwipeToOpen(ref, {
+    edgeZone: null,
     onOpen: () => setOpenMobile(true),
     enabled: isMobile,
   })

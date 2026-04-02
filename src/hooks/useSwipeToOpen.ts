@@ -3,7 +3,7 @@
 import { useEffect, useRef, type RefObject } from "react"
 
 interface UseSwipeToOpenOptions {
-  edgeZone?: number
+  edgeZone?: number | null
   threshold?: number
   maxVerticalDrift?: number
   onOpen: () => void
@@ -40,7 +40,11 @@ export function useSwipeToOpen<T extends HTMLElement>(
     function onTouchStart(event: TouchEvent) {
       const touch = event.touches[0]
 
-      if (!touch || touch.clientX > edgeZone) {
+      if (!touch) {
+        return
+      }
+
+      if (edgeZone !== null && touch.clientX > edgeZone) {
         return
       }
 
