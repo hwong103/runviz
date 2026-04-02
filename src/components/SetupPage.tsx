@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Copy, Download } from 'lucide-react';
 import { auth as authApi } from '../services/api';
@@ -37,7 +37,8 @@ export function SetupPage({
   const [stravaSetupLoading, setStravaSetupLoading] = useState(false);
   const [stravaSetupSaving, setStravaSetupSaving] = useState(false);
   const [stravaSetupStatus, setStravaSetupStatus] = useState<string | null>(null);
-  const [stickyTopOffset, setStickyTopOffset] = useState(32);
+  const [formLeadOffset, setFormLeadOffset] = useState(0);
+  const setupGridRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!needsStravaConnect) {
@@ -81,21 +82,29 @@ export function SetupPage({
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setStickyTopOffset(32);
+      setFormLeadOffset(0);
       return;
     }
 
-    const updateStickyOffset = () => {
-      const scrollY = window.scrollY;
-      const extraOffset = Math.min(112, Math.max(0, scrollY * 0.18));
-      setStickyTopOffset(32 + extraOffset);
+    const updateFormOffset = () => {
+      if (window.innerWidth < 1024) {
+        setFormLeadOffset(0);
+        return;
+      }
+
+      const gridTop = setupGridRef.current?.getBoundingClientRect().top ?? 0;
+      const scrollProgress = Math.max(0, 120 - gridTop);
+      const nextOffset = Math.min(220, scrollProgress * 0.45);
+      setFormLeadOffset(nextOffset);
     };
 
-    updateStickyOffset();
-    window.addEventListener('scroll', updateStickyOffset, { passive: true });
+    updateFormOffset();
+    window.addEventListener('scroll', updateFormOffset, { passive: true });
+    window.addEventListener('resize', updateFormOffset);
 
     return () => {
-      window.removeEventListener('scroll', updateStickyOffset);
+      window.removeEventListener('scroll', updateFormOffset);
+      window.removeEventListener('resize', updateFormOffset);
     };
   }, [isAuthenticated]);
 
@@ -223,7 +232,10 @@ export function SetupPage({
 
   return (
     <div className="rv-grid-lines min-h-screen px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-[1600px] gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
+      <div
+        ref={setupGridRef}
+        className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-[1600px] gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]"
+      >
         <section className="rv-shell-card rv-glow-orb overflow-hidden px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
           <div className="max-w-4xl space-y-8">
             <div className="space-y-4">
@@ -340,124 +352,126 @@ export function SetupPage({
 
         <aside
           className="rv-panel rv-panel-accent rv-reveal rv-spotlight flex flex-col gap-6 px-6 py-8 sm:px-8 lg:sticky lg:h-[calc(100vh-4rem)] lg:self-start lg:overflow-auto"
-          style={{ ...reveal(200), top: `${stickyTopOffset}px` }}
+          style={{ ...reveal(200), top: '32px' }}
         >
-          <div className="space-y-2">
-            <p className="rv-kicker">Your Strava app</p>
-            <h2 className="rv-metric text-4xl sm:text-5xl">Paste and connect</h2>
-            <p className="rv-body-copy-sm">
-              Paste your Client ID and Client Secret here, then RunViz will save them for {accountLabel} and take you straight into Strava connection.
-            </p>
-          </div>
+          <div style={{ paddingTop: `${formLeadOffset}px` }} className="space-y-6 transition-[padding-top] duration-200 ease-out">
+            <div className="space-y-2">
+              <p className="rv-kicker">Your Strava app</p>
+              <h2 className="rv-metric text-4xl sm:text-5xl">Paste and connect</h2>
+              <p className="rv-body-copy-sm">
+                Paste your Client ID and Client Secret here, then RunViz will save them for {accountLabel} and take you straight into Strava connection.
+              </p>
+            </div>
 
-          {needsStravaConnect ? (
-            <>
-              <div className="space-y-4">
-                <label className="rv-mini-label flex flex-col gap-2">
-                  Client ID
-                  <input
-                    value={stravaClientIdInput}
-                    onChange={(e) => setStravaClientIdInput(e.target.value)}
-                    placeholder="123456"
-                    className="rv-field px-4 py-3 text-sm normal-case tracking-normal"
-                  />
-                </label>
-                <label className="rv-mini-label flex flex-col gap-2">
-                  Client Secret
-                  <input
-                    type="password"
-                    value={stravaClientSecretInput}
-                    onChange={(e) => setStravaClientSecretInput(e.target.value)}
-                    placeholder={stravaKeyConfigured ? 'Saved. Enter a new value to rotate it.' : 'Paste your Strava Client Secret'}
-                    className="rv-field px-4 py-3 text-sm normal-case tracking-normal"
-                  />
-                </label>
-              </div>
+            {needsStravaConnect ? (
+              <>
+                <div className="space-y-4">
+                  <label className="rv-mini-label flex flex-col gap-2">
+                    Client ID
+                    <input
+                      value={stravaClientIdInput}
+                      onChange={(e) => setStravaClientIdInput(e.target.value)}
+                      placeholder="123456"
+                      className="rv-field px-4 py-3 text-sm normal-case tracking-normal"
+                    />
+                  </label>
+                  <label className="rv-mini-label flex flex-col gap-2">
+                    Client Secret
+                    <input
+                      type="password"
+                      value={stravaClientSecretInput}
+                      onChange={(e) => setStravaClientSecretInput(e.target.value)}
+                      placeholder={stravaKeyConfigured ? 'Saved. Enter a new value to rotate it.' : 'Paste your Strava Client Secret'}
+                      className="rv-field px-4 py-3 text-sm normal-case tracking-normal"
+                    />
+                  </label>
+                </div>
 
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={async () => {
-                    try {
-                      const trimmedClientId = stravaClientIdInput.trim();
-                      const trimmedClientSecret = stravaClientSecretInput.trim();
-                      const shouldSaveCredentials = trimmedClientId.length > 0 || trimmedClientSecret.length > 0;
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const trimmedClientId = stravaClientIdInput.trim();
+                        const trimmedClientSecret = stravaClientSecretInput.trim();
+                        const shouldSaveCredentials = trimmedClientId.length > 0 || trimmedClientSecret.length > 0;
 
-                      if (!stravaKeyConfigured && !shouldSaveCredentials) {
-                        setStravaSetupStatus('Enter both your Strava Client ID and Client Secret.');
-                        return;
-                      }
-
-                      if (shouldSaveCredentials) {
-                        if (!trimmedClientId || !trimmedClientSecret) {
+                        if (!stravaKeyConfigured && !shouldSaveCredentials) {
                           setStravaSetupStatus('Enter both your Strava Client ID and Client Secret.');
                           return;
                         }
 
-                        setStravaSetupSaving(true);
-                        setStravaSetupStatus(null);
-                        await authApi.saveStravaKey(trimmedClientId, trimmedClientSecret);
-                        const status = await authApi.getStravaKeyStatus();
-                        setStravaKeyConfigured(status.configured);
-                        setStravaKeyUpdatedAt(status.updatedAt ?? null);
-                        setStravaClientIdInput(status.clientId ?? trimmedClientId);
-                        setStravaClientSecretInput('');
+                        if (shouldSaveCredentials) {
+                          if (!trimmedClientId || !trimmedClientSecret) {
+                            setStravaSetupStatus('Enter both your Strava Client ID and Client Secret.');
+                            return;
+                          }
+
+                          setStravaSetupSaving(true);
+                          setStravaSetupStatus(null);
+                          await authApi.saveStravaKey(trimmedClientId, trimmedClientSecret);
+                          const status = await authApi.getStravaKeyStatus();
+                          setStravaKeyConfigured(status.configured);
+                          setStravaKeyUpdatedAt(status.updatedAt ?? null);
+                          setStravaClientIdInput(status.clientId ?? trimmedClientId);
+                          setStravaClientSecretInput('');
+                        }
+
+                        setStravaSetupStatus(shouldSaveCredentials ? 'Strava app saved. Redirecting you to connect Strava...' : 'Redirecting you to connect Strava...');
+                        await connectStrava();
+                      } catch (error) {
+                        console.error('Failed to continue Strava setup:', error);
+                        setStravaSetupStatus(error instanceof Error ? error.message : 'Unable to continue Strava setup.');
+                      } finally {
+                        setStravaSetupSaving(false);
                       }
-
-                      setStravaSetupStatus(shouldSaveCredentials ? 'Strava app saved. Redirecting you to connect Strava...' : 'Redirecting you to connect Strava...');
-                      await connectStrava();
-                    } catch (error) {
-                      console.error('Failed to continue Strava setup:', error);
-                      setStravaSetupStatus(error instanceof Error ? error.message : 'Unable to continue Strava setup.');
-                    } finally {
-                      setStravaSetupSaving(false);
-                    }
-                  }}
-                  disabled={stravaSetupSaving || stravaSetupLoading}
-                  className="rv-button-secondary rv-pill-label px-6 py-3 disabled:cursor-wait"
-                >
-                  {stravaSetupSaving ? 'Saving...' : stravaKeyConfigured ? 'Connect Strava' : 'Save and connect Strava'}
-                </button>
-                <div className="rv-body-copy-sm">
-                  {stravaSetupLoading
-                    ? 'Loading your saved Strava app...'
-                    : stravaKeyConfigured
-                      ? `Saved for this account${stravaKeyUpdatedAt ? ` on ${new Date(stravaKeyUpdatedAt * 1000).toLocaleDateString()}` : ''}.`
-                      : 'No Strava app saved for this account yet.'}
+                    }}
+                    disabled={stravaSetupSaving || stravaSetupLoading}
+                    className="rv-button-secondary rv-pill-label px-6 py-3 disabled:cursor-wait"
+                  >
+                    {stravaSetupSaving ? 'Saving...' : stravaKeyConfigured ? 'Connect Strava' : 'Save and connect Strava'}
+                  </button>
+                  <div className="rv-body-copy-sm">
+                    {stravaSetupLoading
+                      ? 'Loading your saved Strava app...'
+                      : stravaKeyConfigured
+                        ? `Saved for this account${stravaKeyUpdatedAt ? ` on ${new Date(stravaKeyUpdatedAt * 1000).toLocaleDateString()}` : ''}.`
+                        : 'No Strava app saved for this account yet.'}
+                  </div>
                 </div>
-              </div>
 
-              {stravaSetupStatus && (
-                <p className="rv-body-copy-sm">
-                  {stravaSetupStatus}
-                </p>
-              )}
-              <button
-                onClick={logout}
-                className="rv-button-secondary rv-pill-label px-6 py-4"
-              >
-                Sign out
-              </button>
-            </>
-          ) : (
-            <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-5 py-5 text-sm leading-7 text-[var(--rv-text-dim)]">
-              <p className="text-[var(--rv-text)]">Strava is already connected for this account.</p>
-              <p className="mt-2">You can return to the dashboard or reconnect if you want to change accounts.</p>
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  to="/"
-                  className="rv-button-primary inline-flex items-center justify-center px-6 py-4"
-                >
-                  Go to dashboard
-                </Link>
+                {stravaSetupStatus && (
+                  <p className="rv-body-copy-sm">
+                    {stravaSetupStatus}
+                  </p>
+                )}
                 <button
-                  onClick={connectStrava}
+                  onClick={logout}
                   className="rv-button-secondary rv-pill-label px-6 py-4"
                 >
-                  Reconnect Strava
+                  Sign out
                 </button>
+              </>
+            ) : (
+              <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-5 py-5 text-sm leading-7 text-[var(--rv-text-dim)]">
+                <p className="text-[var(--rv-text)]">Strava is already connected for this account.</p>
+                <p className="mt-2">You can return to the dashboard or reconnect if you want to change accounts.</p>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    to="/"
+                    className="rv-button-primary inline-flex items-center justify-center px-6 py-4"
+                  >
+                    Go to dashboard
+                  </Link>
+                  <button
+                    onClick={connectStrava}
+                    className="rv-button-secondary rv-pill-label px-6 py-4"
+                  >
+                    Reconnect Strava
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="rounded-[1.5rem] border border-[var(--rv-green)]/20 bg-[var(--rv-green)]/8 px-5 py-5 text-sm leading-7 text-[var(--rv-text-dim)]">
             <p className="text-[var(--rv-text)]">🔒 Your secret is safe.</p>
