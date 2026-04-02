@@ -50,46 +50,39 @@ export function SettingsPage() {
   const [keyStatus, setKeyStatus] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setClientId("")
-      setClientSecret("")
-      setKeyConfigured(false)
-      setKeyUpdatedAt(null)
-      setKeyLoading(false)
-      setKeySaving(false)
-      setKeyStatus(null)
-      return
-    }
+    if (!isAuthenticated) return
 
     let cancelled = false
-    setKeyLoading(true)
-    setKeyStatus(null)
 
-    void authApi
-      .getStravaKeyStatus()
-      .then((status) => {
+    async function loadStravaKeys() {
+      setKeyLoading(true)
+      setKeyStatus(null)
+
+      try {
+        const status = await authApi.getStravaKeyStatus()
         if (cancelled) return
         setKeyConfigured(status.configured)
         setClientId(status.clientId ?? "")
         setClientSecret("")
         setKeyUpdatedAt(status.updatedAt ?? null)
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return
         setKeyStatus("Unable to load Strava credentials.")
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) {
           setKeyLoading(false)
         }
-      })
+      }
+    }
+
+    void loadStravaKeys()
 
     return () => {
       cancelled = true
     }
   }, [isAuthenticated])
 
-  async function handleSaveCredentials() {
+  async function handleSaveAndConnect() {
     const trimmedId = clientId.trim()
     const trimmedSecret = clientSecret.trim()
 
@@ -102,17 +95,11 @@ export function SettingsPage() {
       setKeySaving(true)
       setKeyStatus(null)
       await authApi.saveStravaKey(trimmedId, trimmedSecret)
-      const status = await authApi.getStravaKeyStatus()
-      setKeyConfigured(status.configured)
-      setClientId(status.clientId ?? trimmedId)
-      setKeyUpdatedAt(status.updatedAt ?? null)
-      setClientSecret("")
-      setKeyStatus("Credentials saved.")
+      await connectStrava()
     } catch (error) {
       setKeyStatus(
         error instanceof Error ? error.message : "Failed to save credentials."
       )
-    } finally {
       setKeySaving(false)
     }
   }
@@ -335,45 +322,23 @@ export function SettingsPage() {
                   Open tools workspace
                   <ChevronRight className="size-4" />
                 </Link>
-                <div className="flex gap-2">
-                  {isAuthenticated ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSaveCredentials}
-                      disabled={
-                        keySaving ||
-                        keyLoading ||
-                        !clientId.trim() ||
-                        !clientSecret.trim()
-                      }
-                      className="shrink-0 gap-2"
-                    >
-                      {keySaving ? "Saving..." : "Save credentials"}
-                    </Button>
-                  ) : null}
-                  {isAuthenticated && needsStravaConnect ? (
-                    <Button
-                      size="sm"
-                      onClick={connectStrava}
-                      className="shrink-0 gap-2"
-                    >
-                      <MoonStar className="size-4" />
-                      Connect Strava
-                    </Button>
-                  ) : null}
-                  {isAuthenticated && !needsStravaConnect && keyConfigured ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={connectStrava}
-                      className="shrink-0 gap-2"
-                    >
-                      <MoonStar className="size-4" />
-                      Reconnect
-                    </Button>
-                  ) : null}
-                </div>
+                {isAuthenticated ? (
+                  <Button
+                    size="sm"
+                    onClick={handleSaveAndConnect}
+                    disabled={
+                      keySaving || keyLoading || !clientId.trim() || !clientSecret.trim()
+                    }
+                    className="shrink-0 gap-2"
+                  >
+                    <MoonStar className="size-4" />
+                    {keySaving
+                      ? "Saving..."
+                      : keyConfigured
+                        ? "Save and reconnect Strava"
+                        : "Save and connect Strava"}
+                  </Button>
+                ) : null}
               </CardFooter>
             </Card>
           </div>
