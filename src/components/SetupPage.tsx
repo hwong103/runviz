@@ -110,14 +110,9 @@ export function SetupPage({
 
         const gridRect = grid.getBoundingClientRect();
         const railRect = rail.getBoundingClientRect();
-        const gridAbsTop = window.scrollY + gridRect.top;
         const gridAbsBottom = window.scrollY + gridRect.bottom;
         const railAbsTop = window.scrollY + railRect.top;
-        const relativeScroll = Math.max(0, window.scrollY - Math.max(0, gridAbsTop - 96));
-        const panelFitsViewport = panelHeight <= window.innerHeight - 96;
-        const desiredTop = panelFitsViewport
-          ? 32
-          : 32 + Math.min(168, relativeScroll * 0.32);
+        const desiredTop = 32;
         const stickStart = railAbsTop - desiredTop;
         const stickEnd = gridAbsBottom - desiredTop - panelHeight;
 
