@@ -32,7 +32,6 @@ import {
   DASHBOARD_WORKSPACE_META,
   MONTHS,
   type DashboardWorkspace,
-  type RaceWorkspace,
   type TrainingWorkspace,
   type ViewPeriod,
   isDashboardWorkspace,
@@ -52,9 +51,6 @@ const RunDetails = lazy(() =>
 );
 const ShoeTracker = lazy(() =>
   import('./components/ShoeTracker').then((module) => ({ default: module.ShoeTracker }))
-);
-const RaceTimePredictions = lazy(() =>
-  import('./components/RaceTimePredictions').then((module) => ({ default: module.RaceTimePredictions }))
 );
 const VDOTPanel = lazy(() =>
   import('./components/VDOTPanel').then((module) => ({ default: module.VDOTPanel }))
@@ -181,7 +177,6 @@ function App() {
   });
   const [dashboardWorkspace, setDashboardWorkspace] = useState<DashboardWorkspace>('overview');
   const [trainingWorkspace, setTrainingWorkspace] = useState<TrainingWorkspace>('health');
-  const [raceWorkspace, setRaceWorkspace] = useState<RaceWorkspace>('predictions');
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedShoeId, setSelectedShoeId] = useState<string | null>(null);
@@ -759,43 +754,14 @@ function App() {
         )}
 
         {dashboardWorkspace === 'race' && (
-          <Tabs
-            value={raceWorkspace}
-            onValueChange={(value) => setRaceWorkspace(value as RaceWorkspace)}
-            className="space-y-4"
-          >
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <p className="rv-kicker mb-2">Race Views</p>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  Compare race forecasts with training paces without carrying both surfaces in the header.
-                </p>
-              </div>
-              <TabsList variant="line" className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:flex sm:w-auto sm:flex-wrap sm:justify-start">
-                <TabsTrigger value="predictions" className={workspaceTabTriggerClass}>
-                  Predictions
-                </TabsTrigger>
-                <TabsTrigger value="vdot" className={workspaceTabTriggerClass}>
-                  Pace Guide
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="predictions" className="mt-0">
-              <Suspense fallback={<PanelFallback title="Race Predictions" subtitle="Loading projections" />}>
-                <RaceTimePredictions activities={activities} allActivities={activities} period={viewPeriod} mostRecentActivityId={mostRecentActivityId} />
-              </Suspense>
-            </TabsContent>
-            <TabsContent value="vdot" className="mt-0">
-              <Suspense fallback={<PanelFallback title="VDOT" subtitle="Loading training pace zones" />}>
-                <VDOTPanel
-                    activities={activities}
-                    allActivities={activities}
-                    mostRecentActivityId={mostRecentActivityId}
-                />
-              </Suspense>
-            </TabsContent>
-          </Tabs>
+          <Suspense fallback={<PanelFallback title="Race Prediction" subtitle="Loading VDOT and pacing" />}>
+            <VDOTPanel
+              activities={activities}
+              allActivities={activities}
+              period={viewPeriod}
+              mostRecentActivityId={mostRecentActivityId}
+            />
+          </Suspense>
         )}
 
         {dashboardWorkspace === 'logbook' && (
