@@ -208,17 +208,6 @@ textarea {
     position: sticky;
 }
 
-.setup-sticky-card {
-    position: relative;
-}
-
-@media (min-width: 1024px) {
-    .setup-sticky-card {
-        position: sticky;
-        align-self: start;
-    }
-}
-
 .rv-panel-strong {
     background: var(--rv-bg-panel-strong);
 }

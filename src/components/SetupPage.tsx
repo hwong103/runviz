@@ -37,8 +37,11 @@ export function SetupPage({
   const [stravaSetupLoading, setStravaSetupLoading] = useState(false);
   const [stravaSetupSaving, setStravaSetupSaving] = useState(false);
   const [stravaSetupStatus, setStravaSetupStatus] = useState<string | null>(null);
-  const [stickyCardTop, setStickyCardTop] = useState(32);
+  const [stickyCardStyle, setStickyCardStyle] = useState<CSSProperties>({});
+  const [stickyRailMinHeight, setStickyRailMinHeight] = useState<number | null>(null);
   const setupGridRef = useRef<HTMLDivElement | null>(null);
+  const stickyRailRef = useRef<HTMLDivElement | null>(null);
+  const stickyPanelRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!needsStravaConnect) {
@@ -82,20 +85,62 @@ export function SetupPage({
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setStickyCardTop(32);
+      setStickyCardStyle({});
+      setStickyRailMinHeight(null);
       return;
     }
 
-    const updateStickyCardPosition = () => {
-      if (window.innerWidth < 1024) {
-        setStickyCardTop(32);
-        return;
-      }
+    let rafId = 0;
 
-      const gridTop = setupGridRef.current?.offsetTop ?? 0;
-      const relativeScroll = Math.max(0, window.scrollY - Math.max(0, gridTop - 96));
-      const nextOffset = Math.min(168, relativeScroll * 0.32);
-      setStickyCardTop(32 + nextOffset);
+    const updateStickyCardPosition = () => {
+      cancelAnimationFrame(rafId);
+      rafId = window.requestAnimationFrame(() => {
+        const grid = setupGridRef.current;
+        const rail = stickyRailRef.current;
+        const panel = stickyPanelRef.current;
+
+        if (!grid || !rail || !panel || window.innerWidth < 1024) {
+          setStickyCardStyle({});
+          setStickyRailMinHeight(null);
+          return;
+        }
+
+        const panelHeight = panel.offsetHeight;
+        setStickyRailMinHeight(panelHeight);
+
+        const gridRect = grid.getBoundingClientRect();
+        const railRect = rail.getBoundingClientRect();
+        const gridAbsTop = window.scrollY + gridRect.top;
+        const gridAbsBottom = window.scrollY + gridRect.bottom;
+        const railAbsTop = window.scrollY + railRect.top;
+        const relativeScroll = Math.max(0, window.scrollY - Math.max(0, gridAbsTop - 96));
+        const desiredTop = 32 + Math.min(168, relativeScroll * 0.32);
+        const stickStart = railAbsTop - desiredTop;
+        const stickEnd = gridAbsBottom - desiredTop - panelHeight;
+
+        if (window.scrollY < stickStart) {
+          setStickyCardStyle({});
+          return;
+        }
+
+        if (window.scrollY >= stickEnd) {
+          setStickyCardStyle({
+            position: 'absolute',
+            top: `${Math.max(0, gridRect.height - panelHeight)}px`,
+            left: '0',
+            right: '0',
+          });
+          return;
+        }
+
+        setStickyCardStyle({
+          position: 'fixed',
+          top: `${desiredTop}px`,
+          left: `${railRect.left}px`,
+          width: `${railRect.width}px`,
+          zIndex: 20,
+        });
+      });
     };
 
     updateStickyCardPosition();
@@ -103,6 +148,7 @@ export function SetupPage({
     window.addEventListener('resize', updateStickyCardPosition);
 
     return () => {
+      cancelAnimationFrame(rafId);
       window.removeEventListener('scroll', updateStickyCardPosition);
       window.removeEventListener('resize', updateStickyCardPosition);
     };
@@ -113,6 +159,8 @@ export function SetupPage({
     if (user?.email) return user.email;
     return 'your account';
   }, [user?.email, user?.name]);
+
+  const stickyRailStyle = stickyRailMinHeight ? { minHeight: `${stickyRailMinHeight}px` } : undefined;
 
   if (authLoading) {
     return (
@@ -351,9 +399,11 @@ export function SetupPage({
           </div>
         </section>
 
+        <div ref={stickyRailRef} className="relative self-start" style={stickyRailStyle}>
         <aside
-          className="rv-panel rv-panel-accent rv-reveal rv-spotlight setup-sticky-card flex flex-col gap-6 px-6 py-8 sm:px-8"
-          style={{ ...reveal(200), top: `${stickyCardTop}px` }}
+          ref={stickyPanelRef}
+          className="rv-panel rv-panel-accent rv-reveal rv-spotlight flex flex-col gap-6 px-6 py-8 sm:px-8"
+          style={{ ...reveal(200), ...stickyCardStyle }}
         >
           <div className="space-y-6">
             <div className="space-y-2">
@@ -486,6 +536,7 @@ export function SetupPage({
             <p className="rv-body-copy-sm">Keep the Strava app tab open while you copy the values back here.</p>
           </div>
         </aside>
+        </div>
       </div>
 
       <div className="rv-mini-label mt-6 mx-auto max-w-[1600px] px-1 text-[var(--rv-text-faint)]">
