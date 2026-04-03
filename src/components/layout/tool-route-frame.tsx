@@ -8,6 +8,7 @@ interface ToolRouteFrameProps {
   title: string
   subtitle: string
   children: ReactNode
+  headerActions?: ReactNode
 }
 
 export function ToolRouteFrame({
@@ -15,6 +16,7 @@ export function ToolRouteFrame({
   title,
   subtitle,
   children,
+  headerActions,
 }: ToolRouteFrameProps) {
   const { athlete, isAuthenticated, loading, logout } = useAuth()
 
@@ -37,6 +39,7 @@ export function ToolRouteFrame({
             : "Browsing without an account"
       }
       onLogout={isAuthenticated ? logout : undefined}
+      headerActions={headerActions}
     >
       {children}
     </AppShell>
