@@ -12,6 +12,7 @@ import { PrivacyPage } from './components/PrivacyPage.tsx'
 import { SettingsPage } from './components/SettingsPage.tsx'
 import { SetupRoute } from './components/SetupRoute.tsx'
 import { StravaAuthStart } from './components/StravaAuthStart.tsx'
+import { Badge } from './components/ui/Badge.tsx'
 
 const RoutePlanner = lazy(() => import('./components/RoutePlanner.tsx'))
 const FormAnalysis = lazy(() => import('./components/FormAnalysis.tsx'))
@@ -72,6 +73,12 @@ createRoot(document.getElementById('root')!).render(
                 eyebrow="Form Lab"
                 title="Review your running form"
                 subtitle="Upload a clip, run the analysis, and keep your video-based coaching workflow inside the shared app shell."
+                headerActions={
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone="blue" size="sm">100% On-device</Badge>
+                    <Badge tone="gold" size="sm">Analysis history saved locally</Badge>
+                  </div>
+                }
               >
                 <FormAnalysis />
               </ToolRouteFrame>

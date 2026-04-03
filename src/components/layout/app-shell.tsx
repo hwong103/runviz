@@ -181,7 +181,10 @@ export function AppShell({
             </div>
           </div>
 
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-2">
+          <div className={cn(
+            "grid gap-2",
+            onSync ? "grid-cols-[minmax(0,1fr)_auto_auto_auto]" : "grid-cols-[minmax(0,1fr)_auto_auto]"
+          )}>
             {onSync ? (
               <Button
                 variant="outline"
