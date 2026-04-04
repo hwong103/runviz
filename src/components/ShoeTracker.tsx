@@ -8,12 +8,13 @@ import { SectionHeader } from './ui/SectionHeader';
 
 interface ShoeTrackerProps {
     activities: Activity[];
+    allActivities: Activity[];
     shoes: Gear[];
     selectedShoeId?: string | null;
     onSelectShoe?: (id: string) => void;
 }
 
-export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }: ShoeTrackerProps) {
+export function ShoeTracker({ activities, allActivities, shoes, selectedShoeId, onSelectShoe }: ShoeTrackerProps) {
     const [fetchedGear, setFetchedGear] = useState<Map<string, Gear>>(new Map());
 
     // 1. Identify gears that are used but unknown
@@ -57,6 +58,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
         fetchedGear.forEach((g, id) => gearLibrary.set(id, g));
 
         const periodDistances = new Map<string, number>();
+        const lifetimeDistancesFromActivities = new Map<string, number>();
 
         activities.forEach(activity => {
             const gearId = activity.gear_id;
@@ -66,22 +68,33 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
             }
         });
 
+        allActivities.forEach(activity => {
+            const gearId = activity.gear_id;
+            if (gearId) {
+                const currentDist = lifetimeDistancesFromActivities.get(gearId) || 0;
+                lifetimeDistancesFromActivities.set(gearId, currentDist + activity.distance);
+            }
+        });
+
         const allKnownIds = new Set([
             ...Array.from(gearLibrary.keys()),
-            ...Array.from(periodDistances.keys())
+            ...Array.from(periodDistances.keys()),
+            ...Array.from(lifetimeDistancesFromActivities.keys())
         ]);
 
         return Array.from(allKnownIds)
             .map(id => {
                 const shoe = gearLibrary.get(id);
                 const pDist = (periodDistances.get(id) || 0) / 1000;
+                const activityLifetimeDistance = (lifetimeDistancesFromActivities.get(id) || 0) / 1000;
+                const apiLifetimeDistance = (shoe?.distance || 0) / 1000;
 
                 return {
                     id,
                     name: shoe?.name || `Unknown Shoe`,
                     brand_name: shoe?.brand_name,
                     primary: shoe?.primary || false,
-                    lifetimeDistance: (shoe?.distance || 0) / 1000,
+                    lifetimeDistance: Math.max(apiLifetimeDistance, activityLifetimeDistance),
                     periodDistance: pDist,
                     isDecoveredFromActivity: !shoe
                 };
@@ -98,7 +111,7 @@ export function ShoeTracker({ activities, shoes, selectedShoeId, onSelectShoe }:
                 if (b.periodDistance !== a.periodDistance) return b.periodDistance - a.periodDistance;
                 return b.lifetimeDistance - a.lifetimeDistance;
             });
-    }, [activities, shoes, fetchedGear]);
+    }, [activities, allActivities, shoes, fetchedGear]);
 
     const pairLabel = `${shoeStats.length} ${shoeStats.length === 1 ? 'pair' : 'pairs'}`;
 

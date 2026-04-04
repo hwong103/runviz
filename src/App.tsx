@@ -339,9 +339,10 @@ function App() {
   }, [activities]);
 
   // Filter activities for the current view
+  const runActivities = useMemo(() => activities.filter(isRun), [activities]);
+
   const filteredActivities = useMemo(() => {
-    return activities.filter((a) => {
-      if (!isRun(a)) return false;
+    return runActivities.filter((a) => {
       const date = parseActivityLocalDate(a.start_date_local);
       const year = date.getFullYear();
       const month = date.getMonth();
@@ -373,7 +374,7 @@ function App() {
       if (selectedShoeId) return a.gear_id === selectedShoeId;
       return true;
     });
-  }, [activities, viewPeriod, selectedShoeId]);
+  }, [runActivities, viewPeriod, selectedShoeId]);
 
   const handleSelectDay = useCallback((dateStr: string) => {
     const activity = filteredActivities.find(a => {
@@ -745,6 +746,7 @@ function App() {
                 <Suspense fallback={<PanelFallback title="Shoes" subtitle="Loading equipment log" />}>
                   <ShoeTracker
                     activities={filteredActivities}
+                    allActivities={runActivities}
                     shoes={allShoes}
                     selectedShoeId={selectedShoeId}
                     onSelectShoe={(id) => setSelectedShoeId((prev) => prev === id ? null : id)}
@@ -791,6 +793,7 @@ function App() {
               <Suspense fallback={<PanelFallback title="Shoes" subtitle="Loading equipment log" />}>
                 <ShoeTracker
                   activities={filteredActivities}
+                  allActivities={runActivities}
                   shoes={allShoes}
                   selectedShoeId={selectedShoeId}
                   onSelectShoe={(id) => setSelectedShoeId((prev) => prev === id ? null : id)}
