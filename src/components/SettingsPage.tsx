@@ -114,15 +114,23 @@ export function SettingsPage() {
   }
 
   function handleSaveMaxHR() {
+    void (async () => {
     const parsed = parseInt(maxHRInput, 10)
     if (!Number.isFinite(parsed) || parsed < 140 || parsed > 220) {
       setMaxHRStatus("Enter a value between 140 and 220 bpm.")
       return
     }
 
-    setMaxHR(parsed)
-    setMaxHRStatus("Saved.")
-    window.setTimeout(() => setMaxHRStatus(null), 2000)
+      try {
+        await setMaxHR(parsed)
+        setMaxHRStatus("Saved.")
+      } catch (error) {
+        setMaxHRStatus(
+          error instanceof Error ? error.message : "Unable to save max heart rate."
+        )
+      }
+      window.setTimeout(() => setMaxHRStatus(null), 2000)
+    })()
   }
 
   const athleteLabel = athlete
@@ -312,9 +320,17 @@ export function SettingsPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      clearMaxHR()
-                      setMaxHRStatus("Reset to default.")
-                      window.setTimeout(() => setMaxHRStatus(null), 2000)
+                      void (async () => {
+                        try {
+                          await clearMaxHR()
+                          setMaxHRStatus("Reset to default.")
+                        } catch (error) {
+                          setMaxHRStatus(
+                            error instanceof Error ? error.message : "Unable to reset max heart rate."
+                          )
+                        }
+                        window.setTimeout(() => setMaxHRStatus(null), 2000)
+                      })()
                     }}
                     className="text-muted-foreground"
                   >

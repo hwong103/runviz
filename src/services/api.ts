@@ -11,6 +11,12 @@ const authClient = createAuthClient({
     plugins: [magicLinkClient()],
 });
 
+interface GeocodingSuggestion {
+    display_name: string;
+    lat: string;
+    lon: string;
+}
+
 class ApiError extends Error {
     status: number;
     constructor(status: number, message: string) {
@@ -99,6 +105,23 @@ export const auth = {
             body: JSON.stringify({ clientId, clientSecret }),
         });
     },
+
+    async getMaxHRPreference(): Promise<{ maxHR: number | null; updatedAt: number | null }> {
+        return fetchApi('/setup/max-hr');
+    },
+
+    async saveMaxHRPreference(maxHR: number): Promise<{ ok: boolean; maxHR: number }> {
+        return fetchApi('/setup/max-hr', {
+            method: 'POST',
+            body: JSON.stringify({ maxHR }),
+        });
+    },
+
+    async clearMaxHRPreference(): Promise<{ ok: boolean }> {
+        return fetchApi('/setup/max-hr', {
+            method: 'DELETE',
+        });
+    },
 };
 
 export const google = {
@@ -168,11 +191,11 @@ export const routes = {
 
 // Geocoding endpoints
 export const geocoding = {
-    async search(query: string): Promise<any[]> {
+    async search(query: string): Promise<GeocodingSuggestion[]> {
         return fetchApi(`/api/geocoding/search?q=${encodeURIComponent(query)}`);
     },
 
-    async reverse(lat: number, lon: number): Promise<any> {
+    async reverse(lat: number, lon: number): Promise<Partial<GeocodingSuggestion>> {
         return fetchApi(`/api/geocoding/reverse?lat=${lat}&lon=${lon}`);
     },
 };

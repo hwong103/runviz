@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { auth } from '../services/api';
+import { syncMaxHRForUser } from './useMaxHR';
 import * as cache from '../services/cache';
 import type { Athlete } from '../types';
 
@@ -30,6 +31,7 @@ export function useAuth() {
         try {
             const session = await auth.getSession();
             if (session.authenticated) {
+                await syncMaxHRForUser(session.user?.id ?? null);
                 const athlete: Athlete | null = session.athlete ? {
                     id: session.athlete.id,
                     username: '',
@@ -51,6 +53,7 @@ export function useAuth() {
                     error: null,
                 });
             } else {
+                await syncMaxHRForUser(null);
                 setState({
                     isAuthenticated: false,
                     athlete: null,
@@ -61,6 +64,7 @@ export function useAuth() {
                 });
             }
         } catch {
+            await syncMaxHRForUser(null);
             setState({
                 isAuthenticated: false,
                 athlete: null,
@@ -93,6 +97,7 @@ export function useAuth() {
         } finally {
             // Always clear local cache and state, even if server logout fails
             await cache.clearCache();
+            await syncMaxHRForUser(null);
             setState({
                 isAuthenticated: false,
                 athlete: null,

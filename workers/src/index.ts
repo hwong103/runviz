@@ -193,6 +193,18 @@ export default {
                 return await handleGetStravaKeyStatus(env, origin, auth, request);
             }
 
+            if (url.pathname === '/setup/max-hr' && request.method === 'GET') {
+                return await handleGetMaxHRPreference(env, origin, auth, request);
+            }
+
+            if (url.pathname === '/setup/max-hr' && request.method === 'POST') {
+                return await handleSaveMaxHRPreference(request, env, origin, auth);
+            }
+
+            if (url.pathname === '/setup/max-hr' && request.method === 'DELETE') {
+                return await handleClearMaxHRPreference(env, origin, auth, request);
+            }
+
             if (url.pathname === '/auth/callback') {
                 return await handleAuthCallback(request, env, origin);
             }
@@ -484,6 +496,76 @@ async function handleGetStravaKeyStatus(env: Env, origin: string, auth: ReturnTy
         clientId: row?.client_id ?? null,
         updatedAt: row?.updated_at ?? null,
     }), {
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleSaveMaxHRPreference(request: Request, env: Env, origin: string, auth: ReturnType<typeof createAuth>): Promise<Response> {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!session?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    const body = await request.json() as { maxHR?: number };
+    const maxHR = Number(body.maxHR);
+    if (!Number.isFinite(maxHR) || maxHR < 140 || maxHR > 220) {
+        return new Response(JSON.stringify({ error: 'Max heart rate must be between 140 and 220.' }), {
+            status: 400,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    await env.DB.prepare(
+        `INSERT INTO user_preferences (user_id, max_hr, created_at, updated_at)
+         VALUES (?, ?, unixepoch(), unixepoch())
+         ON CONFLICT(user_id) DO UPDATE SET
+           max_hr = excluded.max_hr,
+           updated_at = unixepoch()`
+    ).bind(session.user.id, Math.round(maxHR)).run();
+
+    return new Response(JSON.stringify({ ok: true, maxHR: Math.round(maxHR) }), {
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleGetMaxHRPreference(env: Env, origin: string, auth: ReturnType<typeof createAuth>, request: Request): Promise<Response> {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!session?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    const row = await env.DB.prepare(
+        'SELECT max_hr, updated_at FROM user_preferences WHERE user_id = ?'
+    ).bind(session.user.id).first<{ max_hr: number | null; updated_at: number | null }>();
+
+    return new Response(JSON.stringify({
+        maxHR: row?.max_hr ?? null,
+        updatedAt: row?.updated_at ?? null,
+    }), {
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleClearMaxHRPreference(env: Env, origin: string, auth: ReturnType<typeof createAuth>, request: Request): Promise<Response> {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!session?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    await env.DB.prepare(
+        'DELETE FROM user_preferences WHERE user_id = ?'
+    ).bind(session.user.id).run();
+
+    return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
     });
 }
