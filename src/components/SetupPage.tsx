@@ -496,7 +496,7 @@ export function SetupPage({
 
                         const parsedMaxHR = parseInt(maxHRInput, 10);
                         if (Number.isFinite(parsedMaxHR) && parsedMaxHR >= 140 && parsedMaxHR <= 220) {
-                          setMaxHR(parsedMaxHR);
+                          await setMaxHR(parsedMaxHR);
                         }
 
                         setStravaSetupStatus(shouldSaveCredentials ? 'Strava app saved. Redirecting you to connect Strava...' : 'Redirecting you to connect Strava...');
