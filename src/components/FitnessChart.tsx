@@ -235,7 +235,7 @@ export function FitnessChart({ activities, allActivities, period, maxHR = 185, r
                 <div className="mt-5">
                     <AIInsightCard
                         insightType="fitness"
-                        payload={buildFitnessPayload(allActivities)}
+                        payload={buildFitnessPayload(allActivities, maxHR)}
                         mostRecentActivityId={mostRecentActivityId}
                         windowLabel="Based on last 60 days"
                     />

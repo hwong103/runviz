@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import {
   ChevronRight,
+  HeartPulse,
   LogOut,
   MoonStar,
   Palette,
@@ -26,6 +27,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/hooks/useAuth"
+import { useMaxHR } from "@/hooks/useMaxHR"
 import { useTheme } from "@/hooks/useTheme"
 import { auth as authApi } from "@/services/api"
 
@@ -41,6 +43,7 @@ export function SettingsPage() {
     logout,
   } = useAuth()
   const { preference, resolved } = useTheme()
+  const { maxHR, isDefault, setMaxHR, clearMaxHR } = useMaxHR()
   const [clientId, setClientId] = useState("")
   const [clientSecret, setClientSecret] = useState("")
   const [keyConfigured, setKeyConfigured] = useState(false)
@@ -48,6 +51,12 @@ export function SettingsPage() {
   const [keyLoading, setKeyLoading] = useState(false)
   const [keySaving, setKeySaving] = useState(false)
   const [keyStatus, setKeyStatus] = useState<string | null>(null)
+  const [maxHRInput, setMaxHRInput] = useState(String(maxHR))
+  const [maxHRStatus, setMaxHRStatus] = useState<string | null>(null)
+
+  useEffect(() => {
+    setMaxHRInput(String(maxHR))
+  }, [maxHR])
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -102,6 +111,18 @@ export function SettingsPage() {
       )
       setKeySaving(false)
     }
+  }
+
+  function handleSaveMaxHR() {
+    const parsed = parseInt(maxHRInput, 10)
+    if (!Number.isFinite(parsed) || parsed < 140 || parsed > 220) {
+      setMaxHRStatus("Enter a value between 140 and 220 bpm.")
+      return
+    }
+
+    setMaxHR(parsed)
+    setMaxHRStatus("Saved.")
+    window.setTimeout(() => setMaxHRStatus(null), 2000)
   }
 
   const athleteLabel = athlete
@@ -235,6 +256,77 @@ export function SettingsPage() {
                   <ThemeToggle />
                 </div>
               </CardContent>
+            </Card>
+
+            <Card className="border border-border/70 bg-background/80">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <HeartPulse className="size-4 text-muted-foreground" />
+                  Training
+                </CardTitle>
+                <CardDescription>
+                  Calibrate metrics that depend on your physiology.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="settings-max-hr" className="text-sm">
+                    Max heart rate
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="settings-max-hr"
+                      type="number"
+                      min={140}
+                      max={220}
+                      value={maxHRInput}
+                      onChange={(e) => {
+                        setMaxHRInput(e.target.value)
+                        setMaxHRStatus(null)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveMaxHR()
+                      }}
+                      className="w-28"
+                      placeholder="185"
+                    />
+                    <span className="text-sm text-muted-foreground">bpm</span>
+                  </div>
+                  {isDefault ? (
+                    <p className="text-xs text-muted-foreground">
+                      Using default (185 bpm). Enter your measured max HR for accurate training zones, CTL, and VDOT.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Set manually. All training load metrics use this value.
+                    </p>
+                  )}
+                  {maxHRStatus ? (
+                    <p className="text-xs text-muted-foreground">{maxHRStatus}</p>
+                  ) : null}
+                </div>
+              </CardContent>
+              <CardFooter className="justify-between gap-3">
+                {!isDefault ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      clearMaxHR()
+                      setMaxHRStatus("Reset to default.")
+                      window.setTimeout(() => setMaxHRStatus(null), 2000)
+                    }}
+                    className="text-muted-foreground"
+                  >
+                    Reset to default
+                  </Button>
+                ) : (
+                  <span />
+                )}
+                <Button size="sm" variant="outline" onClick={handleSaveMaxHR}>
+                  Save
+                </Button>
+              </CardFooter>
             </Card>
 
             <Card className="border border-border/70 bg-background/80">
