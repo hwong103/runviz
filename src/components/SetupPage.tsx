@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Check, Copy, Download } from 'lucide-react';
+import { useMaxHR } from '../hooks/useMaxHR';
 import { auth as authApi } from '../services/api';
 
 const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
@@ -37,11 +38,17 @@ export function SetupPage({
   const [stravaSetupLoading, setStravaSetupLoading] = useState(false);
   const [stravaSetupSaving, setStravaSetupSaving] = useState(false);
   const [stravaSetupStatus, setStravaSetupStatus] = useState<string | null>(null);
+  const { maxHR, isDefault, setMaxHR } = useMaxHR();
+  const [maxHRInput, setMaxHRInput] = useState(isDefault ? '' : String(maxHR));
   const [stickyCardStyle, setStickyCardStyle] = useState<CSSProperties>({});
   const [stickyRailMinHeight, setStickyRailMinHeight] = useState<number | null>(null);
   const setupGridRef = useRef<HTMLDivElement | null>(null);
   const stickyRailRef = useRef<HTMLDivElement | null>(null);
   const stickyPanelRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setMaxHRInput(isDefault ? '' : String(maxHR));
+  }, [isDefault, maxHR]);
 
   useEffect(() => {
     if (!needsStravaConnect) {
@@ -436,6 +443,28 @@ export function SetupPage({
                   </label>
                 </div>
 
+                <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-4 py-4">
+                  <label className="rv-mini-label mb-3 block">
+                    Max heart rate
+                    <span className="ml-2 font-normal normal-case tracking-normal text-[var(--rv-text-faint)]">optional</span>
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min={140}
+                      max={220}
+                      value={maxHRInput}
+                      onChange={(e) => setMaxHRInput(e.target.value)}
+                      placeholder="e.g. 193"
+                      className="rv-field w-24 px-4 py-2.5 text-sm normal-case tracking-normal"
+                    />
+                    <span className="text-sm text-[var(--rv-text-dim)]">bpm</span>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-[var(--rv-text-faint)]">
+                    Used to calibrate training zones and load metrics. You can set or update this in Settings later.
+                  </p>
+                </div>
+
                 <div className="flex flex-col gap-3">
                   <button
                     onClick={async () => {
@@ -463,6 +492,11 @@ export function SetupPage({
                           setStravaKeyUpdatedAt(status.updatedAt ?? null);
                           setStravaClientIdInput(status.clientId ?? trimmedClientId);
                           setStravaClientSecretInput('');
+                        }
+
+                        const parsedMaxHR = parseInt(maxHRInput, 10);
+                        if (Number.isFinite(parsedMaxHR) && parsedMaxHR >= 140 && parsedMaxHR <= 220) {
+                          setMaxHR(parsedMaxHR);
                         }
 
                         setStravaSetupStatus(shouldSaveCredentials ? 'Strava app saved. Redirecting you to connect Strava...' : 'Redirecting you to connect Strava...');

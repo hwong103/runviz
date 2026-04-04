@@ -38,6 +38,7 @@ interface StatsOverviewProps {
     };
     variant?: 'overview' | 'training';
     mostRecentActivityId?: number;
+    maxHR?: number;
 }
 
 type HelpMetric = TrainingHealthMetricKey;
@@ -62,7 +63,14 @@ function getSelectedPeriodEnd(period: StatsOverviewProps['period']) {
     return now;
 }
 
-export function StatsOverview({ activities, allActivities, period, variant = 'overview', mostRecentActivityId }: StatsOverviewProps) {
+export function StatsOverview({
+    activities,
+    allActivities,
+    period,
+    variant = 'overview',
+    mostRecentActivityId,
+    maxHR = 185,
+}: StatsOverviewProps) {
     const [activeHelp, setActiveHelp] = useState<HelpMetric | null>(null);
     const [activeMetric, setActiveMetric] = useState<TrainingHealthMetricKey>('acwr');
     const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
@@ -130,14 +138,14 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
 
         // Streak calculation
         const streakData = calculateStreaks(filteredActivities);
-        const acwr = calculateAcwr(filteredActivities, selectedPeriodEnd);
+        const acwr = calculateAcwr(filteredActivities, selectedPeriodEnd, maxHR);
         const weeklyRamp = calculateWeeklyRamp(filteredActivities, selectedPeriodEnd);
         const consistencyScore = calculateConsistencyScore(filteredActivities, selectedPeriodEnd);
         const longRunRatio = calculateLongRunRatio(filteredActivities, selectedPeriodEnd);
         const efficiencyIndex = calculateEfficiencyIndex(filteredActivities, selectedPeriodEnd);
         const gapTrendSecPerKm = calculateGapTrend(filteredActivities, selectedPeriodEnd);
-        const monotony = calculateMonotony(filteredActivities, selectedPeriodEnd);
-        const strain = calculateStrainScore(filteredActivities, selectedPeriodEnd);
+        const monotony = calculateMonotony(filteredActivities, selectedPeriodEnd, maxHR);
+        const strain = calculateStrainScore(filteredActivities, selectedPeriodEnd, maxHR);
 
         return {
             runCount: filteredActivities.length,
@@ -157,7 +165,7 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
             strain,
             ...streakData,
         };
-    }, [activities, period, selectedPeriodEnd]);
+    }, [activities, period, selectedPeriodEnd, maxHR]);
 
     const formatPace = (pace: number) => {
         const mins = Math.floor(pace);
@@ -404,12 +412,13 @@ export function StatsOverview({ activities, allActivities, period, variant = 'ov
                         period={period}
                         selectedPeriodEnd={selectedPeriodEnd}
                         metric={activeMetric}
+                        maxHR={maxHR}
                     />
                     {mostRecentActivityId && (
                         <div className="mt-4">
                             <AIInsightCard
                                 insightType="training-health"
-                                payload={buildTrainingHealthPayload(allActivities, period)}
+                                payload={buildTrainingHealthPayload(allActivities, period, maxHR)}
                                 mostRecentActivityId={mostRecentActivityId}
                                 windowLabel={trainingHealthWindowLabel}
                             />

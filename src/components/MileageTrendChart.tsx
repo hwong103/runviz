@@ -43,10 +43,12 @@ interface MileageTrendChartProps {
         month: number | null;
     };
     mostRecentActivityId?: number;
+    maxHR?: number;
 }
 
-export function MileageTrendChart({ activities, allActivities, period, mostRecentActivityId }: MileageTrendChartProps) {
+export function MileageTrendChart({ activities, allActivities, period, mostRecentActivityId, maxHR = 185 }: MileageTrendChartProps) {
     const chartTheme = useChartTheme();
+    void maxHR;
 
     const data = useMemo(() => {
         let startDate: Date;

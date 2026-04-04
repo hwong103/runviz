@@ -85,8 +85,8 @@ export function VDOTPanel({
         return { ctl, tsb, score, band };
     }, [activities, allActivities, maxHR, restHR]);
     const insightPayload = useMemo(
-        () => (allActivities ? buildRacePredictionPayload(allActivities) : {}),
-        [allActivities]
+        () => (allActivities ? buildRacePredictionPayload(allActivities, maxHR) : {}),
+        [allActivities, maxHR]
     );
 
     return (

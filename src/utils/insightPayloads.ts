@@ -247,7 +247,7 @@ function get3WeekRampRate(weeklyTotals: number[]): number {
     return ((recentAvg - previousAvg) / previousAvg) * 100;
 }
 
-function getLatestTrainingMetrics(activities: Activity[], endDate: Date, days: number): TrainingLoadMetrics[] {
+function getLatestTrainingMetrics(activities: Activity[], endDate: Date, days: number, maxHR = 185): TrainingLoadMetrics[] {
     const runs = toRunActivities(activities);
     if (runs.length === 0) return [];
 
@@ -255,7 +255,7 @@ function getLatestTrainingMetrics(activities: Activity[], endDate: Date, days: n
     startDate.setDate(startDate.getDate() - (days - 1));
     startDate.setHours(0, 0, 0, 0);
 
-    const dailyLoads = activitiesToDailyLoads(runs, 185, 60);
+    const dailyLoads = activitiesToDailyLoads(runs, maxHR, 60);
     return calculateTrainingLoadHistory(dailyLoads, startDate, endDate);
 }
 
@@ -349,7 +349,7 @@ export function buildOverviewPayload(activities: Activity[], viewPeriod?: ViewPe
     };
 }
 
-export function buildTrainingHealthPayload(activities: Activity[], viewPeriod?: ViewPeriod): TrainingHealthPayload {
+export function buildTrainingHealthPayload(activities: Activity[], viewPeriod?: ViewPeriod, maxHR = 185): TrainingHealthPayload {
     const anchorDate = getSelectedPeriodEnd(viewPeriod);
     const windowDays = viewPeriod ? viewPeriodToDays(viewPeriod) : 90;
     const windowActivities = getActivitiesInWindowEndingAt(activities, anchorDate, windowDays);
@@ -357,30 +357,30 @@ export function buildTrainingHealthPayload(activities: Activity[], viewPeriod?: 
     const baselineActivities = getPriorWindowActivities(activities, anchorDate, windowDays);
     const acuteRuns = getActivitiesInWindowEndingAt(windowActivities, anchorDate, Math.min(7, windowDays));
     const chronicRuns = getActivitiesInWindowEndingAt(windowActivities, anchorDate, Math.min(42, windowDays));
-    const totalTrimp = windowActivities.reduce((sum, activity) => sum + calculateActivityTRIMP(activity, 185, 60), 0);
-    const baselineTrimp = baselineActivities.reduce((sum, activity) => sum + calculateActivityTRIMP(activity, 185, 60), 0);
+    const totalTrimp = windowActivities.reduce((sum, activity) => sum + calculateActivityTRIMP(activity, maxHR, 60), 0);
+    const baselineTrimp = baselineActivities.reduce((sum, activity) => sum + calculateActivityTRIMP(activity, maxHR, 60), 0);
 
     const acuteLoad = getTotalDistanceKm(acuteRuns);
     const chronicLoad = chronicRuns.length > 0 ? getTotalDistanceKm(chronicRuns) / Math.max(Math.min(42, windowDays) / 7, 1) : 0;
 
     return {
         trimp: Math.round(totalTrimp),
-        monotony: roundTo(calculateMonotony(windowActivities, anchorDate), 2),
-        strain: Math.round(calculateStrainScore(windowActivities, anchorDate)),
+        monotony: roundTo(calculateMonotony(windowActivities, anchorDate, maxHR), 2),
+        strain: Math.round(calculateStrainScore(windowActivities, anchorDate, maxHR)),
         acuteLoad: roundTo(acuteLoad, 1),
         chronicLoad: roundTo(chronicLoad, 1),
-        loadRatio: roundTo(calculateAcwr(windowActivities, anchorDate) ?? 0, 2),
+        loadRatio: roundTo(calculateAcwr(windowActivities, anchorDate, maxHR) ?? 0, 2),
         weekCount: countActiveWeeks(windowActivities),
-        baselineMonotony: roundTo(calculateMonotony(baselineActivities, baselineAnchor), 2),
-        baselineStrain: Math.round(calculateStrainScore(baselineActivities, baselineAnchor)),
+        baselineMonotony: roundTo(calculateMonotony(baselineActivities, baselineAnchor, maxHR), 2),
+        baselineStrain: Math.round(calculateStrainScore(baselineActivities, baselineAnchor, maxHR)),
         baselineTrimp: Math.round(baselineTrimp),
     };
 }
 
-export function buildFitnessPayload(activities: Activity[]): FitnessPayload {
+export function buildFitnessPayload(activities: Activity[], maxHR = 185): FitnessPayload {
     const endDate = new Date();
-    const metrics60 = getLatestTrainingMetrics(activities, endDate, 60);
-    const metrics90 = getLatestTrainingMetrics(activities, endDate, 90);
+    const metrics60 = getLatestTrainingMetrics(activities, endDate, 60, maxHR);
+    const metrics90 = getLatestTrainingMetrics(activities, endDate, 90, maxHR);
     const latest = metrics60[metrics60.length - 1];
     const first = metrics60[0];
 
@@ -476,7 +476,7 @@ export function buildInjuryRiskPayload(activities: Activity[], windowDays = 30):
     };
 }
 
-export function buildRacePredictionPayload(activities: Activity[]): RacePredictionPayload {
+export function buildRacePredictionPayload(activities: Activity[], maxHR = 185): RacePredictionPayload {
     const endDate = new Date();
     const last90Days = getActivitiesInWindowEndingAt(activities, endDate, 90);
     const prior90Days = getPriorWindowActivities(activities, endDate, 90);
@@ -485,8 +485,8 @@ export function buildRacePredictionPayload(activities: Activity[]): RacePredicti
         return {};
     }
 
-    const metrics60 = getLatestTrainingMetrics(activities, endDate, 60);
-    const metrics90 = getLatestTrainingMetrics(activities, endDate, 90);
+    const metrics60 = getLatestTrainingMetrics(activities, endDate, 60, maxHR);
+    const metrics90 = getLatestTrainingMetrics(activities, endDate, 90, maxHR);
     const latestMetric = metrics60[metrics60.length - 1];
     const firstMetric = metrics60[0] ?? latestMetric;
     const ctlDelta = latestMetric ? latestMetric.ctl - (firstMetric?.ctl ?? latestMetric.ctl) : 0;

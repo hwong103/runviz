@@ -57,6 +57,7 @@ interface TrainingHealthTrendChartProps {
     period: ViewPeriod;
     selectedPeriodEnd: Date;
     metric: TrainingHealthMetricKey;
+    maxHR?: number;
 }
 
 interface MetricSeriesPoint {
@@ -72,7 +73,7 @@ interface MetricDefinition {
     emptyState: string;
     formatValue: (value: number | null) => string;
     formatDelta: (value: number) => string;
-    compute: (activities: Activity[], anchorDate: Date) => number | null;
+    compute: (activities: Activity[], anchorDate: Date, maxHR: number) => number | null;
 }
 
 const METRIC_DEFINITIONS: Record<TrainingHealthMetricKey, MetricDefinition> = {
@@ -84,7 +85,7 @@ const METRIC_DEFINITIONS: Record<TrainingHealthMetricKey, MetricDefinition> = {
         emptyState: 'Need more recent workload data before load ratio can be charted.',
         formatValue: (value) => (value === null ? '--' : value.toFixed(2)),
         formatDelta: (value) => formatSigned(value, 2),
-        compute: calculateAcwr,
+        compute: (activities, anchorDate, maxHR) => calculateAcwr(activities, anchorDate, maxHR),
     },
     ramp: {
         label: 'Weekly Change',
@@ -144,8 +145,8 @@ const METRIC_DEFINITIONS: Record<TrainingHealthMetricKey, MetricDefinition> = {
         emptyState: 'Need a fuller week of load to chart monotony.',
         formatValue: (value) => (value === null ? '--' : value.toFixed(2)),
         formatDelta: (value) => formatSigned(value, 2),
-        compute: (activities, anchorDate) => {
-            const monotony = calculateMonotony(activities, anchorDate);
+        compute: (activities, anchorDate, maxHR) => {
+            const monotony = calculateMonotony(activities, anchorDate, maxHR);
             return monotony > 0 ? monotony : null;
         },
     },
@@ -157,8 +158,8 @@ const METRIC_DEFINITIONS: Record<TrainingHealthMetricKey, MetricDefinition> = {
         emptyState: 'Need more recent TRIMP data before strain can be charted.',
         formatValue: (value) => (value === null ? '--' : value.toFixed(0)),
         formatDelta: (value) => `${value >= 0 ? '+' : ''}${value.toFixed(0)}`,
-        compute: (activities, anchorDate) => {
-            const strain = calculateStrainScore(activities, anchorDate);
+        compute: (activities, anchorDate, maxHR) => {
+            const strain = calculateStrainScore(activities, anchorDate, maxHR);
             return strain > 0 ? strain : null;
         },
     },
@@ -216,6 +217,7 @@ export function TrainingHealthTrendChart({
     period,
     selectedPeriodEnd,
     metric,
+    maxHR = 185,
 }: TrainingHealthTrendChartProps) {
     const chartTheme = useChartTheme();
     const metricDefinition = METRIC_DEFINITIONS[metric];
@@ -226,9 +228,9 @@ export function TrainingHealthTrendChart({
 
         return anchors.map((anchorDate): MetricSeriesPoint => ({
             anchorDate,
-            value: metricDefinition.compute(activities, anchorDate),
+            value: metricDefinition.compute(activities, anchorDate, maxHR),
         }));
-    }, [activities, metricDefinition, period, selectedPeriodEnd]);
+    }, [activities, maxHR, metricDefinition, period, selectedPeriodEnd]);
 
     const nonNullPoints = series.filter((point): point is MetricSeriesPoint & { value: number } => point.value !== null);
     const latestPoint = nonNullPoints[nonNullPoints.length - 1] ?? null;
