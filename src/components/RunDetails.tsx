@@ -1,9 +1,10 @@
 import { useMemo, useEffect, useState } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
     type ChartOptions,
+    type Plugin,
     LinearScale,
     BarElement,
     PointElement,
@@ -128,17 +129,6 @@ function formatWholeKmTick(value: number | string) {
 function average(values: number[]) {
     if (values.length === 0) return 0;
     return values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
-function getRankBadgeStyle(binIndex: number, binCount: number, binValue: number, peakValue: number): CSSProperties {
-    const centerPercent = ((binIndex + 0.5) / Math.max(binCount, 1)) * 100;
-    const heightPercent = peakValue > 0 ? (binValue / peakValue) * 100 : 0;
-
-    return {
-        left: `${Math.min(86, Math.max(14, centerPercent))}%`,
-        bottom: `${Math.min(68, Math.max(12, heightPercent + 4))}%`,
-        transform: 'translate(-50%, 0)',
-    };
 }
 
 export function RunDetails({ activity: initialActivity, allActivities, shoes, onClose, onSelect }: RunDetailsProps) {
@@ -285,8 +275,6 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
         };
     }, [activity, runs, shoes, fetchedShoe]);
 
-    const distancePeak = Math.max(...stats.distBins, 1);
-    const pacePeak = Math.max(...stats.paceBins, 1);
     const averageHeartrate = activity.average_heartrate ? Math.round(activity.average_heartrate) : null;
     const runInsightPayload = useMemo(() => buildRunDetailPayload(activity, allActivities), [activity, allActivities]);
     const runInsightContext = useMemo(() => {
@@ -906,41 +894,17 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                     title={`${stats.distanceRankText} longest run`}
                                     description="Your place in the full run history by distance. The marker sits on the matching distance bucket."
                                 >
-                                    <div className="relative h-44">
-                                        <Bar
-                                            data={{
-                                                labels: stats.distLabels,
-                                                datasets: [{
-                                                    data: stats.distBins,
-                                                    backgroundColor: chartTheme.primaryFill,
-                                                    borderRadius: 8,
-                                                    borderWidth: 1,
-                                                    borderColor: chartTheme.primaryLine
-                                                }]
-                                            }}
-                                            options={{
-                                                maintainAspectRatio: false,
-                                                layout: { padding: { top: 22, left: 10, right: 10, bottom: 0 } },
-                                                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                                                scales: {
-                                                    y: { display: false },
-                                                    x: {
-                                                        display: true,
-                                                        ticks: { color: chartTheme.tickColor, font: { size: 9, weight: 'bold' } },
-                                                        grid: { display: false },
-                                                        border: { display: false }
-                                                    }
-                                                }
-                                            }}
+                                    <div className="h-44">
+                                        <RankChart
+                                            labels={stats.distLabels}
+                                            data={stats.distBins}
+                                            highlightBin={stats.myDistBin}
+                                            rankLabel={stats.distanceRankText}
+                                            barColor={chartTheme.primaryFill}
+                                            barBorder={chartTheme.primaryLine}
+                                            badgeColor="rgb(200, 166, 107)"
+                                            tickColor={chartTheme.tickColor}
                                         />
-                                        <div
-                                            className="pointer-events-none absolute"
-                                            style={getRankBadgeStyle(stats.myDistBin, stats.distBins.length, stats.distBins[stats.myDistBin], distancePeak)}
-                                        >
-                                            <div className="whitespace-nowrap rounded-full border border-[var(--rv-yellow)]/25 bg-[var(--rv-yellow)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-yellow)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-                                                {stats.distanceRankText}
-                                            </div>
-                                        </div>
                                     </div>
                                 </InsightCard>
 
@@ -949,41 +913,17 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                     title={`${stats.paceRankText} fastest at ${stats.clusterLabel}km`}
                                     description="Compared against runs within roughly two kilometers of this session."
                                 >
-                                    <div className="relative h-44">
-                                        <Bar
-                                            data={{
-                                                labels: stats.paceLabels,
-                                                datasets: [{
-                                                    data: stats.paceBins,
-                                                    backgroundColor: chartTheme.secondaryFill,
-                                                    borderRadius: 8,
-                                                    borderWidth: 1,
-                                                    borderColor: chartTheme.secondaryLine
-                                                }]
-                                            }}
-                                            options={{
-                                                maintainAspectRatio: false,
-                                                layout: { padding: { top: 22, left: 10, right: 10, bottom: 0 } },
-                                                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                                                scales: {
-                                                    y: { display: false },
-                                                    x: {
-                                                        display: true,
-                                                        ticks: { color: chartTheme.tickColor, font: { size: 9, weight: 'bold' } },
-                                                        grid: { display: false },
-                                                        border: { display: false }
-                                                    }
-                                                }
-                                            }}
+                                    <div className="h-44">
+                                        <RankChart
+                                            labels={stats.paceLabels}
+                                            data={stats.paceBins}
+                                            highlightBin={stats.myPaceBin}
+                                            rankLabel={stats.paceRankText}
+                                            barColor={chartTheme.secondaryFill}
+                                            barBorder={chartTheme.secondaryLine}
+                                            badgeColor="rgb(124, 156, 255)"
+                                            tickColor={chartTheme.tickColor}
                                         />
-                                        <div
-                                            className="pointer-events-none absolute"
-                                            style={getRankBadgeStyle(stats.myPaceBin, stats.paceBins.length, stats.paceBins[stats.myPaceBin], pacePeak)}
-                                        >
-                                            <div className="whitespace-nowrap rounded-full border border-[var(--rv-blue)]/22 bg-[var(--rv-blue)]/12 px-3 py-1 text-sm font-semibold tracking-[-0.02em] text-[var(--rv-blue)] shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-                                                {stats.paceRankText}
-                                            </div>
-                                        </div>
                                     </div>
                                 </InsightCard>
                             </section>
@@ -1058,6 +998,107 @@ function SimilarRunCard({
                 )}
             </div>
         </button>
+    );
+}
+
+function RankChart({
+    labels,
+    data,
+    highlightBin,
+    rankLabel,
+    barColor,
+    barBorder,
+    badgeColor,
+    tickColor,
+}: {
+    labels: Array<string | number>;
+    data: number[];
+    highlightBin: number;
+    rankLabel: string;
+    barColor: string;
+    barBorder: string;
+    badgeColor: string;
+    tickColor: string;
+}) {
+    const badgePlugin = useMemo<Plugin<'bar'>>(() => ({
+        id: 'rankBadge',
+        afterDraw(chart) {
+            const meta = chart.getDatasetMeta(0);
+            const bar = meta.data[highlightBin];
+            if (!bar) return;
+
+            const ctx = chart.ctx;
+            const x = bar.x;
+            const y = bar.y - 8;
+            const fontSize = 12;
+            const paddingH = 10;
+            const paddingV = 5;
+
+            ctx.save();
+            ctx.font = `600 ${fontSize}px sans-serif`;
+
+            const textWidth = ctx.measureText(rankLabel).width;
+            const rectW = textWidth + paddingH * 2;
+            const rectH = fontSize + paddingV * 2;
+            const rectX = x - rectW / 2;
+            const rectY = y - rectH;
+            const radius = rectH / 2;
+
+            ctx.beginPath();
+            ctx.moveTo(rectX + radius, rectY);
+            ctx.lineTo(rectX + rectW - radius, rectY);
+            ctx.quadraticCurveTo(rectX + rectW, rectY, rectX + rectW, rectY + radius);
+            ctx.lineTo(rectX + rectW, rectY + rectH - radius);
+            ctx.quadraticCurveTo(rectX + rectW, rectY + rectH, rectX + rectW - radius, rectY + rectH);
+            ctx.lineTo(rectX + radius, rectY + rectH);
+            ctx.quadraticCurveTo(rectX, rectY + rectH, rectX, rectY + rectH - radius);
+            ctx.lineTo(rectX, rectY + radius);
+            ctx.quadraticCurveTo(rectX, rectY, rectX + radius, rectY);
+            ctx.closePath();
+
+            ctx.strokeStyle = badgeColor.replace('rgb(', 'rgba(').replace(')', ', 0.3)');
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.fillStyle = badgeColor.replace('rgb(', 'rgba(').replace(')', ', 0.12)');
+            ctx.fill();
+
+            ctx.fillStyle = badgeColor;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(rankLabel, x, rectY + rectH / 2);
+            ctx.restore();
+        },
+    }), [highlightBin, rankLabel, badgeColor]);
+
+    return (
+        <Bar
+            data={{
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: barColor,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: barBorder,
+                }],
+            }}
+            options={{
+                maintainAspectRatio: false,
+                layout: { padding: { top: 36, left: 10, right: 10, bottom: 0 } },
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                scales: {
+                    y: { display: false },
+                    x: {
+                        display: true,
+                        ticks: { color: tickColor, font: { size: 9, weight: 'bold' } },
+                        grid: { display: false },
+                        border: { display: false },
+                    },
+                },
+            }}
+            plugins={[badgePlugin]}
+        />
     );
 }
 
