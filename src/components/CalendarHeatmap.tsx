@@ -212,7 +212,7 @@ export function CalendarHeatmap({
             if (isRelativeView) {
                 const startMonth = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
                 const endMonth = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), 1);
-                let currentMonth = new Date(startMonth);
+                const currentMonth = new Date(startMonth);
                 let monthIdx = 0;
 
                 while (currentMonth <= endMonth) {

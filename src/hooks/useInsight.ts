@@ -4,9 +4,18 @@ import type { InsightType } from '@/components/ui/AIInsightCard';
 
 interface UseInsightOptions {
     insightType: InsightType;
-    payload: Record<string, unknown>;
+    payload: object;
     mostRecentActivityId: number;
     enabled?: boolean;
+    useMemory?: boolean;
+    activityContext?: {
+        distanceKm: number;
+        paceMinPerKm: number | null;
+        avgHR: number | null;
+        elevationPerKm: number | null;
+        movingTimeMins: number;
+        runProfile: string;
+    };
 }
 
 interface UseInsightReturn {
@@ -47,13 +56,19 @@ export function useInsight({
     payload,
     mostRecentActivityId,
     enabled = true,
+    useMemory = false,
+    activityContext,
 }: UseInsightOptions): UseInsightReturn {
     const [insight, setInsight] = useState<string | null>(null);
     const [loading, setLoading] = useState(enabled);
     const [error, setError] = useState<Error | null>(null);
     const [dismissed, setDismissed] = useState(false);
 
-    const serializedPayload = stableSerialize(payload);
+    const serializedPayload = stableSerialize({
+        payload,
+        useMemory,
+        activityContext,
+    });
     const payloadHash = hashString(serializedPayload);
     const dismissKey = `dismissed:${insightType}:${mostRecentActivityId}:${payloadHash}`;
 
@@ -86,7 +101,9 @@ export function useInsight({
                         mostRecentActivityId,
                         payloadHash,
                         forceRefresh,
-                        payload,
+                        payload: payload as Record<string, unknown>,
+                        useMemory,
+                        activityContext,
                     }),
                 });
 
@@ -108,7 +125,7 @@ export function useInsight({
                 setLoading(false);
             }
         },
-        [dismissKey, enabled, insightType, mostRecentActivityId, payloadHash, serializedPayload]
+        [activityContext, dismissKey, enabled, insightType, mostRecentActivityId, payload, payloadHash, useMemory]
     );
 
     const refresh = useCallback(async () => {

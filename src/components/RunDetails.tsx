@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
+    type ChartOptions,
     LinearScale,
     BarElement,
     PointElement,
@@ -11,7 +12,7 @@ import {
     Legend,
     Filler,
 } from 'chart.js';
-import { Bar, Chart } from 'react-chartjs-2';
+import { Bar, Chart, Line } from 'react-chartjs-2';
 import {
     ArrowLeft,
     ArrowRight,
@@ -311,6 +312,23 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
     const pacePeak = Math.max(...stats.paceBins, 1);
     const averageHeartrate = activity.average_heartrate ? Math.round(activity.average_heartrate) : null;
     const runInsightPayload = useMemo(() => buildRunDetailPayload(activity, allActivities), [activity, allActivities]);
+    const runInsightContext = useMemo(() => {
+        const paceMinPerKm = activity.average_speed > 0
+            ? (1 / activity.average_speed) * 1000 / 60
+            : null;
+        const elevationPerKm = activity.total_elevation_gain > 0 && activity.distance > 0
+            ? (activity.total_elevation_gain / activity.distance) * 1000
+            : null;
+
+        return {
+            distanceKm: activity.distance / 1000,
+            paceMinPerKm,
+            avgHR: activity.average_heartrate ?? null,
+            elevationPerKm,
+            movingTimeMins: activity.moving_time / 60,
+            runProfile: 'unknown' as const,
+        };
+    }, [activity]);
     const distanceAxisMax = useMemo(() => Math.max(1, Math.ceil(activity.distance / 1000)), [activity.distance]);
     const heartRateSummary = useMemo(() => {
         const hrSamples = streams?.heartrate?.data?.filter((hr): hr is number => hr > 0) ?? [];
@@ -513,7 +531,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
         };
     }, [chartTheme, streams]);
 
-    const hrChartOptions = useMemo(() => {
+    const hrChartOptions = useMemo<ChartOptions<'line'>>(() => {
         if (!hrChartData) return {};
 
         const hrValues = streams?.heartrate?.data?.filter((hr): hr is number => hr > 0) ?? [];
@@ -535,7 +553,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                     borderWidth: 1,
                     titleColor: chartTheme.tooltipTitle,
                     bodyColor: chartTheme.tooltipBody,
-                    titleFont: { size: 11, weight: 'bold' },
+                    titleFont: { size: 11, weight: 'bold' as const },
                     bodyFont: { size: 11 },
                     padding: 12,
                     callbacks: {
@@ -616,7 +634,6 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                     max: viewMode === 'stream' ? distanceAxisMax : undefined,
                     grid: { color: chartTheme.gridColor },
                     border: { display: false },
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     ticks: {
                         color: chartTheme.tickColor,
                         font: { size: 10, weight: 'bold' },
@@ -757,6 +774,8 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                         insightType="run-detail"
                                         payload={runInsightPayload}
                                         mostRecentActivityId={activity.id}
+                                        useMemory
+                                        activityContext={runInsightContext}
                                     />
                                 </section>
                             )}
@@ -838,7 +857,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                         style={{ border: `1px solid ${chartTheme.panelBorder}`, background: chartTheme.panelBg }}
                                     >
                                         <div className="h-56 sm:h-64">
-                                            <Chart type="line" data={hrChartData as any} options={hrChartOptions as any} />
+                                            <Line data={hrChartData} options={hrChartOptions} />
                                         </div>
                                     </div>
                                 </section>

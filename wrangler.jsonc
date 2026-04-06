@@ -30,6 +30,12 @@
   "ai": {
     "binding": "AI"
   },
+  "vectorize": [
+    {
+      "binding": "ACTIVITY_VECTORS",
+      "index_name": "runviz-activities"
+    }
+  ],
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"

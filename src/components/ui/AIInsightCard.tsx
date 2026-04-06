@@ -15,11 +15,20 @@ export type InsightType =
 
 export interface AIInsightCardProps {
     insightType: InsightType;
-    payload: Record<string, unknown> | any;
+    payload: object;
     mostRecentActivityId: number;
     className?: string;
     conditionMet?: boolean;
     windowLabel?: string;
+    useMemory?: boolean;
+    activityContext?: {
+        distanceKm: number;
+        paceMinPerKm: number | null;
+        avgHR: number | null;
+        elevationPerKm: number | null;
+        movingTimeMins: number;
+        runProfile: string;
+    };
 }
 
 export function AIInsightCard({
@@ -29,12 +38,16 @@ export function AIInsightCard({
     className,
     conditionMet = true,
     windowLabel,
+    useMemory = false,
+    activityContext,
 }: AIInsightCardProps) {
     const { insight, loading, error, dismissed, refresh, dismiss } = useInsight({
         insightType,
         payload,
         mostRecentActivityId,
         enabled: conditionMet,
+        useMemory,
+        activityContext,
     });
 
     // If condition not met, don't render anything

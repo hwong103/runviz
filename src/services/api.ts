@@ -161,6 +161,19 @@ export const activities = {
     },
 };
 
+export const memory = {
+    async index(activities: Activity[], medianPaceSecPerM: number): Promise<{ indexed: number }> {
+        return fetchApi('/api/memory/index', {
+            method: 'POST',
+            body: JSON.stringify({ activities, medianPaceSecPerM }),
+        });
+    },
+
+    async status(): Promise<{ indexed: number; lastIndexedDate: string | null }> {
+        return fetchApi('/api/memory/status');
+    },
+};
+
 // Athlete endpoints
 export const athlete = {
     async getProfile(): Promise<Athlete> {

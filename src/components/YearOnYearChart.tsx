@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -64,24 +64,10 @@ export function YearOnYearChart({ activities }: YearOnYearChartProps) {
     const currentYear = new Date().getFullYear();
     const currentMonthIndex = new Date().getMonth();
     const availableYears = useMemo(() => series.map((entry) => String(entry.year)), [series]);
-
-    useEffect(() => {
-        setHiddenYears((previous) => {
-            const next = previous.filter((year) => availableYears.includes(year));
-
-            if (next.length === previous.length) {
-                return previous;
-            }
-
-            try {
-                window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-            } catch {
-                // Ignore storage write failures.
-            }
-
-            return next;
-        });
-    }, [availableYears]);
+    const visibleHiddenYears = useMemo(
+        () => hiddenYears.filter((year) => availableYears.includes(year)),
+        [availableYears, hiddenYears]
+    );
 
     const data = useMemo(
         () => ({
@@ -97,7 +83,7 @@ export function YearOnYearChart({ activities }: YearOnYearChartProps) {
                         if (isCurrentYear && month.monthIndex > currentMonthIndex) return null;
                         return month.km > 0 ? month.km : null;
                     }),
-                    hidden: hiddenYears.includes(String(yearSeries.year)),
+                    hidden: visibleHiddenYears.includes(String(yearSeries.year)),
                     borderColor: palette.line,
                     backgroundColor: palette.fill,
                     borderWidth: isCurrentYear ? 2.5 : 1.5,
@@ -109,7 +95,7 @@ export function YearOnYearChart({ activities }: YearOnYearChartProps) {
                 };
             }),
         }),
-        [series, currentYear, currentMonthIndex, hiddenYears]
+        [series, currentYear, currentMonthIndex, visibleHiddenYears]
     );
 
     const options = {
