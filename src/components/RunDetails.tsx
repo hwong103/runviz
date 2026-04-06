@@ -1076,7 +1076,7 @@ function SimilarRunCard({
     allActivities: Activity[];
     onSelect?: (activity: Activity) => void;
 }) {
-    const matchedActivity = allActivities.find((activity) => activity.id === run.stravaId);
+    const matchedActivity = allActivities.find((activity) => Number(activity.id) === Number(run.stravaId));
     const formattedPace = run.paceMinPerKm
         ? `${Math.floor(run.paceMinPerKm)}:${String(Math.round((run.paceMinPerKm % 1) * 60)).padStart(2, '0')}/km`
         : null;
@@ -1086,9 +1086,21 @@ function SimilarRunCard({
         year: 'numeric',
     });
 
-    const handleClick = () => {
-        if (matchedActivity && onSelect) {
+    const handleClick = async () => {
+        if (!onSelect) {
+            return;
+        }
+
+        if (matchedActivity) {
             onSelect(matchedActivity);
+            return;
+        }
+
+        try {
+            const activity = await activitiesApi.get(Number(run.stravaId));
+            onSelect(activity);
+        } catch (error) {
+            console.error('Failed to open similar run:', error);
         }
     };
 
@@ -1096,7 +1108,7 @@ function SimilarRunCard({
         <button
             type="button"
             onClick={handleClick}
-            disabled={!matchedActivity}
+            disabled={!onSelect}
             className="group flex flex-col gap-1 rounded-[1.2rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3 text-left transition hover:border-[var(--rv-border-strong)] hover:bg-[var(--rv-bg-elevated)] disabled:cursor-default disabled:opacity-60"
         >
             <div className="flex items-center justify-between gap-2">
