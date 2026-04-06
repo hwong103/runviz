@@ -1037,7 +1037,7 @@ function SimilarRunCard({
             type="button"
             onClick={handleClick}
             disabled={!onSelect}
-            className="group flex flex-col gap-1 rounded-[1.2rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3 text-left transition hover:border-[var(--rv-border-strong)] hover:bg-[var(--rv-bg-elevated)] disabled:cursor-default disabled:opacity-60"
+            className="group flex w-full flex-col gap-1 rounded-[1.2rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3 text-left transition hover:border-[var(--rv-border-strong)] hover:bg-[var(--rv-bg-elevated)] disabled:cursor-default disabled:opacity-60"
         >
             <div className="flex items-center justify-between gap-2">
                 <span className="rv-mini-label">{formattedDate}</span>
