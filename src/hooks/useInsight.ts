@@ -1,12 +1,32 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { InsightType } from '@/components/ui/AIInsightCard';
 
 interface UseInsightOptions {
     insightType: InsightType;
-    payload: Record<string, unknown>;
+    payload: object;
     mostRecentActivityId: number;
     enabled?: boolean;
+    useMemory?: boolean;
+    activityContext?: {
+        distanceKm: number;
+        paceMinPerKm: number | null;
+        avgHR: number | null;
+        elevationPerKm: number | null;
+        movingTimeMins: number;
+        runProfile: string;
+    };
+    weekContext?: {
+        totalKm: number;
+        runCount: number;
+        avgPaceMinPerKm: number | null;
+        avgHR: number | null;
+        easyRuns: number;
+        thresholdRuns: number;
+        raceRuns: number;
+        loadRatio: number | null;
+        currentWeekKey?: string;
+    };
 }
 
 interface UseInsightReturn {
@@ -47,15 +67,47 @@ export function useInsight({
     payload,
     mostRecentActivityId,
     enabled = true,
+    useMemory = false,
+    activityContext,
+    weekContext,
 }: UseInsightOptions): UseInsightReturn {
     const [insight, setInsight] = useState<string | null>(null);
     const [loading, setLoading] = useState(enabled);
     const [error, setError] = useState<Error | null>(null);
     const [dismissed, setDismissed] = useState(false);
 
-    const serializedPayload = stableSerialize(payload);
+    const serializedPayload = stableSerialize({
+        payload,
+        useMemory,
+        activityContext,
+        weekContext,
+    });
+    const requestPayloadJson = JSON.stringify({
+        payload: payload as Record<string, unknown>,
+        useMemory,
+        activityContext,
+        weekContext,
+    });
     const payloadHash = hashString(serializedPayload);
     const dismissKey = `dismissed:${insightType}:${mostRecentActivityId}:${payloadHash}`;
+    const parsedPayload = useMemo(
+        () => JSON.parse(requestPayloadJson) as {
+            payload: Record<string, unknown>;
+            useMemory: boolean;
+            activityContext?: UseInsightOptions['activityContext'];
+            weekContext?: UseInsightOptions['weekContext'];
+        },
+        [requestPayloadJson]
+    );
+    const requestBody = useMemo(() => JSON.stringify({
+        insightType,
+        mostRecentActivityId,
+        payloadHash,
+        payload: parsedPayload.payload,
+        useMemory: parsedPayload.useMemory,
+        activityContext: parsedPayload.activityContext,
+        weekContext: parsedPayload.weekContext,
+    }), [insightType, mostRecentActivityId, payloadHash, parsedPayload]);
 
     const fetchInsight = useCallback(
         async (forceRefresh = false) => {
@@ -81,13 +133,12 @@ export function useInsight({
                 const response = await fetch('/api/insights', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        insightType,
-                        mostRecentActivityId,
-                        payloadHash,
-                        forceRefresh,
-                        payload,
-                    }),
+                    body: forceRefresh
+                        ? JSON.stringify({
+                            ...JSON.parse(requestBody),
+                            forceRefresh: true,
+                        })
+                        : requestBody,
                 });
 
                 if (!response.ok) {
@@ -108,7 +159,7 @@ export function useInsight({
                 setLoading(false);
             }
         },
-        [dismissKey, enabled, insightType, mostRecentActivityId, payloadHash, serializedPayload]
+        [dismissKey, enabled, requestBody]
     );
 
     const refresh = useCallback(async () => {

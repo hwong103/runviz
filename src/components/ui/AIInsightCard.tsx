@@ -15,11 +15,31 @@ export type InsightType =
 
 export interface AIInsightCardProps {
     insightType: InsightType;
-    payload: Record<string, unknown> | any;
+    payload: object;
     mostRecentActivityId: number;
     className?: string;
     conditionMet?: boolean;
     windowLabel?: string;
+    useMemory?: boolean;
+    activityContext?: {
+        distanceKm: number;
+        paceMinPerKm: number | null;
+        avgHR: number | null;
+        elevationPerKm: number | null;
+        movingTimeMins: number;
+        runProfile: string;
+    };
+    weekContext?: {
+        totalKm: number;
+        runCount: number;
+        avgPaceMinPerKm: number | null;
+        avgHR: number | null;
+        easyRuns: number;
+        thresholdRuns: number;
+        raceRuns: number;
+        loadRatio: number | null;
+        currentWeekKey?: string;
+    };
 }
 
 export function AIInsightCard({
@@ -29,13 +49,20 @@ export function AIInsightCard({
     className,
     conditionMet = true,
     windowLabel,
+    useMemory = false,
+    activityContext,
+    weekContext,
 }: AIInsightCardProps) {
     const { insight, loading, error, dismissed, refresh, dismiss } = useInsight({
         insightType,
         payload,
         mostRecentActivityId,
         enabled: conditionMet,
+        useMemory,
+        activityContext,
+        weekContext,
     });
+    const showSkeleton = loading && !insight;
 
     // If condition not met, don't render anything
     if (!conditionMet) {
@@ -68,29 +95,33 @@ export function AIInsightCard({
                         </span>
                     </div>
 
-                    {loading ? (
+                    {showSkeleton ? (
                         <div className="mt-2 space-y-1.5">
                             <div className="h-4 w-full animate-pulse rounded bg-muted-foreground/20" />
                             <div className="h-4 w-2/3 animate-pulse rounded bg-muted-foreground/20" />
                         </div>
                     ) : (
-                        <p className="mt-2 text-sm leading-6 text-foreground/80">
+                        <p className={cn(
+                            'mt-2 text-sm leading-6 text-foreground/80 transition-opacity',
+                            loading && 'opacity-70'
+                        )}>
                             {insight}
                         </p>
                     )}
 
-                    {windowLabel && !loading && (
+                    {windowLabel && !showSkeleton && (
                         <p className="mt-2 rv-mini-label text-xs text-muted-foreground">
                             {windowLabel}
                         </p>
                     )}
 
-                    {!loading && (
+                    {!showSkeleton && (
                         <div className="mt-3 flex items-center justify-end gap-2">
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={refresh}
+                                disabled={loading}
                                 className="h-auto px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground"
                             >
                                 <RefreshCw className="mr-1 size-3" />
@@ -100,6 +131,7 @@ export function AIInsightCard({
                                 variant="ghost"
                                 size="sm"
                                 onClick={dismiss}
+                                disabled={loading}
                                 className="h-auto px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground"
                             >
                                 <X className="mr-1 size-3" />

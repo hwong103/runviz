@@ -3,6 +3,13 @@ import { createAuth } from './auth';
 import { encrypt } from './crypto';
 import { handleInsightRequest } from './insights';
 import {
+    buildWeekSummaries,
+    classifyRunProfile,
+    indexActivities,
+    indexWeeks,
+    type ActivityRecord,
+} from './activityMemory';
+import {
     buildAthleteSummary,
     getBetterAuthSessionWithHeaders,
     resolveSession,
@@ -20,13 +27,17 @@ import {
 export interface Env {
     ASSETS: Fetcher;
     DB: D1Database;
+    ACTIVITY_VECTORS: VectorizeIndex;
     TOKENS: KVNamespace;
     RUNVIZ_KV: KVNamespace;
     AI: {
-        run(model: string, options: {
+        run(model: '@cf/meta/llama-3.1-8b-instruct-fp8-fast', options: {
             messages: Array<{ role: 'system' | 'user'; content: string }>;
             max_tokens: number;
-        }): Promise<unknown>;
+        }): Promise<{ response?: string }>;
+        run(model: '@cf/baai/bge-large-en-v1.5', options: {
+            text: string[];
+        }): Promise<{ data: number[][] }>;
     };
     BETTER_AUTH_SECRET: string;
     RESEND_API_KEY: string;
@@ -245,6 +256,18 @@ export default {
                 return await handleInsightRequest(request, env, origin, auth);
             }
 
+            if (url.pathname === '/api/memory/index' && request.method === 'POST') {
+                return await handleMemoryIndex(request, env, origin, auth);
+            }
+
+            if (url.pathname === '/api/memory/status' && request.method === 'GET') {
+                return await handleMemoryStatus(request, env, origin, auth);
+            }
+
+            if (url.pathname === '/api/memory/similar-runs' && request.method === 'POST') {
+                return await handleSimilarRuns(request, env, origin, auth);
+            }
+
             // Support PUT /api/activities/:id for form analysis write-back
             if (request.method === 'PUT' && url.pathname.startsWith('/api/activities/')) {
                 return await handleStravaActivityUpdate(request, env, origin, auth);
@@ -254,7 +277,8 @@ export default {
                 return await handleApiRequest(request, url, env, origin, auth);
             }
 
-            return env.ASSETS.fetch(request);
+            const assetResponse = await env.ASSETS.fetch(request);
+            return withAssetCachePolicy(assetResponse, url.pathname);
         } catch (error) {
             console.error('Worker error:', error);
             return new Response(
@@ -268,6 +292,23 @@ export default {
     },
 };
 
+function withAssetCachePolicy(response: Response, pathname: string): Response {
+    const headers = new Headers(response.headers);
+    const contentType = headers.get('content-type') ?? '';
+    const isStaticAsset = pathname.startsWith('/assets/') || /\.[a-z0-9]+$/i.test(pathname);
+    const isHtml = contentType.includes('text/html');
+
+    if (isHtml && !isStaticAsset) {
+        // Keep the SPA shell fresh across deploys so it doesn't reference stale chunk hashes.
+        headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
+    return new Response(response.body, {
+        status: response.status,
+        headers,
+    });
+}
+
 // Start OAuth flow
 async function handleAuthStart(request: Request, url: URL, env: Env, auth: ReturnType<typeof createAuth>): Promise<Response> {
     const authUrl = await buildStravaAuthUrl(request, url, env, auth);
@@ -276,6 +317,178 @@ async function handleAuthStart(request: Request, url: URL, env: Env, auth: Retur
     }
 
     return Response.redirect(authUrl.toString(), 302);
+}
+
+async function handleMemoryIndex(
+    request: Request,
+    env: Env,
+    origin: string,
+    auth: ReturnType<typeof createAuth>,
+): Promise<Response> {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!session?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    const body = await request.json() as {
+        activities: Array<{
+            id: number;
+            start_date_local: string;
+            distance: number;
+            moving_time: number;
+            average_speed: number;
+            average_heartrate?: number;
+            max_heartrate?: number;
+            total_elevation_gain?: number;
+            type: string;
+            sport_type?: string;
+        }>;
+        medianPaceSecPerM: number;
+    };
+
+    const runs = body.activities.filter((activity) => {
+        const activityType = activity.sport_type ?? activity.type;
+        return activityType === 'Run' && activity.distance > 0;
+    });
+
+    const records: ActivityRecord[] = runs.map((activity) => {
+        const paceMinPerKm = activity.average_speed > 0
+            ? (1 / activity.average_speed) * 1000 / 60
+            : null;
+        const elevationPerKm = activity.total_elevation_gain && activity.distance > 0
+            ? (activity.total_elevation_gain / activity.distance) * 1000
+            : null;
+
+        const record: ActivityRecord = {
+            stravaId: activity.id,
+            userId: session.user.id,
+            activityDate: activity.start_date_local.split('T')[0],
+            distanceKm: activity.distance / 1000,
+            paceMinPerKm,
+            avgHR: activity.average_heartrate ?? null,
+            maxHR: activity.max_heartrate ?? null,
+            elevationPerKm,
+            movingTimeMins: activity.moving_time / 60,
+            runProfile: 'unknown',
+        };
+
+        record.runProfile = classifyRunProfile(record, body.medianPaceSecPerM);
+        return record;
+    });
+
+    const indexed = await indexActivities(env, session.user.id, records);
+    const weekSummaries = buildWeekSummaries(session.user.id, records);
+    const indexedWeeks = await indexWeeks(env, session.user.id, weekSummaries);
+
+    return new Response(JSON.stringify({ indexed, indexedWeeks }), {
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleMemoryStatus(
+    request: Request,
+    env: Env,
+    origin: string,
+    auth: ReturnType<typeof createAuth>,
+): Promise<Response> {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!session?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    const row = await env.DB.prepare(
+        `SELECT COUNT(*) as count, MAX(activity_date) as lastDate
+         FROM activity_vectors WHERE user_id = ?`
+    ).bind(session.user.id).first<{ count: number; lastDate: string | null }>();
+
+    return new Response(JSON.stringify({
+        indexed: row?.count ?? 0,
+        lastIndexedDate: row?.lastDate ?? null,
+    }), {
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleSimilarRuns(
+    request: Request,
+    env: Env,
+    origin: string,
+    auth: ReturnType<typeof createAuth>,
+): Promise<Response> {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!session?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    const body = await request.json() as {
+        activityContext: {
+            distanceKm: number;
+            paceMinPerKm: number | null;
+            avgHR: number | null;
+            elevationPerKm: number | null;
+            movingTimeMins: number;
+            runProfile: string;
+        };
+        excludeStravaId: number;
+    };
+
+    const { activityContext, excludeStravaId } = body;
+    const queryParts: string[] = [
+        `${activityContext.distanceKm.toFixed(1)}km run`,
+    ];
+
+    if (activityContext.runProfile && activityContext.runProfile !== 'unknown') {
+        queryParts.push(`${activityContext.runProfile} effort`);
+    }
+    if (activityContext.paceMinPerKm !== null) {
+        const mins = Math.floor(activityContext.paceMinPerKm);
+        const secs = String(Math.round((activityContext.paceMinPerKm % 1) * 60)).padStart(2, '0');
+        queryParts.push(`pace ${mins}:${secs} per km`);
+    }
+    if (activityContext.avgHR) {
+        queryParts.push(`average heart rate ${activityContext.avgHR} bpm`);
+    }
+    if (activityContext.elevationPerKm && activityContext.elevationPerKm > 5) {
+        queryParts.push(`${Math.round(activityContext.elevationPerKm)} metres elevation per km`);
+    }
+    queryParts.push(`duration ${Math.round(activityContext.movingTimeMins)} minutes`);
+
+    const { findSimilarActivities, findSimilarActivitiesFallback } = await import('./activityMemory');
+    let similar = await findSimilarActivities(
+        env,
+        session.user.id,
+        queryParts.join(', '),
+        4,
+        excludeStravaId,
+    );
+
+    if (similar.length === 0) {
+        similar = await findSimilarActivitiesFallback(
+            env,
+            session.user.id,
+            {
+                distanceKm: activityContext.distanceKm,
+                paceMinPerKm: activityContext.paceMinPerKm,
+                avgHR: activityContext.avgHR,
+                movingTimeMins: activityContext.movingTimeMins,
+            },
+            4,
+            excludeStravaId,
+        );
+    }
+
+    return new Response(JSON.stringify(similar), {
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+    });
 }
 
 async function handleAuthStartUrl(

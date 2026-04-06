@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { activities as activitiesApi } from '../services/api';
+import { activities as activitiesApi, memory as memoryApi } from '../services/api';
 import * as cache from '../services/cache';
 import type { Activity } from '../types';
+import { isRun } from '../types';
 import { parseActivityLocalDate } from '../utils/activityDate';
 
 interface SyncState {
@@ -60,7 +61,6 @@ export function useActivities(enabled = true) {
             let page = 1;
             let hasMore = true;
             const perPage = 200;
-            let totalNewSaved = 0;
             const newlyFetched: Activity[] = [];
 
             while (hasMore && page <= 20) {
@@ -80,7 +80,6 @@ export function useActivities(enabled = true) {
                 const pageActivities = response.activities;
 
                 if (pageActivities.length > 0) {
-                    totalNewSaved += pageActivities.length;
                     newlyFetched.push(...pageActivities);
                 }
 
@@ -118,6 +117,42 @@ export function useActivities(enabled = true) {
             }
 
             const finalActivities = await cache.getCachedActivities();
+
+            if (finalActivities.length > 0) {
+                void (async () => {
+                    try {
+                        const status = await memoryApi.status();
+                        const runs = finalActivities.filter(isRun);
+                        const activitiesToIndex = status.lastIndexedDate
+                            ? runs.filter((activity) => activity.start_date_local.split('T')[0] > status.lastIndexedDate!)
+                            : runs;
+
+                        if (activitiesToIndex.length === 0) {
+                            return;
+                        }
+
+                        const totals = runs.reduce(
+                            (acc, activity) => {
+                                acc.distance += activity.distance;
+                                acc.time += activity.moving_time;
+                                return acc;
+                            },
+                            { distance: 0, time: 0 }
+                        );
+                        const medianPaceSecPerM = totals.distance > 0 && totals.time > 0
+                            ? totals.time / totals.distance
+                            : 0;
+
+                        if (medianPaceSecPerM <= 0) {
+                            return;
+                        }
+
+                        await memoryApi.index(activitiesToIndex, medianPaceSecPerM);
+                    } catch (error) {
+                        console.warn('Activity memory indexing failed (non-critical):', error);
+                    }
+                })();
+            }
 
             setState({
                 activities: finalActivities.sort((a, b) =>
