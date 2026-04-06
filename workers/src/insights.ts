@@ -165,7 +165,7 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string,
                 ? `${activityContext.runProfile} effort`
                 : '',
             activityContext.paceMinPerKm !== null
-                ? `pace ${formatPace(activityContext.paceMinPerKm)} per km`
+                ? `pace ${formatPace(activityContext.paceMinPerKm)}`
                 : '',
             activityContext.avgHR ? `average heart rate ${activityContext.avgHR} bpm` : '',
             `duration ${Math.round(activityContext.movingTimeMins)} minutes`,
@@ -263,18 +263,4 @@ function corsHeaders(origin: string): HeadersInit {
         'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
     };
-}
-
-function formatPace(minutesPerKm: number): string {
-    if (!Number.isFinite(minutesPerKm) || minutesPerKm <= 0) {
-        return 'n/a';
-    }
-
-    const minutes = Math.floor(minutesPerKm);
-    const seconds = Math.round((minutesPerKm - minutes) * 60);
-    if (seconds === 60) {
-        return `${minutes + 1}:00`;
-    }
-
-    return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
