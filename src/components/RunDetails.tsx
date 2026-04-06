@@ -1070,9 +1070,24 @@ function RankChart({
             ctx.restore();
         },
     }), [highlightBin, rankLabel, badgeColor]);
+    const chartKey = useMemo(
+        () => [
+            labels.join('|'),
+            data.join('|'),
+            highlightBin,
+            rankLabel,
+            barColor,
+            barBorder,
+            badgeColor,
+            tickColor,
+        ].join('::'),
+        [labels, data, highlightBin, rankLabel, barColor, barBorder, badgeColor, tickColor]
+    );
 
     return (
         <Bar
+            key={chartKey}
+            redraw
             data={{
                 labels,
                 datasets: [{
