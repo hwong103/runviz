@@ -3,8 +3,10 @@ import { createAuth } from './auth';
 import { encrypt } from './crypto';
 import { handleInsightRequest } from './insights';
 import {
+    buildWeekSummaries,
     classifyRunProfile,
     indexActivities,
+    indexWeeks,
     type ActivityRecord,
 } from './activityMemory';
 import {
@@ -356,8 +358,10 @@ async function handleMemoryIndex(
     });
 
     const indexed = await indexActivities(env, session.user.id, records);
+    const weekSummaries = buildWeekSummaries(session.user.id, records);
+    const indexedWeeks = await indexWeeks(env, session.user.id, weekSummaries);
 
-    return new Response(JSON.stringify({ indexed }), {
+    return new Response(JSON.stringify({ indexed, indexedWeeks }), {
         headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
     });
 }

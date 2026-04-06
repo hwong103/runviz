@@ -2,7 +2,9 @@ import type { Auth } from './auth';
 import type { Env } from './index';
 import {
     findSimilarActivities,
+    findSimilarWeeks,
     formatSimilarActivitiesContext,
+    formatSimilarWeeksContext,
 } from './activityMemory';
 
 const SYSTEM_PROMPT = `You are a pragmatic, data-literate running coach speaking directly to the athlete. Always use second person — "you", "your" — never "this athlete", "they", or "their". Write in plain English, avoid jargon, and give specific actionable coaching. Respond in exactly 2 sentences and keep the full response under 85 words. Do not use bullet points, headers, or markdown formatting. Always compare to the athlete's own historical baseline provided in the data, not to population averages, unless directly relevant. Be direct but not alarming. If something is a concern, say so clearly. If something is positive, note it — but don't be effusive. Sentence 1 should explain what is happening and why it is likely happening based on the provided metrics. Sentence 2 should say what to do next over the next few days or 1-2 weeks, with a concrete action and, when supported by the data, a goal adjustment or training priority. Prefer specific instructions like rest, easy-only running, holding volume, or delaying intensity, and include a timeframe or condition where possible. If the cause is uncertain, say "likely" or "may" rather than sounding certain. Do not pad the response by restating every metric; mention only the most important evidence. When discussing pace, use minutes per kilometer (min/km) format like "5:30/km" or "5.5 min/km", never seconds per kilometer. If two values round to the same displayed number, do not describe one as higher or lower than the other. Only reason about fields that are present in the data. If a metric is absent, treat it as unavailable rather than zero or evidence of decline.`;
@@ -122,6 +124,17 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string,
             movingTimeMins: number;
             runProfile: string;
         };
+        weekContext?: {
+            totalKm: number;
+            runCount: number;
+            avgPaceMinPerKm: number | null;
+            avgHR: number | null;
+            easyRuns: number;
+            thresholdRuns: number;
+            raceRuns: number;
+            loadRatio: number | null;
+            currentWeekKey?: string;
+        };
     };
 
     const {
@@ -132,6 +145,7 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string,
         payload,
         useMemory = false,
         activityContext,
+        weekContext,
     } = body;
 
     if (!INSIGHT_PROMPTS[insightType]) {
@@ -181,8 +195,46 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string,
         similarContext = formatSimilarActivitiesContext(similar);
     }
 
-    const basePrompt = INSIGHT_PROMPTS[insightType](payload);
-    const userPrompt = similarContext ? `${basePrompt}\n\n${similarContext}` : basePrompt;
+    let weekHistoryContext = '';
+    if (useMemory && (insightType === 'overview' || insightType === 'training-health') && weekContext) {
+        const qualityRuns = weekContext.thresholdRuns + weekContext.raceRuns;
+        const queryParts = [
+            `${weekContext.totalKm.toFixed(1)}km week`,
+            `${weekContext.runCount} runs`,
+            qualityRuns > 0 ? `${qualityRuns} quality session${qualityRuns > 1 ? 's' : ''}` : 'easy only',
+        ];
+
+        if (weekContext.avgPaceMinPerKm !== null) {
+            queryParts.push(`average pace ${formatPace(weekContext.avgPaceMinPerKm)}`);
+        }
+        if (weekContext.avgHR) {
+            queryParts.push(`average heart rate ${weekContext.avgHR} bpm`);
+        }
+        if (weekContext.loadRatio !== null) {
+            queryParts.push(
+                weekContext.loadRatio > 1.4
+                    ? 'high load ratio'
+                    : weekContext.loadRatio > 1.1
+                        ? 'moderate load ratio'
+                        : 'balanced load ratio'
+            );
+        }
+
+        const similarWeeks = await findSimilarWeeks(
+            env,
+            userId,
+            queryParts.join(', '),
+            3,
+            weekContext.currentWeekKey,
+        );
+        weekHistoryContext = formatSimilarWeeksContext(similarWeeks);
+    }
+
+    const userPrompt = [
+        INSIGHT_PROMPTS[insightType](payload),
+        similarContext,
+        weekHistoryContext,
+    ].filter(Boolean).join('\n\n');
 
     try {
         const response = await env.AI.run('@cf/meta/llama-3.1-8b-instruct-fp8-fast', {

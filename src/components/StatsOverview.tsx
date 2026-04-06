@@ -9,6 +9,7 @@ import { isRun } from '../types';
 import { TrainingHealthTrendChart, type TrainingHealthMetricKey } from './TrainingHealthTrendChart';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
 import { buildOverviewPayload, buildTrainingHealthPayload, buildInjuryRiskPayload, getInsightWindowLabel, viewPeriodToDays } from '@/utils/insightPayloads';
+import { buildCurrentWeekSummary } from '@/utils/currentWeekSummary';
 import {
     calculateAcwr,
     calculateWeeklyRamp,
@@ -184,6 +185,10 @@ export function StatsOverview({
     const overviewWindowLabel = getInsightWindowLabel(viewPeriodToDays(period));
     const trainingHealthWindowLabel = getInsightWindowLabel(viewPeriodToDays(period));
     const injuryRiskPayload = useMemo(() => buildInjuryRiskPayload(allActivities, 30), [allActivities]);
+    const weekContext = useMemo(
+        () => buildCurrentWeekSummary(allActivities, stats.acwr ?? null),
+        [allActivities, stats.acwr]
+    );
 
     return (
         <div className="space-y-4">
@@ -247,6 +252,8 @@ export function StatsOverview({
                                 payload={buildOverviewPayload(allActivities, period)}
                                 mostRecentActivityId={mostRecentActivityId}
                                 windowLabel={overviewWindowLabel}
+                                useMemory
+                                weekContext={weekContext}
                             />
                         </section>
                     )}
@@ -421,6 +428,8 @@ export function StatsOverview({
                                 payload={buildTrainingHealthPayload(allActivities, period, maxHR)}
                                 mostRecentActivityId={mostRecentActivityId}
                                 windowLabel={trainingHealthWindowLabel}
+                                useMemory
+                                weekContext={weekContext}
                             />
                         </div>
                     )}

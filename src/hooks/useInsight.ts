@@ -16,6 +16,17 @@ interface UseInsightOptions {
         movingTimeMins: number;
         runProfile: string;
     };
+    weekContext?: {
+        totalKm: number;
+        runCount: number;
+        avgPaceMinPerKm: number | null;
+        avgHR: number | null;
+        easyRuns: number;
+        thresholdRuns: number;
+        raceRuns: number;
+        loadRatio: number | null;
+        currentWeekKey?: string;
+    };
 }
 
 interface UseInsightReturn {
@@ -58,6 +69,7 @@ export function useInsight({
     enabled = true,
     useMemory = false,
     activityContext,
+    weekContext,
 }: UseInsightOptions): UseInsightReturn {
     const [insight, setInsight] = useState<string | null>(null);
     const [loading, setLoading] = useState(enabled);
@@ -68,11 +80,13 @@ export function useInsight({
         payload,
         useMemory,
         activityContext,
+        weekContext,
     });
     const requestPayloadJson = JSON.stringify({
         payload: payload as Record<string, unknown>,
         useMemory,
         activityContext,
+        weekContext,
     });
     const payloadHash = hashString(serializedPayload);
     const dismissKey = `dismissed:${insightType}:${mostRecentActivityId}:${payloadHash}`;
@@ -81,6 +95,7 @@ export function useInsight({
             payload: Record<string, unknown>;
             useMemory: boolean;
             activityContext?: UseInsightOptions['activityContext'];
+            weekContext?: UseInsightOptions['weekContext'];
         },
         [requestPayloadJson]
     );
@@ -91,6 +106,7 @@ export function useInsight({
         payload: parsedPayload.payload,
         useMemory: parsedPayload.useMemory,
         activityContext: parsedPayload.activityContext,
+        weekContext: parsedPayload.weekContext,
     }), [insightType, mostRecentActivityId, payloadHash, parsedPayload]);
 
     const fetchInsight = useCallback(

@@ -29,6 +29,17 @@ export interface AIInsightCardProps {
         movingTimeMins: number;
         runProfile: string;
     };
+    weekContext?: {
+        totalKm: number;
+        runCount: number;
+        avgPaceMinPerKm: number | null;
+        avgHR: number | null;
+        easyRuns: number;
+        thresholdRuns: number;
+        raceRuns: number;
+        loadRatio: number | null;
+        currentWeekKey?: string;
+    };
 }
 
 export function AIInsightCard({
@@ -40,6 +51,7 @@ export function AIInsightCard({
     windowLabel,
     useMemory = false,
     activityContext,
+    weekContext,
 }: AIInsightCardProps) {
     const { insight, loading, error, dismissed, refresh, dismiss } = useInsight({
         insightType,
@@ -48,6 +60,7 @@ export function AIInsightCard({
         enabled: conditionMet,
         useMemory,
         activityContext,
+        weekContext,
     });
     const showSkeleton = loading && !insight;
 
