@@ -264,6 +264,10 @@ export default {
                 return await handleMemoryStatus(request, env, origin, auth);
             }
 
+            if (url.pathname === '/api/memory/similar-runs' && request.method === 'POST') {
+                return await handleSimilarRuns(request, env, origin, auth);
+            }
+
             // Support PUT /api/activities/:id for form analysis write-back
             if (request.method === 'PUT' && url.pathname.startsWith('/api/activities/')) {
                 return await handleStravaActivityUpdate(request, env, origin, auth);
@@ -407,6 +411,67 @@ async function handleMemoryStatus(
         indexed: row?.count ?? 0,
         lastIndexedDate: row?.lastDate ?? null,
     }), {
+        headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+    });
+}
+
+async function handleSimilarRuns(
+    request: Request,
+    env: Env,
+    origin: string,
+    auth: ReturnType<typeof createAuth>,
+): Promise<Response> {
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (!session?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
+        });
+    }
+
+    const body = await request.json() as {
+        activityContext: {
+            distanceKm: number;
+            paceMinPerKm: number | null;
+            avgHR: number | null;
+            elevationPerKm: number | null;
+            movingTimeMins: number;
+            runProfile: string;
+        };
+        excludeStravaId: number;
+    };
+
+    const { activityContext, excludeStravaId } = body;
+    const queryParts: string[] = [
+        `${activityContext.distanceKm.toFixed(1)}km run`,
+    ];
+
+    if (activityContext.runProfile && activityContext.runProfile !== 'unknown') {
+        queryParts.push(`${activityContext.runProfile} effort`);
+    }
+    if (activityContext.paceMinPerKm !== null) {
+        const mins = Math.floor(activityContext.paceMinPerKm);
+        const secs = String(Math.round((activityContext.paceMinPerKm % 1) * 60)).padStart(2, '0');
+        queryParts.push(`pace ${mins}:${secs} per km`);
+    }
+    if (activityContext.avgHR) {
+        queryParts.push(`average heart rate ${activityContext.avgHR} bpm`);
+    }
+    if (activityContext.elevationPerKm && activityContext.elevationPerKm > 5) {
+        queryParts.push(`${Math.round(activityContext.elevationPerKm)} metres elevation per km`);
+    }
+    queryParts.push(`duration ${Math.round(activityContext.movingTimeMins)} minutes`);
+
+    const { findSimilarActivities } = await import('./activityMemory');
+    const similar = await findSimilarActivities(
+        env,
+        session.user.id,
+        queryParts.join(', '),
+        4,
+        excludeStravaId,
+    );
+
+    return new Response(JSON.stringify(similar), {
         headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },
     });
 }

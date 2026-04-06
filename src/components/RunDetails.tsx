@@ -27,7 +27,9 @@ import type { Activity, ActivityStreams, Gear } from '../types';
 import { isRun } from '../types';
 import { format } from 'date-fns';
 import { activities as activitiesApi, gear as gearApi } from '../services/api';
+import type { SimilarRunResult } from '../services/api';
 import { useChartTheme } from '../hooks/useChartTheme';
+import { useSimilarRuns } from '../hooks/useSimilarRuns';
 import { getBrandLogoUrl, getBrandFallbackEmoji } from '../services/logoService';
 import { parseActivityLocalDate } from '../utils/activityDate';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
@@ -329,6 +331,16 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
             runProfile: 'unknown' as const,
         };
     }, [activity]);
+    const { similar, loading: similarLoading, hasMemory } = useSimilarRuns({
+        activityId: activity.id,
+        distanceKm: runInsightContext.distanceKm,
+        paceMinPerKm: runInsightContext.paceMinPerKm,
+        avgHR: runInsightContext.avgHR,
+        elevationPerKm: runInsightContext.elevationPerKm,
+        movingTimeMins: runInsightContext.movingTimeMins,
+        runProfile: runInsightContext.runProfile,
+        enabled: true,
+    });
     const distanceAxisMax = useMemo(() => Math.max(1, Math.ceil(activity.distance / 1000)), [activity.distance]);
     const heartRateSummary = useMemo(() => {
         const hrSamples = streams?.heartrate?.data?.filter((hr): hr is number => hr > 0) ?? [];
@@ -780,6 +792,36 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                 </section>
                             )}
 
+                            {(hasMemory || similarLoading) && (
+                                <section className="rv-panel px-5 py-4 sm:px-6 sm:py-5">
+                                    <div className="mb-3 flex items-center gap-2">
+                                        <p className="rv-kicker">Runs like this</p>
+                                    </div>
+
+                                    {similarLoading ? (
+                                        <div className="grid gap-2 sm:grid-cols-2">
+                                            {[0, 1, 2, 3].map((index) => (
+                                                <div
+                                                    key={index}
+                                                    className="h-16 animate-pulse rounded-[1.2rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)]"
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : similar.length > 0 ? (
+                                        <div className="grid gap-2 sm:grid-cols-2">
+                                            {similar.map((run) => (
+                                                <SimilarRunCard
+                                                    key={run.stravaId}
+                                                    run={run}
+                                                    allActivities={allActivities}
+                                                    onSelect={onSelect}
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : null}
+                                </section>
+                            )}
+
                             <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6">
                                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                                     <div>
@@ -1022,6 +1064,60 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                 </div>
             </div>
         </div>
+    );
+}
+
+function SimilarRunCard({
+    run,
+    allActivities,
+    onSelect,
+}: {
+    run: SimilarRunResult;
+    allActivities: Activity[];
+    onSelect?: (activity: Activity) => void;
+}) {
+    const matchedActivity = allActivities.find((activity) => activity.id === run.stravaId);
+    const formattedPace = run.paceMinPerKm
+        ? `${Math.floor(run.paceMinPerKm)}:${String(Math.round((run.paceMinPerKm % 1) * 60)).padStart(2, '0')}/km`
+        : null;
+    const formattedDate = new Date(`${run.activityDate}T12:00:00`).toLocaleDateString('en-AU', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    });
+
+    const handleClick = () => {
+        if (matchedActivity && onSelect) {
+            onSelect(matchedActivity);
+        }
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={handleClick}
+            disabled={!matchedActivity}
+            className="group flex flex-col gap-1 rounded-[1.2rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)] px-4 py-3 text-left transition hover:border-[var(--rv-border-strong)] hover:bg-[var(--rv-bg-elevated)] disabled:cursor-default disabled:opacity-60"
+        >
+            <div className="flex items-center justify-between gap-2">
+                <span className="rv-mini-label">{formattedDate}</span>
+                <span className="rv-pill-label text-[0.65rem] text-[var(--rv-text-faint)]">
+                    {run.runProfile !== 'unknown' ? run.runProfile : ''}
+                </span>
+            </div>
+            <div className="flex items-baseline gap-2">
+                <span className="rv-data text-[1.25rem]">
+                    {run.distanceKm.toFixed(1)}
+                    <span className="ml-1 text-[0.75rem] font-normal text-[var(--rv-text-dim)]">km</span>
+                </span>
+                {formattedPace && (
+                    <span className="text-sm text-[var(--rv-text-dim)]">{formattedPace}</span>
+                )}
+                {run.avgHR && (
+                    <span className="text-sm text-[var(--rv-text-faint)]">{run.avgHR} bpm</span>
+                )}
+            </div>
+        </button>
     );
 }
 

@@ -17,6 +17,18 @@ interface GeocodingSuggestion {
     lon: string;
 }
 
+export interface SimilarRunResult {
+    stravaId: number;
+    activityDate: string;
+    distanceKm: number;
+    paceMinPerKm: number | null;
+    avgHR: number | null;
+    elevationPerKm: number | null;
+    movingTimeMins: number;
+    runProfile: string;
+    similarity: number;
+}
+
 class ApiError extends Error {
     status: number;
     constructor(status: number, message: string) {
@@ -171,6 +183,20 @@ export const memory = {
 
     async status(): Promise<{ indexed: number; lastIndexedDate: string | null }> {
         return fetchApi('/api/memory/status');
+    },
+
+    async similarRuns(activityContext: {
+        distanceKm: number;
+        paceMinPerKm: number | null;
+        avgHR: number | null;
+        elevationPerKm: number | null;
+        movingTimeMins: number;
+        runProfile: string;
+    }, excludeStravaId: number): Promise<SimilarRunResult[]> {
+        return fetchApi('/api/memory/similar-runs', {
+            method: 'POST',
+            body: JSON.stringify({ activityContext, excludeStravaId }),
+        });
     },
 };
 
