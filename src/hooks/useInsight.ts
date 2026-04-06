@@ -69,15 +69,20 @@ export function useInsight({
         useMemory,
         activityContext,
     });
+    const requestPayloadJson = JSON.stringify({
+        payload: payload as Record<string, unknown>,
+        useMemory,
+        activityContext,
+    });
     const payloadHash = hashString(serializedPayload);
     const dismissKey = `dismissed:${insightType}:${mostRecentActivityId}:${payloadHash}`;
     const parsedPayload = useMemo(
-        () => JSON.parse(serializedPayload) as {
+        () => JSON.parse(requestPayloadJson) as {
             payload: Record<string, unknown>;
             useMemory: boolean;
             activityContext?: UseInsightOptions['activityContext'];
         },
-        [serializedPayload]
+        [requestPayloadJson]
     );
     const requestBody = useMemo(() => JSON.stringify({
         insightType,
