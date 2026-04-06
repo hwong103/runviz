@@ -850,7 +850,57 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                 </section>
                             )}
 
-                            <section className="grid gap-4 xl:grid-cols-2">
+                        </div>
+
+                        <aside className="space-y-4">
+                            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                                <SummaryTile
+                                    label="Moving time"
+                                    value={formatDuration(activity.moving_time)}
+                                    icon={<ArrowRight className="h-4 w-4" />}
+                                />
+                                <SummaryTile
+                                    label="Elevation gain"
+                                    value={activity.total_elevation_gain > 0 ? `${Math.round(activity.total_elevation_gain)}m` : 'Flat route'}
+                                    icon={<Mountain className="h-4 w-4" />}
+                                />
+                            </section>
+
+                            {(similarLoading || similar.length > 0) && (
+                                <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6">
+                                    <div className="mb-5">
+                                        <p className="rv-kicker mb-2">Runs Like This</p>
+                                        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">
+                                            Comparable efforts
+                                        </h2>
+                                        <p className="rv-body-copy-sm mt-2">
+                                            Open another run with a similar distance, pace, and effort profile to compare how this session fits your broader training history.
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-2.5">
+                                        {similarLoading ? (
+                                            Array.from({ length: 4 }, (_, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="h-20 animate-pulse rounded-[1.2rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)]"
+                                                />
+                                            ))
+                                        ) : (
+                                            similar.map((run) => (
+                                                <SimilarRunCard
+                                                    key={run.stravaId}
+                                                    run={run}
+                                                    allActivities={allActivities}
+                                                    onSelect={onSelect}
+                                                />
+                                            ))
+                                        )}
+                                    </div>
+                                </section>
+                            )}
+
+                            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                                 <InsightCard
                                     kicker="Distance Rank"
                                     title={`${stats.distanceRankText} longest run`}
@@ -936,61 +986,6 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                         </div>
                                     </div>
                                 </InsightCard>
-                            </section>
-                        </div>
-
-                        <aside className="space-y-4">
-                            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                                <SummaryTile
-                                    label="Moving time"
-                                    value={formatDuration(activity.moving_time)}
-                                    icon={<ArrowRight className="h-4 w-4" />}
-                                />
-                                <SummaryTile
-                                    label="Elevation gain"
-                                    value={activity.total_elevation_gain > 0 ? `${Math.round(activity.total_elevation_gain)}m` : 'Flat route'}
-                                    icon={<Mountain className="h-4 w-4" />}
-                                />
-                            </section>
-
-                            <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6">
-                                <div className="mb-5">
-                                    <p className="rv-kicker mb-2">Runs Like This</p>
-                                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">
-                                        Comparable efforts
-                                    </h2>
-                                    <p className="rv-body-copy-sm mt-2">
-                                        Open another run with a similar distance, pace, and effort profile to compare how this session fits your broader training history.
-                                    </p>
-                                </div>
-
-                                <div className="space-y-2.5">
-                                    {similarLoading ? (
-                                        Array.from({ length: 4 }, (_, index) => (
-                                            <div
-                                                key={index}
-                                                className="h-20 animate-pulse rounded-[1.2rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)]"
-                                            />
-                                        ))
-                                    ) : similar.length > 0 ? (
-                                        similar.map((run) => (
-                                            <SimilarRunCard
-                                                key={run.stravaId}
-                                                run={run}
-                                                allActivities={allActivities}
-                                                onSelect={onSelect}
-                                            />
-                                        ))
-                                    ) : (
-                                        <div className="rounded-[1.5rem] border border-white/[0.06] bg-black/[0.12] px-5 py-6 text-center">
-                                            <Mountain className="mx-auto h-8 w-8 text-[var(--rv-text-faint)]" />
-                                            <p className="rv-mini-label mt-3 text-[var(--rv-text)]">No similar efforts yet</p>
-                                            <p className="rv-body-copy-sm mt-2">
-                                                Once more indexed runs line up on distance and effort, this panel will surface them here.
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
                             </section>
                         </aside>
                     </div>
