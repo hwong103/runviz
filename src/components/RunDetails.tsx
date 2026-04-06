@@ -258,35 +258,12 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
 
         const similarSortedByPace = [...similarRuns].sort((a, b) => (a.moving_time / a.distance) - (b.moving_time / b.distance));
         const paceRank = Math.max(similarSortedByPace.findIndex(a => a.id === activity.id) + 1, 1);
+        const clusterLabel = Math.round(targetDist);
 
         const calories = activity.calories || (activity.kilojoules ? Math.round(activity.kilojoules) : Math.round((activity.distance / 1000) * 70)); // 70 is a rough default for kcal/km
         // Use activity.id as a seed to keep food choice consistent for the same run
         const food = FOOD_EQUIVALENTS[activity.id % FOOD_EQUIVALENTS.length];
         const foodCount = (calories / food.cals).toFixed(1);
-
-        const clusterLabel = Math.round(targetDist);
-        const top10 = similarSortedByPace.slice(0, 15).map(r => {
-            const p = (r.moving_time / r.distance) * 1000 / 60;
-            const isCurrent = r.id === activity.id;
-            const date = parseActivityLocalDate(r.start_date_local);
-
-            const daysAgo = (new Date().getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
-            let recencyColor = 'bg-gray-700';
-            if (daysAgo < 30) recencyColor = 'bg-white';
-            else if (daysAgo < 90) recencyColor = 'bg-emerald-400';
-            else if (daysAgo < 180) recencyColor = 'bg-emerald-600';
-
-            return {
-                id: r.id,
-                pace: formatPace(p),
-                date: format(date, 'd/MM/yy'),
-                isCurrent,
-                recencyColor,
-                rawPace: p
-            };
-        });
-
-
 
         return {
             distBins,
@@ -299,12 +276,10 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
             paceRank,
             distanceRankText: getOrdinal(distanceRank),
             paceRankText: getOrdinal(paceRank),
-            similarCount: similarRuns.length,
             clusterLabel,
             calories,
             food,
             foodCount,
-            top10,
             avgPaceLabel: formatPace((activity.moving_time / activity.distance) * 1000 / 60),
             currentShoe: shoes.find(s => s.id === activity.gear_id) || fetchedShoe
         };
@@ -331,7 +306,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
             runProfile: 'unknown' as const,
         };
     }, [activity]);
-    const { similar, loading: similarLoading, hasMemory } = useSimilarRuns({
+    const { similar, loading: similarLoading } = useSimilarRuns({
         activityId: activity.id,
         distanceKm: runInsightContext.distanceKm,
         paceMinPerKm: runInsightContext.paceMinPerKm,
@@ -792,36 +767,6 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                 </section>
                             )}
 
-                            {(hasMemory || similarLoading) && (
-                                <section className="rv-panel px-5 py-4 sm:px-6 sm:py-5">
-                                    <div className="mb-3 flex items-center gap-2">
-                                        <p className="rv-kicker">Runs like this</p>
-                                    </div>
-
-                                    {similarLoading ? (
-                                        <div className="grid gap-2 sm:grid-cols-2">
-                                            {[0, 1, 2, 3].map((index) => (
-                                                <div
-                                                    key={index}
-                                                    className="h-16 animate-pulse rounded-[1.2rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)]"
-                                                />
-                                            ))}
-                                        </div>
-                                    ) : similar.length > 0 ? (
-                                        <div className="grid gap-2 sm:grid-cols-2">
-                                            {similar.map((run) => (
-                                                <SimilarRunCard
-                                                    key={run.stravaId}
-                                                    run={run}
-                                                    allActivities={allActivities}
-                                                    onSelect={onSelect}
-                                                />
-                                            ))}
-                                        </div>
-                                    ) : null}
-                                </section>
-                            )}
-
                             <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6">
                                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                                     <div>
@@ -1010,50 +955,38 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
 
                             <section className="rv-panel rv-panel-strong px-5 py-5 sm:px-6">
                                 <div className="mb-5">
-                                    <p className="rv-kicker mb-2">Nearby Efforts</p>
+                                    <p className="rv-kicker mb-2">Runs Like This</p>
                                     <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--rv-text)]">
-                                        Similar runs
+                                        Comparable efforts
                                     </h2>
                                     <p className="rv-body-copy-sm mt-2">
-                                        The fastest recent efforts around {stats.clusterLabel} km, with this run highlighted in the stack.
+                                        Open another run with a similar distance, pace, and effort profile to compare how this session fits your broader training history.
                                     </p>
                                 </div>
 
                                 <div className="space-y-2.5">
-                                    {stats.top10.length > 0 ? (
-                                        stats.top10.map((r) => (
+                                    {similarLoading ? (
+                                        Array.from({ length: 4 }, (_, index) => (
                                             <div
-                                                key={r.id}
-                                                className={`rounded-[1.4rem] border px-4 py-3 transition ${r.isCurrent
-                                                    ? 'border-[var(--rv-blue)]/28 bg-[var(--rv-blue)]/12'
-                                                    : 'border-white/[0.06] bg-black/[0.12]'
-                                                    }`}
-                                            >
-                                                <div className="mb-3 flex items-start justify-between gap-3">
-                                                    <div>
-                                                        <div className="rv-data text-xl text-[var(--rv-text)]">
-                                                            {r.pace}
-                                                            <span className="ml-1 text-[0.8rem] font-medium text-[var(--rv-text-faint)]">/km</span>
-                                                        </div>
-                                                        <div className="rv-mini-label mt-1 text-[var(--rv-text-faint)]">{r.date}</div>
-                                                    </div>
-                                                    <span className={`h-2.5 w-2.5 rounded-full ${r.recencyColor === 'bg-white' ? 'bg-[var(--rv-text)]' : r.recencyColor}`} />
-                                                </div>
-
-                                                <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                                                    <div
-                                                        className={`h-full rounded-full ${r.recencyColor === 'bg-white' ? 'bg-[var(--rv-text)]' : r.recencyColor}`}
-                                                        style={{ width: `${Math.max(20, 100 - (r.rawPace / 10 * 100))}%` }}
-                                                    />
-                                                </div>
-                                            </div>
+                                                key={index}
+                                                className="h-20 animate-pulse rounded-[1.2rem] border border-[var(--rv-border)] bg-[var(--rv-bg-panel)]"
+                                            />
+                                        ))
+                                    ) : similar.length > 0 ? (
+                                        similar.map((run) => (
+                                            <SimilarRunCard
+                                                key={run.stravaId}
+                                                run={run}
+                                                allActivities={allActivities}
+                                                onSelect={onSelect}
+                                            />
                                         ))
                                     ) : (
                                         <div className="rounded-[1.5rem] border border-white/[0.06] bg-black/[0.12] px-5 py-6 text-center">
                                             <Mountain className="mx-auto h-8 w-8 text-[var(--rv-text-faint)]" />
-                                            <p className="rv-mini-label mt-3 text-[var(--rv-text)]">Not enough comparable runs yet</p>
+                                            <p className="rv-mini-label mt-3 text-[var(--rv-text)]">No similar efforts yet</p>
                                             <p className="rv-body-copy-sm mt-2">
-                                                Once you have more efforts at this distance, this panel will start ranking them for you.
+                                                Once more indexed runs line up on distance and effort, this panel will surface them here.
                                             </p>
                                         </div>
                                     )}
