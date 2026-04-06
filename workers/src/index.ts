@@ -462,14 +462,29 @@ async function handleSimilarRuns(
     }
     queryParts.push(`duration ${Math.round(activityContext.movingTimeMins)} minutes`);
 
-    const { findSimilarActivities } = await import('./activityMemory');
-    const similar = await findSimilarActivities(
+    const { findSimilarActivities, findSimilarActivitiesFallback } = await import('./activityMemory');
+    let similar = await findSimilarActivities(
         env,
         session.user.id,
         queryParts.join(', '),
         4,
         excludeStravaId,
     );
+
+    if (similar.length === 0) {
+        similar = await findSimilarActivitiesFallback(
+            env,
+            session.user.id,
+            {
+                distanceKm: activityContext.distanceKm,
+                paceMinPerKm: activityContext.paceMinPerKm,
+                avgHR: activityContext.avgHR,
+                movingTimeMins: activityContext.movingTimeMins,
+            },
+            4,
+            excludeStravaId,
+        );
+    }
 
     return new Response(JSON.stringify(similar), {
         headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' },

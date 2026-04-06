@@ -256,7 +256,7 @@ export async function findSimilarActivities(
         return [];
     }
 
-    return (matches.matches ?? [])
+    const vectorMatches = (matches.matches ?? [])
         .filter((match) => {
             if (match.metadata?.stravaId === undefined || !match.metadata.activityDate || !match.metadata.distanceKm || !match.metadata.movingTimeMins) {
                 return false;
@@ -280,6 +280,78 @@ export async function findSimilarActivities(
             runProfile: match.metadata!.runProfile ?? 'unknown',
             similarity: match.score ?? 0,
         }));
+
+    if (vectorMatches.length > 0) {
+        return vectorMatches;
+    }
+
+    return [];
+}
+
+export async function findSimilarActivitiesFallback(
+    env: Env,
+    userId: string,
+    context: {
+        distanceKm: number;
+        paceMinPerKm: number | null;
+        avgHR: number | null;
+        movingTimeMins: number;
+    },
+    k = 5,
+    excludeStravaId?: number,
+): Promise<SimilarActivity[]> {
+    const rows = await env.DB.prepare(`
+        SELECT
+          strava_id,
+          activity_date,
+          distance_km,
+          pace_min_per_km,
+          avg_hr,
+          elevation_per_km,
+          moving_time_mins,
+          run_profile
+        FROM activity_vectors
+        WHERE user_id = ?
+          AND (? IS NULL OR strava_id != ?)
+        ORDER BY
+          ABS(distance_km - ?) * 3.0 +
+          ABS(COALESCE(pace_min_per_km, ?) - ?) * 1.5 +
+          ABS(COALESCE(avg_hr, ?) - ?) * 0.03 +
+          ABS(moving_time_mins - ?) * 0.05
+        LIMIT ?
+    `).bind(
+        userId,
+        excludeStravaId ?? null,
+        excludeStravaId ?? null,
+        context.distanceKm,
+        context.paceMinPerKm ?? 0,
+        context.paceMinPerKm ?? 0,
+        context.avgHR ?? 0,
+        context.avgHR ?? 0,
+        context.movingTimeMins,
+        k,
+    ).all<{
+        strava_id: number;
+        activity_date: string;
+        distance_km: number;
+        pace_min_per_km: number | null;
+        avg_hr: number | null;
+        elevation_per_km: number | null;
+        moving_time_mins: number;
+        run_profile: RunProfile | null;
+    }>();
+
+    return (rows.results ?? []).map((row, index) => ({
+        stravaId: row.strava_id,
+        activityDate: row.activity_date,
+        distanceKm: row.distance_km,
+        paceMinPerKm: row.pace_min_per_km,
+        avgHR: row.avg_hr,
+        elevationPerKm: row.elevation_per_km,
+        movingTimeMins: row.moving_time_mins,
+        runProfile: row.run_profile ?? 'unknown',
+        similarity: Math.max(0, 1 - index * 0.1),
+    }));
 }
 
 export function formatSimilarActivitiesContext(activities: SimilarActivity[]): string {
