@@ -273,7 +273,8 @@ export default {
                 return await handleApiRequest(request, url, env, origin, auth);
             }
 
-            return env.ASSETS.fetch(request);
+            const assetResponse = await env.ASSETS.fetch(request);
+            return withAssetCachePolicy(assetResponse, url.pathname);
         } catch (error) {
             console.error('Worker error:', error);
             return new Response(
@@ -286,6 +287,23 @@ export default {
         }
     },
 };
+
+function withAssetCachePolicy(response: Response, pathname: string): Response {
+    const headers = new Headers(response.headers);
+    const contentType = headers.get('content-type') ?? '';
+    const isStaticAsset = pathname.startsWith('/assets/') || /\.[a-z0-9]+$/i.test(pathname);
+    const isHtml = contentType.includes('text/html');
+
+    if (isHtml && !isStaticAsset) {
+        // Keep the SPA shell fresh across deploys so it doesn't reference stale chunk hashes.
+        headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
+    return new Response(response.body, {
+        status: response.status,
+        headers,
+    });
+}
 
 // Start OAuth flow
 async function handleAuthStart(request: Request, url: URL, env: Env, auth: ReturnType<typeof createAuth>): Promise<Response> {
