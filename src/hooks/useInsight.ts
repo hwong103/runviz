@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { InsightType } from '@/components/ui/AIInsightCard';
 
@@ -71,6 +71,22 @@ export function useInsight({
     });
     const payloadHash = hashString(serializedPayload);
     const dismissKey = `dismissed:${insightType}:${mostRecentActivityId}:${payloadHash}`;
+    const parsedPayload = useMemo(
+        () => JSON.parse(serializedPayload) as {
+            payload: Record<string, unknown>;
+            useMemory: boolean;
+            activityContext?: UseInsightOptions['activityContext'];
+        },
+        [serializedPayload]
+    );
+    const requestBody = useMemo(() => JSON.stringify({
+        insightType,
+        mostRecentActivityId,
+        payloadHash,
+        payload: parsedPayload.payload,
+        useMemory: parsedPayload.useMemory,
+        activityContext: parsedPayload.activityContext,
+    }), [insightType, mostRecentActivityId, payloadHash, parsedPayload]);
 
     const fetchInsight = useCallback(
         async (forceRefresh = false) => {
@@ -96,15 +112,12 @@ export function useInsight({
                 const response = await fetch('/api/insights', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        insightType,
-                        mostRecentActivityId,
-                        payloadHash,
-                        forceRefresh,
-                        payload: payload as Record<string, unknown>,
-                        useMemory,
-                        activityContext,
-                    }),
+                    body: forceRefresh
+                        ? JSON.stringify({
+                            ...JSON.parse(requestBody),
+                            forceRefresh: true,
+                        })
+                        : requestBody,
                 });
 
                 if (!response.ok) {
@@ -125,7 +138,7 @@ export function useInsight({
                 setLoading(false);
             }
         },
-        [activityContext, dismissKey, enabled, insightType, mostRecentActivityId, payload, payloadHash, useMemory]
+        [dismissKey, enabled, requestBody]
     );
 
     const refresh = useCallback(async () => {
