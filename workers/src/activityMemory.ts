@@ -258,11 +258,11 @@ export async function findSimilarActivities(
 
     return (matches.matches ?? [])
         .filter((match) => {
-            if (!match.metadata?.stravaId || !match.metadata.activityDate || !match.metadata.distanceKm || !match.metadata.movingTimeMins) {
+            if (match.metadata?.stravaId === undefined || !match.metadata.activityDate || !match.metadata.distanceKm || !match.metadata.movingTimeMins) {
                 return false;
             }
 
-            if (excludeStravaId && match.metadata.stravaId === excludeStravaId) {
+            if (excludeStravaId && Number(match.metadata.stravaId) === Number(excludeStravaId)) {
                 return false;
             }
 
@@ -270,7 +270,7 @@ export async function findSimilarActivities(
         })
         .slice(0, k)
         .map((match) => ({
-            stravaId: match.metadata!.stravaId!,
+            stravaId: Number(match.metadata!.stravaId!),
             activityDate: match.metadata!.activityDate!,
             distanceKm: match.metadata!.distanceKm!,
             paceMinPerKm: match.metadata!.paceMinPerKm ? match.metadata!.paceMinPerKm : null,
