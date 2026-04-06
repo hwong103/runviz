@@ -787,7 +787,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                             : 'border-[var(--rv-blue)]/24 bg-[var(--rv-blue)]/10 text-[var(--rv-blue)]'
                                             }`}
                                     >
-                                        {viewMode === 'splits' ? 'Split View' : 'Live Trace'}
+                                        {viewMode === 'splits' ? 'Splits' : 'Live Trace'}
                                     </button>
                                 </div>
 
