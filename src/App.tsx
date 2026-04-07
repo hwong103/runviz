@@ -758,7 +758,7 @@ function App() {
                     allActivities={runActivities}
                     shoes={allShoes}
                     selectedShoeId={selectedShoeId}
-                    onSelectShoe={(id) => setSelectedShoeId((prev) => prev === id ? null : id)}
+                    onSelectShoe={(id: string) => setSelectedShoeId((prev) => prev === id ? null : id)}
                   />
                 </Suspense>
               </div>
@@ -805,7 +805,7 @@ function App() {
                   allActivities={runActivities}
                   shoes={allShoes}
                   selectedShoeId={selectedShoeId}
-                  onSelectShoe={(id) => setSelectedShoeId((prev) => prev === id ? null : id)}
+                  onSelectShoe={(id: string) => setSelectedShoeId((prev) => prev === id ? null : id)}
                 />
               </Suspense>
             </div>

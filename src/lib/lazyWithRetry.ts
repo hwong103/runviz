@@ -1,7 +1,7 @@
 import { lazy } from 'react'
 import type { ComponentType } from 'react'
 
-type ModuleLoader<T extends ComponentType<object>> = () => Promise<{ default: T }>
+type ModuleLoader<T extends ComponentType<any>> = () => Promise<{ default: T }>
 
 function isRecoverableChunkError(error: unknown) {
   if (!(error instanceof Error)) {
@@ -18,7 +18,7 @@ function isRecoverableChunkError(error: unknown) {
   )
 }
 
-export function lazyWithRetry<T extends ComponentType<object>>(
+export function lazyWithRetry<T extends ComponentType<any>>(
   loader: ModuleLoader<T>,
   retryKey: string,
 ) {
