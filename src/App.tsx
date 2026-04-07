@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Suspense, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -37,30 +37,39 @@ import {
   type ViewPeriod,
   isDashboardWorkspace,
 } from './lib/dashboard';
+import { lazyWithRetry } from './lib/lazyWithRetry';
 
-const FitnessChart = lazy(() =>
-  import('./components/FitnessChart').then((module) => ({ default: module.FitnessChart }))
+const FitnessChart = lazyWithRetry(
+  () => import('./components/FitnessChart').then((module) => ({ default: module.FitnessChart })),
+  'fitness-chart',
 );
-const MileageTrendChart = lazy(() =>
-  import('./components/MileageTrendChart').then((module) => ({ default: module.MileageTrendChart }))
+const MileageTrendChart = lazyWithRetry(
+  () => import('./components/MileageTrendChart').then((module) => ({ default: module.MileageTrendChart })),
+  'mileage-trend-chart',
 );
-const YearOnYearChart = lazy(() =>
-  import('./components/YearOnYearChart').then((module) => ({ default: module.YearOnYearChart }))
+const YearOnYearChart = lazyWithRetry(
+  () => import('./components/YearOnYearChart').then((module) => ({ default: module.YearOnYearChart })),
+  'year-on-year-chart',
 );
-const RunDetails = lazy(() =>
-  import('./components/RunDetails').then((module) => ({ default: module.RunDetails }))
+const RunDetails = lazyWithRetry(
+  () => import('./components/RunDetails').then((module) => ({ default: module.RunDetails })),
+  'run-details',
 );
-const ShoeTracker = lazy(() =>
-  import('./components/ShoeTracker').then((module) => ({ default: module.ShoeTracker }))
+const ShoeTracker = lazyWithRetry(
+  () => import('./components/ShoeTracker').then((module) => ({ default: module.ShoeTracker })),
+  'shoe-tracker',
 );
-const VDOTPanel = lazy(() =>
-  import('./components/VDOTPanel').then((module) => ({ default: module.VDOTPanel }))
+const VDOTPanel = lazyWithRetry(
+  () => import('./components/VDOTPanel').then((module) => ({ default: module.VDOTPanel })),
+  'vdot-panel',
 );
-const WeeklyRampChart = lazy(() =>
-  import('./components/WeeklyRampChart').then((module) => ({ default: module.WeeklyRampChart }))
+const WeeklyRampChart = lazyWithRetry(
+  () => import('./components/WeeklyRampChart').then((module) => ({ default: module.WeeklyRampChart })),
+  'weekly-ramp-chart',
 );
-const CadenceTrendChart = lazy(() =>
-  import('./components/CadenceTrendChart').then((module) => ({ default: module.CadenceTrendChart }))
+const CadenceTrendChart = lazyWithRetry(
+  () => import('./components/CadenceTrendChart').then((module) => ({ default: module.CadenceTrendChart })),
+  'cadence-trend-chart',
 );
 
 const GEAR_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days

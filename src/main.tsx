@@ -1,4 +1,4 @@
-import { StrictMode, lazy, Suspense } from 'react'
+import { StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
@@ -13,9 +13,10 @@ import { SettingsPage } from './components/SettingsPage.tsx'
 import { SetupRoute } from './components/SetupRoute.tsx'
 import { StravaAuthStart } from './components/StravaAuthStart.tsx'
 import { Badge } from './components/ui/Badge.tsx'
+import { lazyWithRetry } from './lib/lazyWithRetry.ts'
 
-const RoutePlanner = lazy(() => import('./components/RoutePlanner.tsx'))
-const FormAnalysis = lazy(() => import('./components/FormAnalysis.tsx'))
+const RoutePlanner = lazyWithRetry(() => import('./components/RoutePlanner.tsx'), 'route-planner')
+const FormAnalysis = lazyWithRetry(() => import('./components/FormAnalysis.tsx'), 'form-analysis')
 const routerBase = import.meta.env.BASE_URL.endsWith('/')
   ? import.meta.env.BASE_URL.slice(0, -1) || '/'
   : import.meta.env.BASE_URL
@@ -42,7 +43,7 @@ const routerBase = import.meta.env.BASE_URL.endsWith('/')
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={routerBase}>
-      <Suspense fallback={<div className="min-h-screen bg-[#0a0c10]" />}>
+      <Suspense fallback={<div className="min-h-screen bg-background text-foreground" />}>
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/auth/strava" element={<StravaAuthStart />} />
