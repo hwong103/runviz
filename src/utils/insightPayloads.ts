@@ -59,7 +59,7 @@ export interface InjuryRiskPayload {
     recentRestDays: number;
     consecutiveRunDays: number;
     baselineLoadRatio: number;
-    injuryHistoryFlag: boolean;
+    hadExtendedTrainingGap: string;
 }
 
 export interface RacePredictionPayload {
@@ -471,7 +471,9 @@ export function buildInjuryRiskPayload(activities: Activity[], windowDays = 30):
         recentRestDays: Math.max(0, 14 - daysWithActivity),
         consecutiveRunDays: getConsecutiveRunDays(activities, anchorDate),
         baselineLoadRatio: roundTo(baselineLoadRatio, 2),
-        injuryHistoryFlag: hasExtendedGap(activities),
+        hadExtendedTrainingGap: hasExtendedGap(activities)
+            ? 'yes — one or more gaps of 21+ days exist in training history (cause unknown)'
+            : 'no gaps of 21+ days detected',
         shouldShow,
     };
 }
