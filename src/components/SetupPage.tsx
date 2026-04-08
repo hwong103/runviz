@@ -1,7 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Check, Copy, Download } from 'lucide-react';
+import { ArrowUpRight, Bot, Check, Copy, Download } from 'lucide-react';
+import { PERSONAS, useCoachPersona } from '@/hooks/useCoachPersona';
 import { useMaxHR } from '../hooks/useMaxHR';
 import { auth as authApi } from '../services/api';
 
@@ -28,6 +29,7 @@ export function SetupPage({
   sendMagicLink,
   logout,
 }: SetupPageProps) {
+  const { persona, setPersona } = useCoachPersona();
   const [magicEmail, setMagicEmail] = useState('');
   const [magicSending, setMagicSending] = useState(false);
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
@@ -164,6 +166,7 @@ export function SetupPage({
     if (user?.email) return user.email;
     return 'your account';
   }, [user?.email, user?.name]);
+  const showSavedStravaMessage = stravaSetupLoading || stravaKeyConfigured;
 
   const stickyRailStyle = stickyRailMinHeight ? { minHeight: `${stickyRailMinHeight}px` } : undefined;
 
@@ -444,6 +447,42 @@ export function SetupPage({
                 </div>
 
                 <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-4 py-4">
+                  <label className="rv-mini-label mb-3 flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-[var(--rv-text-faint)]" />
+                    Coach persona
+                  </label>
+                  <div className="grid gap-2">
+                    {PERSONAS.map((candidate) => (
+                      <button
+                        key={candidate.id}
+                        type="button"
+                        onClick={() => setPersona(candidate.id)}
+                        className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+                          persona === candidate.id
+                            ? 'border-foreground/20 bg-white/[0.06]'
+                            : 'border-white/8 bg-transparent hover:bg-white/[0.03]'
+                        }`}
+                      >
+                        <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
+                          persona === candidate.id
+                            ? 'border-foreground/20 bg-foreground text-background'
+                            : 'border-white/8 bg-white/[0.04] text-[var(--rv-text-faint)]'
+                        }`}>
+                          {candidate.name.slice(0, 1)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-[var(--rv-text)]">{candidate.name}</span>
+                            <span className="rv-mini-label text-[0.65rem] text-[var(--rv-text-faint)]">{candidate.title}</span>
+                          </div>
+                          <p className="mt-0.5 text-xs text-[var(--rv-text-dim)]">{candidate.description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-4 py-4">
                   <label className="rv-mini-label mb-3 block">
                     Max heart rate
                     <span className="ml-2 font-normal normal-case tracking-normal text-[var(--rv-text-faint)]">optional</span>
@@ -455,7 +494,7 @@ export function SetupPage({
                       max={220}
                       value={maxHRInput}
                       onChange={(e) => setMaxHRInput(e.target.value)}
-                      placeholder="e.g. 193"
+                      placeholder="193"
                       className="rv-field w-24 px-4 py-2.5 text-sm normal-case tracking-normal"
                     />
                     <span className="text-sm text-[var(--rv-text-dim)]">bpm</span>
@@ -513,13 +552,13 @@ export function SetupPage({
                   >
                     {stravaSetupSaving ? 'Saving...' : stravaKeyConfigured ? 'Connect Strava' : 'Save and connect Strava'}
                   </button>
-                  <div className="rv-body-copy-sm">
-                    {stravaSetupLoading
-                      ? 'Loading your saved Strava app...'
-                      : stravaKeyConfigured
-                        ? `Saved for this account${stravaKeyUpdatedAt ? ` on ${new Date(stravaKeyUpdatedAt * 1000).toLocaleDateString()}` : ''}.`
-                        : 'No Strava app saved for this account yet.'}
-                  </div>
+                  {showSavedStravaMessage && (
+                    <div className="rv-body-copy-sm">
+                      {stravaSetupLoading
+                        ? 'Loading your saved Strava app...'
+                        : `Saved for this account${stravaKeyUpdatedAt ? ` on ${new Date(stravaKeyUpdatedAt * 1000).toLocaleDateString()}` : ''}.`}
+                    </div>
+                  )}
                 </div>
 
                 {stravaSetupStatus && (
@@ -527,12 +566,14 @@ export function SetupPage({
                     {stravaSetupStatus}
                   </p>
                 )}
-                <button
-                  onClick={logout}
-                  className="rv-button-secondary rv-pill-label px-6 py-4"
-                >
-                  Sign out
-                </button>
+                {stravaKeyConfigured && (
+                  <button
+                    onClick={logout}
+                    className="rv-button-secondary rv-pill-label px-6 py-4"
+                  >
+                    Sign out
+                  </button>
+                )}
               </>
             ) : (
               <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] px-5 py-5 text-sm leading-7 text-[var(--rv-text-dim)]">
