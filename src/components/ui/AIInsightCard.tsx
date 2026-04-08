@@ -42,6 +42,16 @@ export interface AIInsightCardProps {
     };
 }
 
+const INSIGHT_LABELS: Record<InsightType, string> = {
+    overview: 'Training Insight',
+    'training-health': 'Health Insight',
+    fitness: 'Fitness Insight',
+    volume: 'Volume Insight',
+    'injury-risk': 'Injury Insight',
+    'race-prediction': 'Race Insight',
+    'run-detail': 'Run Insight',
+};
+
 export function AIInsightCard({
     insightType,
     payload,
@@ -91,7 +101,7 @@ export function AIInsightCard({
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                         <span className="rv-kicker text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            AI insight
+                            {INSIGHT_LABELS[insightType]}
                         </span>
                     </div>
 
