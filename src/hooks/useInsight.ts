@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { InsightType } from '@/components/ui/AIInsightCard';
+import type { CoachPersona } from '@/hooks/useCoachPersona';
 
 interface UseInsightOptions {
     insightType: InsightType;
     payload: object;
     mostRecentActivityId: number;
     enabled?: boolean;
+    persona?: CoachPersona;
     useMemory?: boolean;
     activityContext?: {
         distanceKm: number;
@@ -67,6 +69,7 @@ export function useInsight({
     payload,
     mostRecentActivityId,
     enabled = true,
+    persona = 'neutral',
     useMemory = false,
     activityContext,
     weekContext,
@@ -78,12 +81,14 @@ export function useInsight({
 
     const serializedPayload = stableSerialize({
         payload,
+        persona,
         useMemory,
         activityContext,
         weekContext,
     });
     const requestPayloadJson = JSON.stringify({
         payload: payload as Record<string, unknown>,
+        persona,
         useMemory,
         activityContext,
         weekContext,
@@ -93,6 +98,7 @@ export function useInsight({
     const parsedPayload = useMemo(
         () => JSON.parse(requestPayloadJson) as {
             payload: Record<string, unknown>;
+            persona: CoachPersona;
             useMemory: boolean;
             activityContext?: UseInsightOptions['activityContext'];
             weekContext?: UseInsightOptions['weekContext'];
@@ -104,6 +110,7 @@ export function useInsight({
         mostRecentActivityId,
         payloadHash,
         payload: parsedPayload.payload,
+        persona: parsedPayload.persona,
         useMemory: parsedPayload.useMemory,
         activityContext: parsedPayload.activityContext,
         weekContext: parsedPayload.weekContext,
@@ -172,6 +179,7 @@ export function useInsight({
                 insightType,
                 mostRecentActivityId: String(mostRecentActivityId),
                 payloadHash,
+                persona,
             });
             await fetch(`/api/insights/cache?${params.toString()}`, {
                 method: 'DELETE',
@@ -181,7 +189,7 @@ export function useInsight({
         }
 
         await fetchInsight(true);
-    }, [dismissKey, fetchInsight, insightType, mostRecentActivityId, payloadHash]);
+    }, [dismissKey, fetchInsight, insightType, mostRecentActivityId, payloadHash, persona]);
 
     const dismiss = useCallback(() => {
         localStorage.setItem(dismissKey, 'true');

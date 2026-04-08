@@ -20,6 +20,7 @@ import {
 } from '../analytics/trainingLoad';
 import { useChartTheme } from '../hooks/useChartTheme';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
+import { useCoachPersona } from '@/hooks/useCoachPersona';
 import { buildFitnessPayload } from '@/utils/insightPayloads';
 
 ChartJS.register(
@@ -48,6 +49,7 @@ interface FitnessChartProps {
 
 export function FitnessChart({ activities, allActivities, period, maxHR = 185, restHR = 60, mostRecentActivityId }: FitnessChartProps) {
     const chartTheme = useChartTheme();
+    const { persona } = useCoachPersona();
 
     const metrics = useMemo(() => {
         if (activities.length === 0) return [];
@@ -238,6 +240,7 @@ export function FitnessChart({ activities, allActivities, period, maxHR = 185, r
                         payload={buildFitnessPayload(allActivities, maxHR)}
                         mostRecentActivityId={mostRecentActivityId}
                         windowLabel="Based on last 60 days"
+                        persona={persona}
                     />
                 </div>
             )}

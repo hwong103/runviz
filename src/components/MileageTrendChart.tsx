@@ -19,6 +19,7 @@ import type { Activity } from '../types';
 import { parseActivityLocalDate } from '../utils/activityDate';
 import { useChartTheme } from '../hooks/useChartTheme';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
+import { useCoachPersona } from '@/hooks/useCoachPersona';
 import { buildVolumePayload, getInsightWindowLabel, viewPeriodToDays } from '@/utils/insightPayloads';
 
 ChartJS.register(
@@ -48,6 +49,7 @@ interface MileageTrendChartProps {
 
 export function MileageTrendChart({ activities, allActivities, period, mostRecentActivityId, maxHR = 185 }: MileageTrendChartProps) {
     const chartTheme = useChartTheme();
+    const { persona } = useCoachPersona();
     void maxHR;
 
     const data = useMemo(() => {
@@ -236,6 +238,7 @@ export function MileageTrendChart({ activities, allActivities, period, mostRecen
                         payload={buildVolumePayload(allActivities, period)}
                         mostRecentActivityId={mostRecentActivityId}
                         windowLabel={getInsightWindowLabel(viewPeriodToDays(period))}
+                        persona={persona}
                     />
                 </div>
             )}

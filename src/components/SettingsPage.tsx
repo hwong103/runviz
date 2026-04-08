@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import {
+  Bot,
   ChevronRight,
   HeartPulse,
   LogOut,
@@ -27,6 +28,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/hooks/useAuth"
+import { PERSONAS, useCoachPersona } from "@/hooks/useCoachPersona"
 import { useMaxHR } from "@/hooks/useMaxHR"
 import { useTheme } from "@/hooks/useTheme"
 import { auth as authApi } from "@/services/api"
@@ -43,6 +45,7 @@ export function SettingsPage() {
     logout,
   } = useAuth()
   const { preference, resolved } = useTheme()
+  const { persona, setPersona } = useCoachPersona()
   const { maxHR, isDefault, setMaxHR, clearMaxHR } = useMaxHR()
   const [clientId, setClientId] = useState("")
   const [clientSecret, setClientSecret] = useState("")
@@ -262,6 +265,49 @@ export function SettingsPage() {
                 </div>
                 <div className="max-w-[220px]">
                   <ThemeToggle />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-border/70 bg-background/80">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="size-4 text-muted-foreground" />
+                  Coach
+                </CardTitle>
+                <CardDescription>
+                  Choose how your AI coach delivers insights and feedback.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-2">
+                  {PERSONAS.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setPersona(p.id)}
+                      className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+                        persona === p.id
+                          ? "border-foreground/20 bg-muted/60"
+                          : "border-border/70 bg-transparent hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
+                        persona === p.id
+                          ? "border-foreground/20 bg-foreground text-background"
+                          : "border-border/70 bg-muted/30 text-muted-foreground"
+                      }`}>
+                        {p.name.slice(0, 1)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">{p.name}</span>
+                          <span className="rv-mini-label text-[0.65rem] text-muted-foreground">{p.title}</span>
+                        </div>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{p.description}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </CardContent>
             </Card>

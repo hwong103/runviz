@@ -8,6 +8,7 @@ import type { Activity } from '../types';
 import { isRun } from '../types';
 import { TrainingHealthTrendChart, type TrainingHealthMetricKey } from './TrainingHealthTrendChart';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
+import { useCoachPersona } from '@/hooks/useCoachPersona';
 import { buildOverviewPayload, buildTrainingHealthPayload, buildInjuryRiskPayload, getInsightWindowLabel, viewPeriodToDays } from '@/utils/insightPayloads';
 import { buildCurrentWeekSummary } from '@/utils/currentWeekSummary';
 import {
@@ -74,6 +75,7 @@ export function StatsOverview({
 }: StatsOverviewProps) {
     const [activeHelp, setActiveHelp] = useState<HelpMetric | null>(null);
     const [activeMetric, setActiveMetric] = useState<TrainingHealthMetricKey>('acwr');
+    const { persona } = useCoachPersona();
     const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
     const selectedPeriodEnd = useMemo(() => getSelectedPeriodEnd(period), [period]);
 
@@ -252,6 +254,7 @@ export function StatsOverview({
                                 payload={buildOverviewPayload(allActivities, period)}
                                 mostRecentActivityId={mostRecentActivityId}
                                 windowLabel={overviewWindowLabel}
+                                persona={persona}
                                 useMemory
                                 weekContext={weekContext}
                             />
@@ -266,6 +269,7 @@ export function StatsOverview({
                                 mostRecentActivityId={mostRecentActivityId}
                                 className="border-amber-500/40"
                                 windowLabel={getInsightWindowLabel(30)}
+                                persona={persona}
                             />
                         </section>
                     )}
@@ -428,6 +432,7 @@ export function StatsOverview({
                                 payload={buildTrainingHealthPayload(allActivities, period, maxHR)}
                                 mostRecentActivityId={mostRecentActivityId}
                                 windowLabel={trainingHealthWindowLabel}
+                                persona={persona}
                                 useMemory
                                 weekContext={weekContext}
                             />

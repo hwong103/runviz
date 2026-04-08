@@ -34,6 +34,7 @@ import { useSimilarRuns } from '../hooks/useSimilarRuns';
 import { parseActivityLocalDate } from '../utils/activityDate';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
 import { BrandLogo as ShoeBrandLogo } from '@/components/ui/BrandLogo';
+import { useCoachPersona } from '@/hooks/useCoachPersona';
 import { buildRunDetailPayload } from '@/utils/insightPayloads';
 
 ChartJS.register(
@@ -108,6 +109,7 @@ function average(values: number[]) {
 }
 
 export function RunDetails({ activity: initialActivity, allActivities, shoes, onClose, onSelect }: RunDetailsProps) {
+    const { persona } = useCoachPersona();
     // Reset internal state when ID changes (navigation)
     const [activity, setActivity] = useState<Activity>(initialActivity);
     useEffect(() => { setActivity(initialActivity); }, [initialActivity]);
@@ -741,6 +743,7 @@ export function RunDetails({ activity: initialActivity, allActivities, shoes, on
                                         insightType="run-detail"
                                         payload={runInsightPayload}
                                         mostRecentActivityId={activity.id}
+                                        persona={persona}
                                         useMemory
                                         activityContext={runInsightContext}
                                     />

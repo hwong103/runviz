@@ -1,8 +1,9 @@
 import { Sparkles, RefreshCw, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { PERSONAS, type CoachPersona } from '@/hooks/useCoachPersona';
 import { useInsight } from '@/hooks/useInsight';
+import { cn } from '@/lib/utils';
 
 export type InsightType =
     | 'overview'
@@ -20,6 +21,7 @@ export interface AIInsightCardProps {
     className?: string;
     conditionMet?: boolean;
     windowLabel?: string;
+    persona?: CoachPersona;
     useMemory?: boolean;
     activityContext?: {
         distanceKm: number;
@@ -44,7 +46,7 @@ export interface AIInsightCardProps {
 
 const INSIGHT_LABELS: Record<InsightType, string> = {
     overview: 'Training Insight',
-    'training-health': 'Health Insight',
+    'training-health': 'Training Health',
     fitness: 'Fitness Insight',
     volume: 'Volume Insight',
     'injury-risk': 'Injury Insight',
@@ -59,6 +61,7 @@ export function AIInsightCard({
     className,
     conditionMet = true,
     windowLabel,
+    persona,
     useMemory = false,
     activityContext,
     weekContext,
@@ -68,10 +71,12 @@ export function AIInsightCard({
         payload,
         mostRecentActivityId,
         enabled: conditionMet,
+        persona,
         useMemory,
         activityContext,
         weekContext,
     });
+    const coachName = PERSONAS.find((candidate) => candidate.id === (persona ?? 'neutral'))?.name ?? 'Jordan';
     const showSkeleton = loading && !insight;
 
     // If condition not met, don't render anything
@@ -102,6 +107,9 @@ export function AIInsightCard({
                     <div className="flex items-center gap-2">
                         <span className="rv-kicker text-xs font-medium uppercase tracking-wide text-muted-foreground">
                             {INSIGHT_LABELS[insightType]}
+                        </span>
+                        <span className="text-[0.62rem] font-medium text-muted-foreground/50">
+                            {coachName}
                         </span>
                     </div>
 

@@ -9,6 +9,7 @@ import {
 } from '../analytics/trainingLoad';
 import { parseActivityLocalDate } from '../utils/activityDate';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
+import { useCoachPersona } from '@/hooks/useCoachPersona';
 import { buildRacePredictionPayload } from '@/utils/insightPayloads';
 import type { ViewPeriod } from '@/lib/dashboard';
 
@@ -41,6 +42,7 @@ export function VDOTPanel({
     restHR = 60,
     mostRecentActivityId,
 }: VDOTPanelProps) {
+    const { persona } = useCoachPersona();
     void period;
     const result = useMemo(() => calcVDOTFromActivities(activities), [activities]);
     const readiness = useMemo(() => {
@@ -194,6 +196,7 @@ export function VDOTPanel({
                         mostRecentActivityId={mostRecentActivityId}
                         conditionMet={Boolean(insightPayload.vdot)}
                         windowLabel="Based on last 90 days"
+                        persona={persona}
                     />
                 </div>
             )}
