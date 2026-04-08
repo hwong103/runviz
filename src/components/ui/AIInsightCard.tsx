@@ -1,4 +1,4 @@
-import { Sparkles, RefreshCw, X } from 'lucide-react';
+import { Bot, Sparkles, RefreshCw, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { PERSONAS, type CoachPersona } from '@/hooks/useCoachPersona';
@@ -108,9 +108,6 @@ export function AIInsightCard({
                         <span className="rv-kicker text-xs font-medium uppercase tracking-wide text-muted-foreground">
                             {INSIGHT_LABELS[insightType]}
                         </span>
-                        <span className="text-[0.62rem] font-medium text-muted-foreground/50">
-                            {coachName}
-                        </span>
                     </div>
 
                     {showSkeleton ? (
@@ -134,27 +131,33 @@ export function AIInsightCard({
                     )}
 
                     {!showSkeleton && (
-                        <div className="mt-3 flex items-center justify-end gap-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={refresh}
-                                disabled={loading}
-                                className="h-auto px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground"
-                            >
-                                <RefreshCw className="mr-1 size-3" />
-                                Refresh
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={dismiss}
-                                disabled={loading}
-                                className="h-auto px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="mr-1 size-3" />
-                                Dismiss
-                            </Button>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background/70 px-2.5 py-1 text-[0.68rem] font-medium text-muted-foreground shadow-sm">
+                                <Bot className="size-3" />
+                                {coachName}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={refresh}
+                                    disabled={loading}
+                                    className="h-auto px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+                                >
+                                    <RefreshCw className="mr-1 size-3" />
+                                    Refresh
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={dismiss}
+                                    disabled={loading}
+                                    className="h-auto px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+                                >
+                                    <X className="mr-1 size-3" />
+                                    Dismiss
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </div>
