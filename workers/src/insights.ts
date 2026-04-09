@@ -17,19 +17,20 @@ const PERSONA_PROMPTS: Record<string, string> = {
 const OUTPUT_RULES = `Hard output rules:
 - Return exactly 2 sentences and aim for 90-110 words total.
 - No bullet points, headers, markdown, labels, or line breaks.
-- Do not prescribe exact run counts, routine scores, pace targets, percentage cuts, or rest-day counts unless that number is directly supported by the provided data.
+- If you use a number in the recommendation, it must already appear in the Data section verbatim. Do not invent target run counts, routine scores, durations, pace goals, percentages, distances, or thresholds.
 - Prefer hold, steady, gradual rebuild, or modest consolidation guidance when the data is mixed.
 - Do not default to telling the runner to cut back just because load ratio is elevated.
 - If Training Phase is "rebuild" or "build", treat some load elevation as expected from a low or rising baseline and only recommend pulling back when multiple red flags agree.
 - If Training Phase is "down-week", treat reduced volume as intentional consolidation unless the provided data clearly says otherwise.`;
 
-const INSIGHT_PROMPT_VERSION = 'v4';
+const INSIGHT_PROMPT_VERSION = 'v5';
 
 const PERSONA_NUDGES: Record<string, string> = {
     gentle: `Persona-specific guidance:
 - Sound warm, calm, and human rather than analytical.
 - Lead with one thing that is going right or understandable in the data.
 - End with one concrete low-stress action that feels manageable over the next few days.
+- Sentence 2 must contain a clear action verb such as keep, hold, ease, repeat, stay, or prioritize.
 - Do not hedge so much that the advice becomes vague.`,
     neutral: `Persona-specific guidance:
 - Prioritize a crisp explanation of what the key metric pattern means.
@@ -43,6 +44,7 @@ const PERSONA_NUDGES: Record<string, string> = {
     drill: `Persona-specific guidance:
 - Sound demanding and commanding, not merely blunt.
 - Frame the second sentence as an order or standard to meet.
+- Sentence 2 should start with a command verb such as Hold, Keep, Stabilize, Stop, or Reduce.
 - Use sharper language than blunt, but do not invent extra risk or exaggerate the data.
 - Avoid generic phrasing like "maintain a steady approach."`,
 };
@@ -50,19 +52,20 @@ const PERSONA_NUDGES: Record<string, string> = {
 const INSIGHT_TYPE_NUDGES: Record<string, string> = {
     overview: `Overview-specific guidance:
 - If the block reflects a rebuild with only a moderate load rise, say that plainly and do not call it unstable by default.
-- Do not invent numeric routine-score targets or other made-up thresholds.
+- Do not invent routine-score targets, run-count goals, long-run durations, pace targets, or other made-up thresholds.
 - Differentiate the personas through framing and phrasing, not by changing the core recommendation.
 - Gentle should sound supportive with a small next step, neutral should sound coach-like and practical, blunt should be terse, and drill should sound like an order.`,
     'training-health': `Training-health-specific guidance:
 - Explain the stress pattern clearly, then give one practical adjustment.
-- Do not invent precise percentage cuts, exact rest prescriptions, or other made-up numeric targets.
+- Do not invent precise percentage cuts, exact rest prescriptions, run counts, or other made-up numeric targets.
 - If rebuild context is present and the stress pattern is manageable, say so instead of defaulting to overload language.`,
     'injury-risk': `Injury-risk-specific guidance:
 - Rebuild context should usually lead to stabilize-and-monitor language rather than alarm.
 - Gentle should reassure without becoming vague.
 - Neutral should explain the risk pattern and the short-term plan.
 - Blunt should be short and matter-of-fact.
-- Drill should sound commanding, with sentence 2 phrased as an order.`,
+- Drill should sound commanding, with sentence 2 phrased as an order.
+- Do not invent pace targets, percentage reductions, or new weekly-kilometer goals unless those exact numbers are already in the Data.`,
 };
 
 const INSIGHT_PROMPTS: Record<string, (payload: Record<string, unknown>) => string> = {
