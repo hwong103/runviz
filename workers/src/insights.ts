@@ -14,38 +14,63 @@ const PERSONA_PROMPTS: Record<string, string> = {
     drill: `You are Sergeant Kowalski, a demanding drill-sergeant running coach speaking directly to the athlete. Always use second person — "you", "your". Hold the athlete to a high standard. Respond in exactly 2 sentences, under 85 words. No bullet points, headers, or markdown. Don't accept excuses from the data or the athlete. If the numbers are bad, say so. If the athlete needs to back off, frame it as a tactical order, not a comfort. Sentence 1 is a direct assessment of what the data shows. Sentence 2 is a non-negotiable instruction. When discussing pace use min/km format like "5:30/km". Only reason about fields that are present in the data. If a metric is absent, treat it as unavailable rather than zero or evidence of decline. Never infer, assume, or fabricate information that is not explicitly present in the data — this includes injuries, illness, life circumstances, personal history, or motivations. If you find yourself about to write something that is not directly stated in the provided data fields, do not write it.`,
 };
 
+const OUTPUT_RULES = `Hard output rules:
+- Return exactly 2 sentences and fewer than 85 words total.
+- No bullet points, headers, markdown, labels, or line breaks.
+- Do not prescribe exact run counts, routine scores, pace targets, percentage cuts, or rest-day counts unless that number is directly supported by the provided data.
+- Prefer hold, steady, gradual rebuild, or modest consolidation guidance when the data is mixed.
+- Do not default to telling the runner to cut back just because load ratio is elevated.
+- If Training Phase is "rebuild" or "build", treat some load elevation as expected from a low or rising baseline and only recommend pulling back when multiple red flags agree.
+- If Training Phase is "down-week", treat reduced volume as intentional consolidation unless the provided data clearly says otherwise.`;
+
+const INSIGHT_PROMPT_VERSION = 'v2';
+
 const INSIGHT_PROMPTS: Record<string, (payload: Record<string, unknown>) => string> = {
-    overview: (payload) => `Analyse your current training block - specifically your load ratio, routine consistency, weekly change trend, and aerobic efficiency. Explain what state the block is in, what is most likely driving that state, and what you should do over the next 7-10 days. If the block is unstable, guide the runner toward a steadier approach without sounding harsh. Do not just restate the numbers; interpret them into a plan.
+    overview: (payload) => `Analyse your current training block - specifically your load ratio, routine consistency, weekly change trend, aerobic efficiency, and training phase context. Explain what state the block is in, what is most likely driving that state, and what you should do over the next 7-10 days. If the block is unstable, guide the runner toward a steadier approach without sounding harsh. If Training Phase is "rebuild" or "build", do not treat a moderate rise from a low baseline as a problem by itself. Only recommend pulling back when at least two red flags agree, such as very high load ratio plus worsening efficiency, or a steep ramp plus poor routine. If the data is mixed, prefer hold-steady or gradual rebuild guidance over cutback advice. Do not just restate the numbers; interpret them into a plan.
+
+${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
-    'training-health': (payload) => `Analyse your training stress, monotony, and strain metrics. Explain what they suggest about stress distribution, why that pattern is likely happening, and what change to make in the next 7 days. Give one concrete coaching instruction about recovery, intensity, or session spacing, using a supportive tone that leaves room for recovery from illness or fatigue when relevant.
+    'training-health': (payload) => `Analyse your training stress, monotony, strain, load ratio, and training phase context. Explain what they suggest about stress distribution, why that pattern is likely happening, and what change to make in the next 7 days. Give one concrete coaching instruction about recovery, intensity, or session spacing. Do not assume that higher stress automatically means overload: if Training Phase is "rebuild" or "build", acknowledge when the pattern can simply reflect a return to structure or a planned increase. Recommend a pullback only when stress markers stack up clearly rather than from one ratio alone.
+
+${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
-    fitness: (payload) => `Analyse your fitness (CTL), fatigue (ATL), and training stress balance (TSB). Explain your current form state, why it looks that way, and what that means for training or racing in the next 3-10 days. Be explicit about whether you should push, maintain, absorb training, or freshen up, but phrase any pullback as a sensible reset rather than a reprimand.
+    fitness: (payload) => `Analyse your fitness (CTL), fatigue (ATL), and training stress balance (TSB). Explain your current form state, why it looks that way, and what that means for training or racing in the next 3-10 days. Be explicit about whether you should push, maintain, absorb training, or freshen up, but do not default to freshen-up advice unless the fatigue markers clearly support it.
+
+${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
-    volume: (payload) => `Analyse your weekly volume trend over the supplied analysis window, including ramp rate. Explain whether the current trajectory is sustainable, what is likely driving it relative to baseline, and what to do with volume over the next 1-2 weeks. Be explicit about whether to hold, cut back, or keep building, and if volume is down after a setback or illness, frame a gradual rebuild as a valid option.
+    volume: (payload) => `Analyse your weekly volume trend over the supplied analysis window, including ramp rate and training phase context. Explain whether the current trajectory is sustainable, what is likely driving it relative to baseline, and what to do with volume over the next 1-2 weeks. Be explicit about whether to hold, cut back, or keep building, but treat a rebuild or early build as a valid reason for moderate week-to-week increases. If volume is down after a setback or interruption, frame a gradual rebuild as a valid option rather than a problem.
+
+${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
-    'injury-risk': (payload) => `Your load metrics have crossed a risk threshold. Give a direct, calm coaching read on the risk pattern and a specific short-term plan to reduce risk. Base your entire response only on the numeric fields provided — load ratio, ramp rate, rest days, consecutive run days, and baseline load ratio. The "had extended training gap" field only indicates whether a 21+ day break appears in history; it does not indicate injury. Do not mention injury history, past injuries, illness, or any cause not directly supported by the numeric data. Do not speculate about why gaps occurred. Include a timeframe or condition for returning to normal training.
+    'injury-risk': (payload) => `Your load metrics have crossed a risk threshold. Give a direct, calm coaching read on the risk pattern and a specific short-term plan to reduce risk. Base your entire response only on the fields provided. The "had extended training gap" field only indicates whether a 21+ day break appears in history; it does not indicate injury. Do not mention injury history, past injuries, illness, or any cause not directly supported by the numeric data. Do not speculate about why gaps occurred. If Training Phase is "rebuild" and recent training history is shallow, acknowledge that risk metrics can be inflated by a low baseline and prefer controlled progression advice over alarmist pullback language unless the ramp is extreme.
+
+${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
-    'race-prediction': (payload) => `Analyse your VDOT trend, race time predictions, and current readiness context. Explain what your race potential looks like right now, why it is likely moving that way, and what to do over the next 7-14 days to respond. If current fatigue or freshness suggests caution, say so clearly but gently, and adjust the near-term goal accordingly.
+    'race-prediction': (payload) => `Analyse your VDOT trend, race time predictions, current readiness context, and training phase context. Explain what your race potential looks like right now, why it is likely moving that way, and what to do over the next 7-14 days to respond. If current fatigue or freshness suggests caution, say so clearly but gently, but avoid reflexively telling the runner to back off when they are clearly rebuilding or returning to structure.
+
+${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
     'run-detail': (payload) => `Analyse this specific run in the context of your recent history. Explain what was notable about it, why it matters for your current fitness or fatigue, and how your next 1-2 runs should change because of it. If it was a breakthrough, say how to build on it; if it was a warning sign, say how to absorb it without sounding severe or discouraging.
+
+${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
@@ -88,6 +113,22 @@ function formatPace(minutesPerKm: number): string {
     }
 
     return `${minutes}:${String(seconds).padStart(2, '0')}/km`;
+}
+
+function sanitizeInsightText(text: string): string {
+    const singleLine = text.replace(/\s+/g, ' ').trim();
+    const sentenceMatches = singleLine.match(/[^.!?]+[.!?]+/g) ?? [];
+    const baseText = sentenceMatches.length >= 2
+        ? sentenceMatches.slice(0, 2).join(' ').trim()
+        : singleLine;
+
+    const words = baseText.split(/\s+/).filter(Boolean);
+    if (words.length <= 85) {
+        return baseText;
+    }
+
+    const trimmed = words.slice(0, 85).join(' ').replace(/[,:;]+$/, '').trim();
+    return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
 export async function handleInsightRequest(request: Request, env: Env, origin: string, auth: Auth): Promise<Response> {
@@ -163,7 +204,7 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string,
     }
 
     const safePersona = ['gentle', 'neutral', 'blunt', 'drill'].includes(persona) ? persona : 'neutral';
-    const cacheKey = `insight:${userId}:${insightType}:${mostRecentActivityId}:${payloadHash}:${safePersona}`;
+    const cacheKey = `insight:${userId}:${insightType}:${mostRecentActivityId}:${payloadHash}:${safePersona}:${INSIGHT_PROMPT_VERSION}`;
 
     // Check cache unless force refresh
     if (!forceRefresh) {
@@ -250,10 +291,10 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string,
                 { role: 'system', content: PERSONA_PROMPTS[safePersona] ?? PERSONA_PROMPTS.neutral },
                 { role: 'user', content: userPrompt },
             ],
-            max_tokens: 180,
+            max_tokens: 120,
         }) as InsightModelResponse;
 
-        const insight = response.response;
+        const insight = response.response ? sanitizeInsightText(response.response) : undefined;
         if (!insight) {
             throw new Error('AI response missing insight text');
         }
@@ -287,7 +328,7 @@ async function handleDeleteCache(request: Request, env: Env, origin: string, use
     const safePersona = ['gentle', 'neutral', 'blunt', 'drill'].includes(persona) ? persona : 'neutral';
     const resolvedKey = key ?? (
         insightType && mostRecentActivityId
-            ? `insight:${userId}:${insightType}:${mostRecentActivityId}:${payloadHash}:${safePersona}`
+            ? `insight:${userId}:${insightType}:${mostRecentActivityId}:${payloadHash}:${safePersona}:${INSIGHT_PROMPT_VERSION}`
             : null
     );
 

@@ -18,6 +18,13 @@ export interface OverviewPayload {
     baselineAvgWeeklyKm: number;
     baselineLoadRatio: number;
     baselineEfficiency: number;
+    trainingPhase: 'rebuild' | 'build' | 'steady' | 'down-week';
+    phaseExplanation: string;
+    activeWeeksLast6: number;
+    longestGapDaysLast42: number;
+    recentRunDays14d: number;
+    currentWeeklyKm: number;
+    previousWeeklyKm: number;
 }
 
 export interface TrainingHealthPayload {
@@ -31,6 +38,13 @@ export interface TrainingHealthPayload {
     baselineMonotony: number;
     baselineStrain: number;
     baselineTrimp: number;
+    trainingPhase: 'rebuild' | 'build' | 'steady' | 'down-week';
+    phaseExplanation: string;
+    activeWeeksLast6: number;
+    longestGapDaysLast42: number;
+    recentRunDays14d: number;
+    currentWeeklyKm: number;
+    previousWeeklyKm: number;
 }
 
 export interface FitnessPayload {
@@ -51,6 +65,10 @@ export interface VolumePayload {
     rampRate3Week: number;
     baselineAvgWeeklyKm: number;
     baselinePeakWeeklyKm: number;
+    trainingPhase: 'rebuild' | 'build' | 'steady' | 'down-week';
+    phaseExplanation: string;
+    activeWeeksLast6: number;
+    longestGapDaysLast42: number;
 }
 
 export interface InjuryRiskPayload {
@@ -60,6 +78,12 @@ export interface InjuryRiskPayload {
     consecutiveRunDays: number;
     baselineLoadRatio: number;
     hadExtendedTrainingGap: string;
+    trainingPhase: 'rebuild' | 'build' | 'steady' | 'down-week';
+    phaseExplanation: string;
+    activeWeeksLast6: number;
+    longestGapDaysLast42: number;
+    currentWeeklyKm: number;
+    baselineAvgWeeklyKm: number;
 }
 
 export interface RacePredictionPayload {
@@ -81,6 +105,11 @@ export interface RacePredictionPayload {
     lastRaceDistanceKm?: number;
     lastRaceTimeMins?: number;
     lastRaceDate?: string;
+    trainingPhase?: 'rebuild' | 'build' | 'steady' | 'down-week';
+    phaseExplanation?: string;
+    activeWeeksLast6?: number;
+    longestGapDaysLast42?: number;
+    recentRunDays14d?: number;
 }
 
 export interface RunDetailPayload {
@@ -278,6 +307,116 @@ function getConsecutiveRunDays(activities: Activity[], anchorDate: Date): number
     return streak;
 }
 
+function getRunDaysInWindow(activities: Activity[], anchorDate: Date, days: number): Date[] {
+    const runDays = new Set(
+        getActivitiesInWindowEndingAt(activities, anchorDate, days).map((activity) =>
+            parseActivityLocalDate(activity.start_date_local).toDateString()
+        )
+    );
+
+    return Array.from(runDays)
+        .map((date) => new Date(date))
+        .sort((a, b) => a.getTime() - b.getTime());
+}
+
+function getLongestGapDaysInWindow(activities: Activity[], anchorDate: Date, days: number): number {
+    const { start, end } = getWindowBounds(anchorDate, days);
+    const runDays = getRunDaysInWindow(activities, anchorDate, days);
+
+    if (runDays.length === 0) {
+        return days;
+    }
+
+    let longestGap = Math.max(
+        0,
+        Math.floor((runDays[0].getTime() - start.getTime()) / 86400000)
+    );
+
+    for (let index = 1; index < runDays.length; index += 1) {
+        const diffDays = Math.floor((runDays[index].getTime() - runDays[index - 1].getTime()) / 86400000) - 1;
+        longestGap = Math.max(longestGap, diffDays);
+    }
+
+    const trailingGap = Math.max(
+        0,
+        Math.floor((end.getTime() - runDays[runDays.length - 1].getTime()) / 86400000)
+    );
+
+    return Math.max(longestGap, trailingGap);
+}
+
+interface TrainingPhaseContext {
+    trainingPhase: 'rebuild' | 'build' | 'steady' | 'down-week';
+    phaseExplanation: string;
+    activeWeeksLast6: number;
+    longestGapDaysLast42: number;
+    recentRunDays14d: number;
+    currentWeeklyKm: number;
+    previousWeeklyKm: number;
+}
+
+function deriveTrainingPhaseContext(
+    activities: Activity[],
+    anchorDate: Date,
+    baselineAvgWeeklyKm: number,
+    weeklyChange: number | null,
+): TrainingPhaseContext {
+    const recent42 = getActivitiesInWindowEndingAt(activities, anchorDate, 42);
+    const recent14RunDays = getRunDaysInWindow(activities, anchorDate, 14).length;
+    const activeWeeksLast6 = countActiveWeeks(recent42);
+    const longestGapDaysLast42 = getLongestGapDaysInWindow(activities, anchorDate, 42);
+    const weeklyTotals = getWeeklyTotalsEndingAt(activities, anchorDate, 6);
+    const currentWeeklyKm = weeklyTotals[weeklyTotals.length - 1] ?? 0;
+    const previousWeeklyKm = weeklyTotals[weeklyTotals.length - 2] ?? 0;
+    const lowBaseline = baselineAvgWeeklyKm > 0 && currentWeeklyKm <= baselineAvgWeeklyKm * 0.7;
+
+    if (longestGapDaysLast42 >= 7 || activeWeeksLast6 <= 3 || recent14RunDays <= 4) {
+        return {
+            trainingPhase: 'rebuild',
+            phaseExplanation: 'Recent gaps or a shallow recent baseline suggest you are rebuilding rather than overloading.',
+            activeWeeksLast6,
+            longestGapDaysLast42,
+            recentRunDays14d: recent14RunDays,
+            currentWeeklyKm: roundTo(currentWeeklyKm, 1),
+            previousWeeklyKm: roundTo(previousWeeklyKm, 1),
+        };
+    }
+
+    if ((weeklyChange ?? 0) <= -15 || lowBaseline) {
+        return {
+            trainingPhase: 'down-week',
+            phaseExplanation: 'Recent volume is below baseline, which looks more like consolidation or a down week than a hard push.',
+            activeWeeksLast6,
+            longestGapDaysLast42,
+            recentRunDays14d: recent14RunDays,
+            currentWeeklyKm: roundTo(currentWeeklyKm, 1),
+            previousWeeklyKm: roundTo(previousWeeklyKm, 1),
+        };
+    }
+
+    if ((weeklyChange ?? 0) >= 8 || (previousWeeklyKm > 0 && currentWeeklyKm > previousWeeklyKm * 1.08)) {
+        return {
+            trainingPhase: 'build',
+            phaseExplanation: 'This looks like a building phase, so some upward pressure in load can be appropriate if other markers stay stable.',
+            activeWeeksLast6,
+            longestGapDaysLast42,
+            recentRunDays14d: recent14RunDays,
+            currentWeeklyKm: roundTo(currentWeeklyKm, 1),
+            previousWeeklyKm: roundTo(previousWeeklyKm, 1),
+        };
+    }
+
+    return {
+        trainingPhase: 'steady',
+        phaseExplanation: 'Recent volume and routine look broadly stable relative to your baseline.',
+        activeWeeksLast6,
+        longestGapDaysLast42,
+        recentRunDays14d: recent14RunDays,
+        currentWeeklyKm: roundTo(currentWeeklyKm, 1),
+        previousWeeklyKm: roundTo(previousWeeklyKm, 1),
+    };
+}
+
 function hasExtendedGap(activities: Activity[], gapDays = 21): boolean {
     const runs = toRunActivities(activities);
     for (let index = 1; index < runs.length; index += 1) {
@@ -333,6 +472,13 @@ export function buildOverviewPayload(activities: Activity[], viewPeriod?: ViewPe
     const baselineLoadRatio = calculateAcwr(baselineActivities, anchorDate) ?? loadRatio;
     const efficiency = calculateEfficiencyIndex(windowActivities, anchorDate, Math.min(windowDays, 28)) ?? 0;
     const baselineEfficiency = calculateEfficiencyIndex(baselineActivities, anchorDate, 28) ?? efficiency;
+    const baselineAvgWeeklyKm = roundTo(getTotalDistanceKm(baselineActivities) / Math.max(180 / 7, 1), 1);
+    const phaseContext = deriveTrainingPhaseContext(
+        activities,
+        anchorDate,
+        baselineAvgWeeklyKm,
+        weeklyRamp.rampPercent ?? null,
+    );
 
     return {
         runCount: windowActivities.length,
@@ -343,9 +489,10 @@ export function buildOverviewPayload(activities: Activity[], viewPeriod?: ViewPe
         routineScore: calculateConsistencyScore(windowActivities, anchorDate),
         efficiencyMPerBeat: roundTo(efficiency, 2),
         avgOutingMins: roundTo(getAverageOutingMinutes(windowActivities), 1),
-        baselineAvgWeeklyKm: roundTo(getTotalDistanceKm(baselineActivities) / Math.max(180 / 7, 1), 1),
+        baselineAvgWeeklyKm,
         baselineLoadRatio: roundTo(baselineLoadRatio, 2),
         baselineEfficiency: roundTo(baselineEfficiency, 2),
+        ...phaseContext,
     };
 }
 
@@ -359,6 +506,14 @@ export function buildTrainingHealthPayload(activities: Activity[], viewPeriod?: 
     const chronicRuns = getActivitiesInWindowEndingAt(windowActivities, anchorDate, Math.min(42, windowDays));
     const totalTrimp = windowActivities.reduce((sum, activity) => sum + calculateActivityTRIMP(activity, maxHR, 60), 0);
     const baselineTrimp = baselineActivities.reduce((sum, activity) => sum + calculateActivityTRIMP(activity, maxHR, 60), 0);
+    const baselineAvgWeeklyKm = getTotalDistanceKm(baselineActivities) / Math.max(windowDays / 7, 1);
+    const weeklyRamp = calculateWeeklyRamp(windowActivities, anchorDate);
+    const phaseContext = deriveTrainingPhaseContext(
+        activities,
+        anchorDate,
+        baselineAvgWeeklyKm,
+        weeklyRamp.rampPercent ?? null,
+    );
 
     const acuteLoad = getTotalDistanceKm(acuteRuns);
     const chronicLoad = chronicRuns.length > 0 ? getTotalDistanceKm(chronicRuns) / Math.max(Math.min(42, windowDays) / 7, 1) : 0;
@@ -374,6 +529,7 @@ export function buildTrainingHealthPayload(activities: Activity[], viewPeriod?: 
         baselineMonotony: roundTo(calculateMonotony(baselineActivities, baselineAnchor, maxHR), 2),
         baselineStrain: Math.round(calculateStrainScore(baselineActivities, baselineAnchor, maxHR)),
         baselineTrimp: Math.round(baselineTrimp),
+        ...phaseContext,
     };
 }
 
@@ -438,6 +594,12 @@ export function buildVolumePayload(activities: Activity[], viewPeriod?: ViewPeri
         ? baselineWeeklyKm.reduce((sum, value) => sum + value, 0) / baselineWeeklyKm.length
         : avgWeeklyKm;
     const baselinePeakWeeklyKm = baselineWeeklyKm.length > 0 ? Math.max(...baselineWeeklyKm) : maxWeeklyKm;
+    const phaseContext = deriveTrainingPhaseContext(
+        activities,
+        anchorDate,
+        baselineAvgWeeklyKm,
+        weekOverWeekChange,
+    );
 
     return {
         recentWeeklyKm,
@@ -447,6 +609,7 @@ export function buildVolumePayload(activities: Activity[], viewPeriod?: ViewPeri
         rampRate3Week: roundTo(get3WeekRampRate(recentWeeklyKm), 1),
         baselineAvgWeeklyKm: roundTo(baselineAvgWeeklyKm, 1),
         baselinePeakWeeklyKm: roundTo(baselinePeakWeeklyKm, 1),
+        ...phaseContext,
     };
 }
 
@@ -463,7 +626,19 @@ export function buildInjuryRiskPayload(activities: Activity[], windowDays = 30):
     const baselineAnchor = getPriorWindowEnd(anchorDate, windowDays);
     const baselineActivities = getPriorWindowActivities(activities, anchorDate, windowDays);
     const baselineLoadRatio = calculateAcwr(baselineActivities, baselineAnchor) ?? loadRatio;
-    const shouldShow = loadRatio > 1.5 || rampRate3Week > 30;
+    const baselineAvgWeeklyKm = getTotalDistanceKm(baselineActivities) / Math.max(windowDays / 7, 1);
+    const phaseContext = deriveTrainingPhaseContext(
+        activities,
+        anchorDate,
+        baselineAvgWeeklyKm,
+        rampRate3Week,
+    );
+    const enoughHistory = phaseContext.activeWeeksLast6 >= 4 && phaseContext.recentRunDays14d >= 5;
+    const shouldShow = enoughHistory && (
+        loadRatio > 1.55 ||
+        rampRate3Week > 35 ||
+        (loadRatio > 1.45 && rampRate3Week > 20)
+    );
 
     return {
         loadRatio: roundTo(loadRatio, 2),
@@ -471,9 +646,11 @@ export function buildInjuryRiskPayload(activities: Activity[], windowDays = 30):
         recentRestDays: Math.max(0, 14 - daysWithActivity),
         consecutiveRunDays: getConsecutiveRunDays(activities, anchorDate),
         baselineLoadRatio: roundTo(baselineLoadRatio, 2),
+        baselineAvgWeeklyKm: roundTo(baselineAvgWeeklyKm, 1),
         hadExtendedTrainingGap: hasExtendedGap(activities)
             ? 'yes — one or more gaps of 21+ days exist in training history (cause unknown)'
             : 'no gaps of 21+ days detected',
+        ...phaseContext,
         shouldShow,
     };
 }
@@ -505,6 +682,14 @@ export function buildRacePredictionPayload(activities: Activity[], maxHR = 185):
     const daysWithActivity = new Set(
         last14Days.map((activity) => parseActivityLocalDate(activity.start_date_local).toDateString())
     ).size;
+    const weeklyRamp = calculateWeeklyRamp(last90Days, endDate);
+    const baselineAvgWeeklyKm = getTotalDistanceKm(prior90Days) / Math.max(90 / 7, 1);
+    const phaseContext = deriveTrainingPhaseContext(
+        activities,
+        endDate,
+        baselineAvgWeeklyKm,
+        weeklyRamp.rampPercent ?? null,
+    );
 
     const priorResult = calcVDOTFromActivities(prior90Days);
     const vdot = currentResult.vdot;
@@ -540,6 +725,7 @@ export function buildRacePredictionPayload(activities: Activity[], maxHR = 185):
         lastRaceDistanceKm: latestRace ? roundTo(latestRace.distance / 1000, 1) : undefined,
         lastRaceTimeMins: latestRace ? Math.round(latestRace.moving_time / 60) : undefined,
         lastRaceDate: latestRace ? latestRace.start_date_local.split('T')[0] : undefined,
+        ...phaseContext,
     };
 }
 
