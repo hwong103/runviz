@@ -15,7 +15,7 @@ const PERSONA_PROMPTS: Record<string, string> = {
 };
 
 const OUTPUT_RULES = `Hard output rules:
-- Return exactly 2 sentences and fewer than 85 words total.
+- Return exactly 2 sentences and aim for 90-110 words total.
 - No bullet points, headers, markdown, labels, or line breaks.
 - Do not prescribe exact run counts, routine scores, pace targets, percentage cuts, or rest-day counts unless that number is directly supported by the provided data.
 - Prefer hold, steady, gradual rebuild, or modest consolidation guidance when the data is mixed.
@@ -54,7 +54,7 @@ ${OUTPUT_RULES}
 Data:
 ${formatPayload(payload)}`,
 
-    'injury-risk': (payload) => `Your load metrics have crossed a risk threshold. Give a direct, calm coaching read on the risk pattern and a specific short-term plan to reduce risk. Base your entire response only on the fields provided. The "had extended training gap" field only indicates whether a 21+ day break appears in history; it does not indicate injury. Do not mention injury history, past injuries, illness, or any cause not directly supported by the numeric data. Do not speculate about why gaps occurred. If Training Phase is "rebuild" and recent training history is shallow, acknowledge that risk metrics can be inflated by a low baseline and prefer controlled progression advice over alarmist pullback language unless the ramp is extreme.
+    'injury-risk': (payload) => `Analyse the current risk pattern calmly and give a specific short-term plan to reduce risk. Base your entire response only on the fields provided. The "had extended training gap" field only indicates whether a 21+ day break appears in history; it does not indicate injury. Do not mention injury history, past injuries, illness, or any cause not directly supported by the numeric data. Do not speculate about why gaps occurred. If Training Phase is "rebuild" and recent training history is shallow, acknowledge that risk metrics can be inflated by a low baseline and prefer controlled progression advice over alarmist pullback language unless the ramp is extreme. When rebuild context is present, do not open by saying the runner has crossed a risk threshold.
 
 ${OUTPUT_RULES}
 
@@ -117,17 +117,21 @@ function formatPace(minutesPerKm: number): string {
 
 function sanitizeInsightText(text: string): string {
     const singleLine = text.replace(/\s+/g, ' ').trim();
-    const sentenceMatches = singleLine.match(/[^.!?]+[.!?]+/g) ?? [];
-    const baseText = sentenceMatches.length >= 2
-        ? sentenceMatches.slice(0, 2).join(' ').trim()
-        : singleLine;
+    const sentenceMatches = singleLine.match(/.+?(?<!\d)[.!?](?!\d)(?:\s+|$)/g) ?? [];
+    let baseText = singleLine;
+
+    if (sentenceMatches.length >= 2) {
+        baseText = sentenceMatches.slice(0, 2).join(' ').trim();
+    } else if (sentenceMatches.length === 1) {
+        baseText = sentenceMatches[0].trim();
+    }
 
     const words = baseText.split(/\s+/).filter(Boolean);
-    if (words.length <= 85) {
+    if (words.length <= 110) {
         return baseText;
     }
 
-    const trimmed = words.slice(0, 85).join(' ').replace(/[,:;]+$/, '').trim();
+    const trimmed = words.slice(0, 110).join(' ').replace(/[,:;]+$/, '').trim();
     return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
@@ -291,7 +295,7 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string,
                 { role: 'system', content: PERSONA_PROMPTS[safePersona] ?? PERSONA_PROMPTS.neutral },
                 { role: 'user', content: userPrompt },
             ],
-            max_tokens: 120,
+            max_tokens: 170,
         }) as InsightModelResponse;
 
         const insight = response.response ? sanitizeInsightText(response.response) : undefined;
