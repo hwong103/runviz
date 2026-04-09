@@ -23,7 +23,7 @@ const OUTPUT_RULES = `Hard output rules:
 - If Training Phase is "rebuild" or "build", treat some load elevation as expected from a low or rising baseline and only recommend pulling back when multiple red flags agree.
 - If Training Phase is "down-week", treat reduced volume as intentional consolidation unless the provided data clearly says otherwise.`;
 
-const INSIGHT_PROMPT_VERSION = 'v6';
+const INSIGHT_PROMPT_VERSION = 'v7';
 
 const PERSONA_NUDGES: Record<string, string> = {
     gentle: `Persona-specific guidance:
@@ -165,6 +165,9 @@ const PERSONA_FALLBACK_ACTIONS: Record<string, string> = {
     drill: 'Hold the current load steady and stop adding strain for the next few days.',
 };
 
+const ACTION_VERB_PATTERN = /\b(hold|keep|ease|repeat|stay|prioritize|focus|maintain|stabilize|reduce|stop|reassess)\b/i;
+const COMMAND_START_PATTERN = /^(Hold|Keep|Stabilize|Stop|Reduce|Maintain|Repeat|Ease|Back off|Stay)\b/i;
+
 function normalizeSentence(sentence: string): string {
     const cleaned = sentence.replace(/\s+/g, ' ').trim();
     if (!cleaned) {
@@ -237,11 +240,19 @@ function needsPersonaFallback(sentence: string, persona: string, allowedTokens: 
     }
 
     if (persona === 'gentle') {
-        return !/\b(keep|hold|ease|repeat|stay|prioritize|focus|maintain)\b/i.test(sentence);
+        return !ACTION_VERB_PATTERN.test(sentence);
+    }
+
+    if (persona === 'neutral') {
+        return !ACTION_VERB_PATTERN.test(sentence);
+    }
+
+    if (persona === 'blunt') {
+        return !COMMAND_START_PATTERN.test(sentence.trim());
     }
 
     if (persona === 'drill') {
-        return !/^(Hold|Keep|Stabilize|Stop|Reduce|Maintain|Repeat|Ease|Back off|Stay)\b/i.test(sentence.trim());
+        return !COMMAND_START_PATTERN.test(sentence.trim());
     }
 
     return false;
