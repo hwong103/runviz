@@ -23,7 +23,27 @@ const OUTPUT_RULES = `Hard output rules:
 - If Training Phase is "rebuild" or "build", treat some load elevation as expected from a low or rising baseline and only recommend pulling back when multiple red flags agree.
 - If Training Phase is "down-week", treat reduced volume as intentional consolidation unless the provided data clearly says otherwise.`;
 
-const INSIGHT_PROMPT_VERSION = 'v2';
+const INSIGHT_PROMPT_VERSION = 'v3';
+
+const PERSONA_NUDGES: Record<string, string> = {
+    gentle: `Persona-specific guidance:
+- Sound warm, calm, and human rather than analytical.
+- Lead with one thing that is going right or understandable in the data.
+- End with one concrete low-stress action that feels manageable over the next few days.
+- Do not hedge so much that the advice becomes vague.`,
+    neutral: `Persona-specific guidance:
+- Prioritize a crisp explanation of what the key metric pattern means.
+- End with one clear practical coaching adjustment and a short timeframe.
+- Keep the tone measured and useful rather than motivational.`,
+    blunt: `Persona-specific guidance:
+- Be concise and unsentimental, but still specific.
+- Name the main issue plainly, then give one direct instruction.
+- Do not soften the message with reassurance or filler.`,
+    drill: `Persona-specific guidance:
+- Sound demanding and commanding, not merely blunt.
+- Frame the second sentence as an order or standard to meet.
+- Use sharper language than blunt, but do not invent extra risk or exaggerate the data.`,
+};
 
 const INSIGHT_PROMPTS: Record<string, (payload: Record<string, unknown>) => string> = {
     overview: (payload) => `Analyse your current training block - specifically your load ratio, routine consistency, weekly change trend, aerobic efficiency, and training phase context. Explain what state the block is in, what is most likely driving that state, and what you should do over the next 7-10 days. If the block is unstable, guide the runner toward a steadier approach without sounding harsh. If Training Phase is "rebuild" or "build", do not treat a moderate rise from a low baseline as a problem by itself. Only recommend pulling back when at least two red flags agree, such as very high load ratio plus worsening efficiency, or a steep ramp plus poor routine. If the data is mixed, prefer hold-steady or gradual rebuild guidance over cutback advice. Do not just restate the numbers; interpret them into a plan.
@@ -33,7 +53,7 @@ ${OUTPUT_RULES}
 Data:
 ${formatPayload(payload)}`,
 
-    'training-health': (payload) => `Analyse your training stress, monotony, strain, load ratio, and training phase context. Explain what they suggest about stress distribution, why that pattern is likely happening, and what change to make in the next 7 days. Give one concrete coaching instruction about recovery, intensity, or session spacing. Do not assume that higher stress automatically means overload: if Training Phase is "rebuild" or "build", acknowledge when the pattern can simply reflect a return to structure or a planned increase. Recommend a pullback only when stress markers stack up clearly rather than from one ratio alone.
+    'training-health': (payload) => `Analyse your training stress, monotony, strain, load ratio, and training phase context. Explain what they suggest about stress distribution, why that pattern is likely happening, and what change to make in the next 7 days. Give one concrete coaching instruction about recovery, intensity, or session spacing. Do not assume that higher stress automatically means overload: if Training Phase is "rebuild" or "build", acknowledge when the pattern can simply reflect a return to structure or a planned increase. Recommend a pullback only when stress markers stack up clearly rather than from one ratio alone. Avoid made-up precision like exact percentage cuts or recovery prescriptions unless the data directly supports them.
 
 ${OUTPUT_RULES}
 
@@ -54,7 +74,7 @@ ${OUTPUT_RULES}
 Data:
 ${formatPayload(payload)}`,
 
-    'injury-risk': (payload) => `Analyse the current risk pattern calmly and give a specific short-term plan to reduce risk. Base your entire response only on the fields provided. The "had extended training gap" field only indicates whether a 21+ day break appears in history; it does not indicate injury. Do not mention injury history, past injuries, illness, or any cause not directly supported by the numeric data. Do not speculate about why gaps occurred. If Training Phase is "rebuild" and recent training history is shallow, acknowledge that risk metrics can be inflated by a low baseline and prefer controlled progression advice over alarmist pullback language unless the ramp is extreme. When rebuild context is present, do not open by saying the runner has crossed a risk threshold.
+    'injury-risk': (payload) => `Analyse the current risk pattern calmly and give a specific short-term plan to reduce risk. Base your entire response only on the fields provided. The "had extended training gap" field only indicates whether a 21+ day break appears in history; it does not indicate injury. Do not mention injury history, past injuries, illness, or any cause not directly supported by the numeric data. Do not speculate about why gaps occurred. If Training Phase is "rebuild" and recent training history is shallow, acknowledge that risk metrics can be inflated by a low baseline and prefer controlled progression advice over alarmist pullback language unless the ramp is extreme. When rebuild context is present, do not open by saying the runner has crossed a risk threshold. Prefer "hold steady and stabilize" over "cut back" when the risk appears to come from a shallow baseline rather than stacked warning signs.
 
 ${OUTPUT_RULES}
 
@@ -285,6 +305,7 @@ async function handleGenerateInsight(request: Request, env: Env, origin: string,
 
     const userPrompt = [
         INSIGHT_PROMPTS[insightType](payload),
+        PERSONA_NUDGES[safePersona] ?? PERSONA_NUDGES.neutral,
         similarContext,
         weekHistoryContext,
     ].filter(Boolean).join('\n\n');
