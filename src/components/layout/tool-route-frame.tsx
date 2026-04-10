@@ -19,8 +19,8 @@ export function ToolRouteFrame({
   children,
   headerActions,
 }: ToolRouteFrameProps) {
-  const { athlete, isAuthenticated, loading, logout } = useAuth()
-  const { syncing, sync, lastSync } = useActivities(isAuthenticated)
+  const { athlete, isAuthenticated, needsStravaConnect, loading, logout } = useAuth()
+  const { syncing, sync, lastSync } = useActivities()
   const [currentTime, setCurrentTime] = useState(() => Date.now())
 
   const athleteLabel = athlete
@@ -61,7 +61,7 @@ export function ToolRouteFrame({
               : "Browsing without an account"
       }
       syncing={syncing}
-      onSync={isAuthenticated ? () => sync({ forceFull: true }) : undefined}
+      onSync={isAuthenticated && !needsStravaConnect ? () => sync({ forceFull: true }) : undefined}
       onLogout={isAuthenticated ? logout : undefined}
       headerActions={headerActions}
     >

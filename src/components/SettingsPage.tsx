@@ -41,7 +41,7 @@ export function SettingsPage() {
     connectStrava,
     logout,
   } = useAuth()
-  const { syncing, sync } = useActivities(isAuthenticated && !needsStravaConnect)
+  const { syncing, sync } = useActivities()
   const { persona, setPersona } = useCoachPersona()
   const { maxHR, isDefault, setMaxHR, clearMaxHR } = useMaxHR()
   const [clientId, setClientId] = useState("")
@@ -153,7 +153,7 @@ export function SettingsPage() {
       athleteImage={athlete?.profile ?? user?.image ?? null}
       statusText={statusText}
       syncing={syncing}
-      onSync={isAuthenticated ? () => sync({ forceFull: true }) : undefined}
+      onSync={isAuthenticated && !needsStravaConnect ? () => sync({ forceFull: true }) : undefined}
       onLogout={isAuthenticated ? logout : undefined}
     >
       <div className="mx-auto max-w-[1120px] space-y-4">
