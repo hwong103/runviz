@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight, Bot, Check, Copy, Download } from 'lucide-react';
 import { PERSONAS, useCoachPersona } from '@/hooks/useCoachPersona';
 import { useMaxHR } from '../hooks/useMaxHR';
-import { auth as authApi } from '../services/api';
+import { auth as authApi } from '../services/api/authApi';
 
 const reveal = (delay: number): CSSProperties => ({ '--rv-delay': `${delay}ms` } as CSSProperties);
 

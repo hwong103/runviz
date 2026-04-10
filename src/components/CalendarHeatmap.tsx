@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import type { Activity } from '../types';
-import { isRun } from '../types';
+import type { Activity } from '../types/activity';
+import { isRun } from '../types/activity';
 import { format, parseISO } from 'date-fns';
 
 interface CalendarHeatmapProps {

@@ -14,7 +14,7 @@ import {
 } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 import { TrendingUp } from 'lucide-react';
-import type { Activity } from '../types';
+import type { Activity } from '../types/activity';
 import { computeWeeklyVolume } from '../analytics/weeklyVolume';
 import { useChartTheme } from '../hooks/useChartTheme';
 

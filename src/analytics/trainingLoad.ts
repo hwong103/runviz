@@ -5,7 +5,8 @@
  * Replicates Strava's paywalled training load feature.
  */
 
-import type { TrainingLoadMetrics, Activity } from '../types';
+import type { TrainingLoadMetrics } from '../types/analytics';
+import type { Activity } from '../types/activity';
 
 function toLocalDateKey(date: Date): string {
     const year = date.getFullYear();

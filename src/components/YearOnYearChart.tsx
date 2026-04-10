@@ -12,7 +12,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { BarChart2 } from 'lucide-react';
-import type { Activity } from '../types';
+import type { Activity } from '../types/activity';
 import { computeYearOnYear } from '../analytics/yearOnYear';
 import { useChartTheme } from '../hooks/useChartTheme';
 

@@ -28,7 +28,7 @@ import { useActivities } from "@/hooks/useActivities"
 import { useAuth } from "@/hooks/useAuth"
 import { PERSONAS, useCoachPersona } from "@/hooks/useCoachPersona"
 import { useMaxHR } from "@/hooks/useMaxHR"
-import { auth as authApi } from "@/services/api"
+import { auth as authApi } from "@/services/api/authApi"
 
 export function SettingsPage() {
   const {

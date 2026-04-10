@@ -15,7 +15,7 @@ import {
 import { Chart } from 'react-chartjs-2';
 import { format, subDays, startOfDay, eachDayOfInterval, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
-import type { Activity } from '../types';
+import type { Activity } from '../types/activity';
 import { parseActivityLocalDate } from '../utils/activityDate';
 import { useChartTheme } from '../hooks/useChartTheme';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';

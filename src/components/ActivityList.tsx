@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
-import type { Activity, Gear } from '../types';
+import type { Activity } from '../types/activity';
+import type { Gear } from '../types/gear';
 import { formatDuration } from '../analytics/heartRateZones';
 import { calculateActivityTRIMP } from '../analytics/trainingLoad';
 import { format, formatDistanceToNow } from 'date-fns';

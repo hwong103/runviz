@@ -25,9 +25,10 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from './components/ui/dropdown-menu';
-import type { Activity, Gear } from './types';
-import { isRun } from './types';
-import { gear as gearApi } from './services/api';
+import type { Activity } from './types/activity';
+import { isRun } from './types/activity';
+import type { Gear } from './types/gear';
+import { gear as gearApi } from './services/api/gearApi';
 import { parseActivityLocalDate } from './utils/activityDate';
 import {
   DASHBOARD_WORKSPACE_META,

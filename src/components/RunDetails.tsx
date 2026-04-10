@@ -24,11 +24,13 @@ import {
     Mountain,
     X,
 } from 'lucide-react';
-import type { Activity, ActivityStreams, Gear } from '../types';
-import { isRun } from '../types';
+import type { Activity, ActivityStreams } from '../types/activity';
+import { isRun } from '../types/activity';
+import type { Gear } from '../types/gear';
 import { format } from 'date-fns';
-import { activities as activitiesApi, gear as gearApi } from '../services/api';
-import type { SimilarRunResult } from '../services/api';
+import { activities as activitiesApi } from '../services/api/activitiesApi';
+import { gear as gearApi } from '../services/api/gearApi';
+import type { SimilarRunResult } from '../services/api/memoryApi';
 import { useChartTheme } from '../hooks/useChartTheme';
 import { useSimilarRuns } from '../hooks/useSimilarRuns';
 import { parseActivityLocalDate } from '../utils/activityDate';

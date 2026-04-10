@@ -1,6 +1,8 @@
 import { lazy } from 'react'
 import type { ComponentType } from 'react'
 
+// This helper must accept lazily loaded components with arbitrary props.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ModuleLoader<T extends ComponentType<any>> = () => Promise<{ default: T }>
 
 function isRecoverableChunkError(error: unknown) {
@@ -18,6 +20,7 @@ function isRecoverableChunkError(error: unknown) {
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function lazyWithRetry<T extends ComponentType<any>>(
   loader: ModuleLoader<T>,
   retryKey: string,

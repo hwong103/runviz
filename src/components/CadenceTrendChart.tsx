@@ -11,7 +11,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { Radio } from 'lucide-react';
-import type { Activity } from '../types';
+import type { Activity } from '../types/activity';
 import { extractCadenceHistory } from '../analytics/cadence';
 import { useChartTheme } from '../hooks/useChartTheme';
 

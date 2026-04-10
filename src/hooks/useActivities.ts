@@ -11,10 +11,11 @@ import {
 } from "react"
 
 import { useAuth } from "@/hooks/useAuth"
-import { activities as activitiesApi, memory as memoryApi } from "@/services/api"
+import { activities as activitiesApi } from "@/services/api/activitiesApi"
+import { memory as memoryApi } from "@/services/api/memoryApi"
 import * as cache from "@/services/cache"
-import type { Activity } from "@/types"
-import { isRun } from "@/types"
+import type { Activity } from "@/types/activity"
+import { isRun } from "@/types/activity"
 import { parseActivityLocalDate } from "@/utils/activityDate"
 
 interface SyncState {

@@ -12,7 +12,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, startOfDay, format, parseISO } from 'date-fns';
-import type { Activity } from '../types';
+import type { Activity } from '../types/activity';
 import {
     activitiesToDailyLoads,
     calculateTrainingLoadHistory,

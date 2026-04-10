@@ -12,10 +12,12 @@ import {
     TrendingUp,
 } from 'lucide-react';
 import { useActivities } from '../hooks/useActivities';
-import { activities as activitiesApi, auth } from '../services/api';
+import { activities as activitiesApi } from '../services/api/activitiesApi';
+import { auth } from '../services/api/authApi';
 import { saveFormAnalysis, listFormAnalyses } from '../services/cache';
-import type { Activity, FormAnalysis, FormVideo } from '../types';
-import { isRun } from '../types';
+import type { Activity } from '../types/activity';
+import { isRun } from '../types/activity';
+import type { FormAnalysis, FormVideo } from '../types/formAnalysis';
 import { parseActivityLocalDate } from '../utils/activityDate';
 import { format } from 'date-fns';
 import { Badge } from './ui/Badge';

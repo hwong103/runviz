@@ -2,8 +2,9 @@ import { calculateAcwr, calculateConsistencyScore, calculateEfficiencyIndex, cal
 import { activitiesToDailyLoads, calculateActivityTRIMP, calculateTrainingLoadHistory } from '@/analytics/trainingLoad';
 import { calcVDOTFromActivities } from '@/analytics/vdot';
 import type { ViewPeriod } from '@/lib/dashboard';
-import type { Activity, TrainingLoadMetrics } from '@/types';
-import { isRun } from '@/types';
+import type { Activity } from '@/types/activity';
+import type { TrainingLoadMetrics } from '@/types/analytics';
+import { isRun } from '@/types/activity';
 import { parseActivityLocalDate } from '@/utils/activityDate';
 
 export interface OverviewPayload {

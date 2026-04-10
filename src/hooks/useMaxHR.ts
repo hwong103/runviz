@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { auth as authApi } from '@/services/api';
+import { auth as authApi } from '@/services/api/authApi';
 
 const STORAGE_KEY = 'runviz_max_hr';
 const OWNER_STORAGE_KEY = 'runviz_max_hr_owner';

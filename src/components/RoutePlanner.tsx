@@ -14,8 +14,9 @@ import {
     Mountain,
     Clock,
 } from 'lucide-react';
-import { routes as routesApi, geocoding } from '../services/api';
-import type { GeneratedRoute, RoutePoint } from '../types';
+import { geocoding } from '../services/api/geocodingApi';
+import { routes as routesApi } from '../services/api/routesApi';
+import type { GeneratedRoute, RoutePoint } from '../types/route';
 import { useTheme } from '../hooks/useTheme';
 import { Button } from './ui/button';
 import { Input } from './ui/input';

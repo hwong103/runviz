@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { auth } from '../services/api';
+import { auth } from '../services/api/authApi';
 import { syncMaxHRForUser } from './useMaxHR';
 import * as cache from '../services/cache';
-import type { Athlete } from '../types';
+import type { Athlete } from '../types/athlete';
 
 interface AuthState {
     isAuthenticated: boolean;

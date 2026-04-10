@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Footprints } from 'lucide-react';
-import type { Activity, Gear } from '../types';
-import { gear as gearApi } from '../services/api';
+import type { Activity } from '../types/activity';
+import type { Gear } from '../types/gear';
+import { gear as gearApi } from '../services/api/gearApi';
 import { Badge } from './ui/Badge';
 import { BrandLogo } from './ui/BrandLogo';
 import { SectionHeader } from './ui/SectionHeader';

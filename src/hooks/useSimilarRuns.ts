@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { memory as memoryApi, type SimilarRunResult } from '../services/api';
+import { memory as memoryApi, type SimilarRunResult } from '../services/api/memoryApi';
 
 interface UseSimilarRunsOptions {
     activityId: number;

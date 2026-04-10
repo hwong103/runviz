@@ -2,7 +2,8 @@
 
 import { openDB } from 'idb';
 import type { DBSchema, IDBPDatabase } from 'idb';
-import type { Activity, ActivityStreams, FormAnalysis } from '../types';
+import type { Activity, ActivityStreams } from '../types/activity';
+import type { FormAnalysis } from '../types/formAnalysis';
 
 interface RunVizDB extends DBSchema {
     activities: {

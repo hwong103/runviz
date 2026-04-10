@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { startOfDay, subDays } from 'date-fns';
-import type { Activity } from '../types';
-import { isRun } from '../types';
+import type { Activity } from '../types/activity';
+import { isRun } from '../types/activity';
 import { calcVDOTFromActivities } from '../analytics/vdot';
 import {
     activitiesToDailyLoads,

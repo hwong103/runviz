@@ -10,7 +10,7 @@ import {
 } from 'chart.js';
 import { Scatter } from 'react-chartjs-2';
 import { Footprints } from 'lucide-react';
-import type { Activity } from '../types';
+import type { Activity } from '../types/activity';
 import { useChartTheme } from '../hooks/useChartTheme';
 
 ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, ScatterController);

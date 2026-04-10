@@ -21,7 +21,7 @@ import {
     startOfYear,
     subDays,
 } from 'date-fns';
-import type { Activity } from '../types';
+import type { Activity } from '../types/activity';
 import {
     calculateAcwr,
     calculateConsistencyScore,
