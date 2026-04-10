@@ -6,13 +6,11 @@ import {
   HeartPulse,
   LogOut,
   MoonStar,
-  Palette,
   Settings2,
   ShieldCheck,
   Sparkles,
 } from "lucide-react"
 
-import { ThemeToggle } from "@/components/ThemeToggle"
 import { AppShell } from "@/components/layout/app-shell"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -26,11 +24,10 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
+import { useActivities } from "@/hooks/useActivities"
 import { useAuth } from "@/hooks/useAuth"
 import { PERSONAS, useCoachPersona } from "@/hooks/useCoachPersona"
 import { useMaxHR } from "@/hooks/useMaxHR"
-import { useTheme } from "@/hooks/useTheme"
 import { auth as authApi } from "@/services/api"
 
 export function SettingsPage() {
@@ -44,7 +41,7 @@ export function SettingsPage() {
     connectStrava,
     logout,
   } = useAuth()
-  const { preference, resolved } = useTheme()
+  const { syncing, sync } = useActivities()
   const { persona, setPersona } = useCoachPersona()
   const { maxHR, isDefault, setMaxHR, clearMaxHR } = useMaxHR()
   const [clientId, setClientId] = useState("")
@@ -142,133 +139,26 @@ export function SettingsPage() {
 
   const statusText = loading
     ? "Loading account"
+    : syncing
+      ? "Syncing now"
     : isAuthenticated
       ? "Signed in"
       : "Browsing without an account"
-
-  const themeLabel =
-    preference === "system"
-      ? `System (${resolved})`
-      : preference === "dark"
-        ? "Dark"
-        : "Light"
-
   return (
     <AppShell
       eyebrow="Settings"
-      title="Account and workspace settings"
-      subtitle="Manage appearance, account access, and service connections from one dedicated page."
+      title="Account, coaching, and connection settings"
+      subtitle="Manage access, training preferences, and Strava setup from one dedicated page."
       athleteName={athleteLabel}
       athleteImage={athlete?.profile ?? user?.image ?? null}
       statusText={statusText}
+      syncing={syncing}
+      onSync={isAuthenticated && !needsStravaConnect ? () => sync({ forceFull: true }) : undefined}
       onLogout={isAuthenticated ? logout : undefined}
     >
       <div className="mx-auto max-w-[1120px] space-y-4">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-          <Card className="border border-border/70 bg-background/80">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings2 className="size-4 text-muted-foreground" />
-                Account
-              </CardTitle>
-              <CardDescription>
-                Identity and session controls for this RunViz workspace.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Avatar size="lg">
-                  {athlete?.profile || user?.image ? (
-                    <AvatarImage
-                      src={athlete?.profile ?? user?.image ?? undefined}
-                      alt={athleteLabel}
-                    />
-                  ) : null}
-                  <AvatarFallback>
-                    {athleteLabel.slice(0, 1).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <p className="truncate text-base font-medium text-foreground">
-                    {athleteLabel}
-                  </p>
-                  <p className="truncate text-sm text-muted-foreground">
-                    {user?.email ?? "No email available"}
-                  </p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-border/70 bg-muted/30 p-4">
-                  <p className="text-sm font-medium text-foreground">Session</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {statusText}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-border/70 bg-muted/30 p-4">
-                  <p className="text-sm font-medium text-foreground">Workspace</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Shared shell active across dashboard, planning, form, and settings.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="justify-between gap-3">
-              {isAuthenticated ? (
-                <>
-                  <span className="text-sm text-muted-foreground">
-                    Logging out clears the local activity cache on this device.
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={logout}
-                    className="shrink-0 gap-2"
-                  >
-                    <LogOut className="size-4" />
-                    Logout
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <span className="text-sm text-muted-foreground">
-                    Sign in to save your setup and sync your Strava data.
-                  </span>
-                  <Button size="sm" onClick={login} className="shrink-0 gap-2">
-                    <Sparkles className="size-4" />
-                    Sign in
-                  </Button>
-                </>
-              )}
-            </CardFooter>
-          </Card>
-
+        <div className="grid gap-4 lg:grid-cols-2">
           <div className="grid gap-4">
-            <Card className="border border-border/70 bg-background/80">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="size-4 text-muted-foreground" />
-                  Appearance
-                </CardTitle>
-                <CardDescription>
-                  Choose how RunViz renders across light, dark, and system themes.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="rounded-xl border border-border/70 bg-muted/30 p-4">
-                  <p className="text-sm font-medium text-foreground">Current theme</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {themeLabel}
-                  </p>
-                </div>
-                <div className="max-w-[220px]">
-                  <ThemeToggle />
-                </div>
-              </CardContent>
-            </Card>
-
             <Card className="border border-border/70 bg-background/80">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -316,10 +206,10 @@ export function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <HeartPulse className="size-4 text-muted-foreground" />
-                  Training
+                  Heart rate
                 </CardTitle>
                 <CardDescription>
-                  Calibrate metrics that depend on your physiology.
+                  Calibrate the inputs that drive your training metrics.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -390,7 +280,9 @@ export function SettingsPage() {
                 </Button>
               </CardFooter>
             </Card>
+          </div>
 
+          <div className="grid gap-4">
             <Card className="border border-border/70 bg-background/80">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -418,7 +310,6 @@ export function SettingsPage() {
                     </p>
                   ) : null}
                 </div>
-
                 {isAuthenticated ? (
                   <div className="space-y-3">
                     <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -493,6 +384,69 @@ export function SettingsPage() {
                         : "Save and connect Strava"}
                   </Button>
                 ) : null}
+              </CardFooter>
+            </Card>
+
+            <Card className="border border-border/70 bg-background/80">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings2 className="size-4 text-muted-foreground" />
+                  Account
+                </CardTitle>
+                <CardDescription>
+                  Identity and session controls for this RunViz workspace.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Avatar size="lg">
+                    {athlete?.profile || user?.image ? (
+                      <AvatarImage
+                        src={athlete?.profile ?? user?.image ?? undefined}
+                        alt={athleteLabel}
+                      />
+                    ) : null}
+                    <AvatarFallback>
+                      {athleteLabel.slice(0, 1).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-medium text-foreground">
+                      {athleteLabel}
+                    </p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {user?.email ?? "No email available"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                {isAuthenticated ? (
+                  <>
+                    <span className="max-w-[46ch] text-sm text-muted-foreground">
+                      Logging out clears the local activity cache on this device.
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={logout}
+                      className="shrink-0 gap-2"
+                    >
+                      <LogOut className="size-4" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm text-muted-foreground">
+                      Sign in to save your setup and sync your Strava data.
+                    </span>
+                    <Button size="sm" onClick={login} className="shrink-0 gap-2">
+                      <Sparkles className="size-4" />
+                      Sign in
+                    </Button>
+                  </>
+                )}
               </CardFooter>
             </Card>
           </div>

@@ -178,7 +178,7 @@ function App() {
     sendMagicLink,
     logout,
   } = useAuth();
-  const { activities, syncing, sync, lastSync } = useActivities(isAuthenticated && !needsStravaConnect);
+  const { activities, syncing, sync, lastSync } = useActivities();
   const { maxHR } = useMaxHR();
   const [filterStyle, setFilterStyle] = useState<'relative' | 'calendar'>('relative');
   const [viewPeriod, setViewPeriod] = useState<ViewPeriod>({
