@@ -36,6 +36,12 @@ interface PoseSample {
     landmarks: Array<{ x: number; y: number }>;
 }
 
+function revokeObjectUrl(url?: string | null) {
+    if (url?.startsWith('blob:')) {
+        URL.revokeObjectURL(url);
+    }
+}
+
 function HistoryRow({
     analysis,
     active,
@@ -154,6 +160,12 @@ export default function FormAnalysisPage() {
         init();
     }, []);
 
+    useEffect(() => {
+        return () => {
+            revokeObjectUrl(selectedVideo?.baseUrl);
+        };
+    }, [selectedVideo]);
+
     // Auto-match activity when video is selected
     useEffect(() => {
         if (!selectedVideo) {
@@ -189,6 +201,7 @@ export default function FormAnalysisPage() {
         }
 
         const objectUrl = URL.createObjectURL(file);
+        revokeObjectUrl(selectedVideo?.baseUrl);
 
         const creationTime = file.lastModified
             ? new Date(file.lastModified).toISOString()
@@ -222,9 +235,7 @@ export default function FormAnalysisPage() {
     };
 
     const clearVideo = () => {
-        if (selectedVideo?.baseUrl?.startsWith('blob:')) {
-            URL.revokeObjectURL(selectedVideo.baseUrl);
-        }
+        revokeObjectUrl(selectedVideo?.baseUrl);
         setSelectedVideo(null);
     };
 

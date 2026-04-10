@@ -1,4 +1,13 @@
-import { useEffect, useState } from 'react';
+import {
+    createElement,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+    type ReactNode,
+} from 'react';
 import { auth } from '../services/api';
 import { syncMaxHRForUser } from './useMaxHR';
 import * as cache from '../services/cache';
@@ -13,7 +22,17 @@ interface AuthState {
     error: string | null;
 }
 
-export function useAuth() {
+interface AuthContextValue extends AuthState {
+    login: () => Promise<void>;
+    connectStrava: () => Promise<void>;
+    sendMagicLink: (email: string) => Promise<void>;
+    logout: () => Promise<void>;
+    refresh: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+function useAuthState(): AuthContextValue {
     const [state, setState] = useState<AuthState>({
         isAuthenticated: false,
         athlete: null,
@@ -23,11 +42,7 @@ export function useAuth() {
         error: null,
     });
 
-    useEffect(() => {
-        checkSession();
-    }, []);
-
-    async function checkSession() {
+    const checkSession = useCallback(async () => {
         try {
             const session = await auth.getSession();
             if (session.authenticated) {
@@ -74,22 +89,26 @@ export function useAuth() {
                 error: null,
             });
         }
-    }
+    }, []);
 
-    function login() {
+    useEffect(() => {
+        void checkSession();
+    }, [checkSession]);
+
+    const login = useCallback(() => {
         return auth.signInGoogle();
-    }
+    }, []);
 
-    async function connectStrava() {
+    const connectStrava = useCallback(async () => {
         const { url } = await auth.getStravaLoginUrl('link');
         window.location.href = url;
-    }
+    }, []);
 
-    async function sendMagicLink(email: string) {
+    const sendMagicLink = useCallback(async (email: string) => {
         await auth.sendMagicLink(email);
-    }
+    }, []);
 
-    async function logout() {
+    const logout = useCallback(async () => {
         try {
             await auth.logout();
         } catch (err) {
@@ -107,14 +126,27 @@ export function useAuth() {
                 error: null,
             });
         }
-    }
+    }, []);
 
-    return {
+    return useMemo(() => ({
         ...state,
         login,
         connectStrava,
         sendMagicLink,
         logout,
         refresh: checkSession,
-    };
+    }), [state, login, connectStrava, sendMagicLink, logout, checkSession]);
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+    const value = useAuthState();
+    return createElement(AuthContext.Provider, { value }, children);
+}
+
+export function useAuth() {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 }

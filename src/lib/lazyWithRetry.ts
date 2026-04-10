@@ -1,6 +1,9 @@
 import { lazy } from 'react'
 import type { ComponentType } from 'react'
 
+// React.lazy is typed in terms of ComponentType<any>, so we keep the escape hatch
+// isolated to this adapter instead of weakening types across the call sites.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ModuleLoader<T extends ComponentType<any>> = () => Promise<{ default: T }>
 
 function isRecoverableChunkError(error: unknown) {
@@ -18,6 +21,7 @@ function isRecoverableChunkError(error: unknown) {
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function lazyWithRetry<T extends ComponentType<any>>(
   loader: ModuleLoader<T>,
   retryKey: string,
@@ -41,7 +45,7 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       ) {
         window.sessionStorage.setItem(storageKey, '1')
         window.location.reload()
-        return new Promise<never>(() => {})
+        return await new Promise<never>(() => {})
       }
 
       throw error

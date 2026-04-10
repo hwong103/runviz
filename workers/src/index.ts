@@ -15,6 +15,7 @@ import {
     resolveSession,
     resolveStravaAccess,
     resolveStoredStravaKeys,
+    type StravaAccessContext,
     type TokenData,
 } from './session';
 
@@ -126,6 +127,73 @@ function appendSetCookieHeaders(target: Headers, source?: Headers | null) {
     if (setCookie) {
         target.append('Set-Cookie', setCookie);
     }
+}
+
+async function ensureFreshStravaAccess(
+    access: StravaAccessContext,
+    env: Env,
+    origin: string,
+): Promise<StravaAccessContext | Response> {
+    if (access.tokenData.expiresAt >= Date.now() / 1000) {
+        return access;
+    }
+
+    const keys = access.userId ? await resolveStoredStravaKeys(env, access.userId) : null;
+    if (!keys) {
+        return new Response(
+            JSON.stringify({ error: 'Strava app credentials are missing for this account.' }),
+            { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
+        );
+    }
+
+    const refreshResponse = await fetch(STRAVA_TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            client_id: keys.clientId,
+            client_secret: keys.clientSecret,
+            refresh_token: access.tokenData.refreshToken,
+            grant_type: 'refresh_token',
+        }),
+    });
+
+    if (!refreshResponse.ok) {
+        return new Response(
+            JSON.stringify({ error: 'Token refresh failed' }),
+            { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
+        );
+    }
+
+    const refreshData = await refreshResponse.json() as {
+        access_token: string;
+        refresh_token: string;
+        expires_at: number;
+    };
+
+    const tokenData: TokenData = {
+        ...access.tokenData,
+        accessToken: refreshData.access_token,
+        refreshToken: refreshData.refresh_token,
+        expiresAt: refreshData.expires_at,
+    };
+
+    const storageKey = access.source === 'better-auth' && access.userId
+        ? `strava:${access.userId}`
+        : access.sessionId
+            ? `session:${access.sessionId}`
+            : null;
+
+    if (storageKey) {
+        await env.TOKENS.put(storageKey, JSON.stringify(tokenData), {
+            expirationTtl: 60 * 60 * 24 * 30,
+        });
+    }
+
+    return {
+        ...access,
+        tokenData,
+        athlete: buildAthleteSummary(tokenData),
+    };
 }
 
 // Get session ID from cookie
@@ -813,59 +881,11 @@ async function handleApiRequest(
             { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
         );
     }
-    let tokenData = access.tokenData;
-
-    // Refresh token if expired
-    if (tokenData.expiresAt < Date.now() / 1000) {
-        const keys = access.userId ? await resolveStoredStravaKeys(env, access.userId) : null;
-        if (!keys) {
-            return new Response(
-                JSON.stringify({ error: 'Strava app credentials are missing for this account.' }),
-                { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
-            );
-        }
-        const refreshResponse = await fetch(STRAVA_TOKEN_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                client_id: keys.clientId,
-                client_secret: keys.clientSecret,
-                refresh_token: tokenData.refreshToken,
-                grant_type: 'refresh_token',
-            }),
-        });
-
-        if (!refreshResponse.ok) {
-            return new Response(
-                JSON.stringify({ error: 'Token refresh failed' }),
-                { status: 401, headers: { ...corsHeaders(origin, env), 'Content-Type': 'application/json' } }
-            );
-        }
-
-        const refreshData = await refreshResponse.json() as {
-            access_token: string;
-            refresh_token: string;
-            expires_at: number;
-        };
-
-        tokenData = {
-            ...tokenData,
-            accessToken: refreshData.access_token,
-            refreshToken: refreshData.refresh_token,
-            expiresAt: refreshData.expires_at,
-        };
-
-        const storageKey = access.source === 'better-auth' && access.userId
-            ? `strava:${access.userId}`
-            : access.sessionId
-                ? `session:${access.sessionId}`
-                : null;
-        if (storageKey) {
-            await env.TOKENS.put(storageKey, JSON.stringify(tokenData), {
-                expirationTtl: 60 * 60 * 24 * 30,
-            });
-        }
+    const freshAccess = await ensureFreshStravaAccess(access, env, origin);
+    if (freshAccess instanceof Response) {
+        return freshAccess;
     }
+    const tokenData = freshAccess.tokenData;
 
     // Proxy request to Strava API
     const stravaPath = url.pathname.replace('/api', '').replace(/\/$/, '');
@@ -1005,6 +1025,13 @@ async function handleGoogleAuthStart(request: Request, env: Env, origin: string,
     authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/drive.readonly');
     authUrl.searchParams.set('access_type', 'offline');
     authUrl.searchParams.set('prompt', 'consent');
+    const requestOrigin = new URL(request.url).origin;
+    const callbackOrigin = isAllowedOrigin(requestOrigin, env)
+        ? requestOrigin
+        : isAllowedOrigin(origin, env)
+            ? origin
+            : env.FRONTEND_URL;
+    authUrl.searchParams.set('state', callbackOrigin);
 
     return Response.redirect(authUrl.toString(), 302);
 }
@@ -1016,6 +1043,10 @@ async function handleGoogleAuthCallback(request: Request, env: Env, origin: stri
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
     if (!code) return new Response('Missing code', { status: 400 });
+    const callbackOrigin = url.searchParams.get('state');
+    const targetOrigin = callbackOrigin && isAllowedOrigin(callbackOrigin, env)
+        ? callbackOrigin
+        : env.FRONTEND_URL;
 
     const tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
         method: 'POST',
@@ -1049,7 +1080,7 @@ async function handleGoogleAuthCallback(request: Request, env: Env, origin: stri
     });
 
     return new Response(
-        `<html><body><script>window.opener.postMessage("google_auth_success", ${JSON.stringify(env.FRONTEND_URL)}); window.close();</script>Success! You can close this window.</body></html>`,
+        `<html><body><script>window.opener.postMessage("google_auth_success", ${JSON.stringify(targetOrigin)}); window.close();</script>Success! You can close this window.</body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
     );
 }
@@ -1118,8 +1149,11 @@ async function handleGoogleToken(request: Request, env: Env, origin: string, aut
 async function handleStravaActivityUpdate(request: Request, env: Env, origin: string, auth: ReturnType<typeof createAuth>): Promise<Response> {
     const access = await resolveStravaAccess(request, env, auth);
     if (!access) return new Response('Unauthorized', { status: 401, headers: corsHeaders(origin, env) });
-
-    const tokenData = access.tokenData;
+    const freshAccess = await ensureFreshStravaAccess(access, env, origin);
+    if (freshAccess instanceof Response) {
+        return freshAccess;
+    }
+    const tokenData = freshAccess.tokenData;
 
     // Check if activity:write scope is present
     if (!tokenData.scopes?.includes('activity:write')) {
