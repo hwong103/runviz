@@ -10,11 +10,11 @@
     },
     "devDependencies": {
         "@cloudflare/workers-types": "^4.20240117.0",
-        "typescript": "^5.3.3",
-        "wrangler": "^4.62.0"
+        "typescript": "^5.9.3",
+        "wrangler": "^4.81.1"
     },
     "dependencies": {
-        "better-auth": "^1.5.5",
-        "resend": "^6.9.4"
+        "better-auth": "^1.6.2",
+        "resend": "^6.10.0"
     }
 }
