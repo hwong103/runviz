@@ -26,7 +26,7 @@ interface SyncState {
 }
 
 interface ActivitiesContextValue extends SyncState {
-  sync: (options?: { forceFull?: boolean }) => Promise<void>
+  sync: (options?: { forceFull?: boolean; silent?: boolean }) => Promise<void>
   getActivity: (id: number) => Promise<Activity | null>
   refresh: () => Promise<void>
 }
@@ -50,6 +50,7 @@ function useActivitiesState(enabled: boolean): ActivitiesContextValue {
   })
 
   const hasInitialized = useRef(false)
+  const syncInFlight = useRef(false)
 
   const loadCached = useCallback(async () => {
     try {
@@ -70,17 +71,23 @@ function useActivitiesState(enabled: boolean): ActivitiesContextValue {
     }
   }, [])
 
-  const sync = useCallback(async (options: { forceFull?: boolean } = {}) => {
+  const sync = useCallback(async (options: { forceFull?: boolean; silent?: boolean } = {}) => {
     if (!enabled) return
 
-    let shouldStart = false
-    setState((prev) => {
-      if (prev.syncing) return prev
-      shouldStart = true
-      return { ...prev, syncing: true, error: null }
-    })
+    const silent = options.silent === true
+    if (syncInFlight.current) {
+      if (!silent) {
+        setState((prev) => (prev.syncing ? prev : { ...prev, syncing: true }))
+      }
+      return
+    }
 
-    if (!shouldStart) return
+    syncInFlight.current = true
+    if (!silent) {
+      setState((prev) => ({ ...prev, syncing: true, error: null }))
+    } else {
+      setState((prev) => ({ ...prev, error: null }))
+    }
 
     try {
       const isFullSync = options.forceFull === true
@@ -190,6 +197,8 @@ function useActivitiesState(enabled: boolean): ActivitiesContextValue {
         syncing: false,
         error: err instanceof Error ? err.message : "Sync failed",
       }))
+    } finally {
+      syncInFlight.current = false
     }
   }, [enabled])
 
@@ -211,7 +220,7 @@ function useActivitiesState(enabled: boolean): ActivitiesContextValue {
 
     const init = async () => {
       await loadCached()
-      await sync()
+      await sync({ silent: true })
     }
 
     void init()
