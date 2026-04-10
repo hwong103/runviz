@@ -6,13 +6,11 @@ import {
   HeartPulse,
   LogOut,
   MoonStar,
-  Palette,
   Settings2,
   ShieldCheck,
   Sparkles,
 } from "lucide-react"
 
-import { ThemeToggle } from "@/components/ThemeToggle"
 import { AppShell } from "@/components/layout/app-shell"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -26,11 +24,9 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/hooks/useAuth"
 import { PERSONAS, useCoachPersona } from "@/hooks/useCoachPersona"
 import { useMaxHR } from "@/hooks/useMaxHR"
-import { useTheme } from "@/hooks/useTheme"
 import { auth as authApi } from "@/services/api"
 
 export function SettingsPage() {
@@ -44,7 +40,6 @@ export function SettingsPage() {
     connectStrava,
     logout,
   } = useAuth()
-  const { preference, resolved } = useTheme()
   const { persona, setPersona } = useCoachPersona()
   const { maxHR, isDefault, setMaxHR, clearMaxHR } = useMaxHR()
   const [clientId, setClientId] = useState("")
@@ -145,26 +140,18 @@ export function SettingsPage() {
     : isAuthenticated
       ? "Signed in"
       : "Browsing without an account"
-
-  const themeLabel =
-    preference === "system"
-      ? `System (${resolved})`
-      : preference === "dark"
-        ? "Dark"
-        : "Light"
-
   return (
     <AppShell
       eyebrow="Settings"
-      title="Account and workspace settings"
-      subtitle="Manage appearance, account access, and service connections from one dedicated page."
+      title="Account, coaching, and connection settings"
+      subtitle="Manage access, training preferences, and Strava setup from one dedicated page."
       athleteName={athleteLabel}
       athleteImage={athlete?.profile ?? user?.image ?? null}
       statusText={statusText}
       onLogout={isAuthenticated ? logout : undefined}
     >
       <div className="mx-auto max-w-[1120px] space-y-4">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
           <Card className="border border-border/70 bg-background/80">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -197,28 +184,11 @@ export function SettingsPage() {
                   </p>
                 </div>
               </div>
-
-              <Separator />
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-border/70 bg-muted/30 p-4">
-                  <p className="text-sm font-medium text-foreground">Session</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {statusText}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-border/70 bg-muted/30 p-4">
-                  <p className="text-sm font-medium text-foreground">Workspace</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Shared shell active across dashboard, planning, form, and settings.
-                  </p>
-                </div>
-              </div>
             </CardContent>
-            <CardFooter className="justify-between gap-3">
+            <CardFooter className="flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
               {isAuthenticated ? (
                 <>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="max-w-[46ch] text-sm text-muted-foreground">
                     Logging out clears the local activity cache on this device.
                   </span>
                   <Button
@@ -249,24 +219,105 @@ export function SettingsPage() {
             <Card className="border border-border/70 bg-background/80">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Palette className="size-4 text-muted-foreground" />
-                  Appearance
+                  <ShieldCheck className="size-4 text-muted-foreground" />
+                  Connections
                 </CardTitle>
                 <CardDescription>
-                  Choose how RunViz renders across light, dark, and system themes.
+                  Keep your training data source connected and ready to sync.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="rounded-xl border border-border/70 bg-muted/30 p-4">
-                  <p className="text-sm font-medium text-foreground">Current theme</p>
+                  <p className="text-sm font-medium text-foreground">Strava</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {themeLabel}
+                    {!isAuthenticated
+                      ? "Sign in first to link your Strava account."
+                      : needsStravaConnect
+                        ? "Connection required before your activities can sync."
+                        : "Connected and ready to sync."}
                   </p>
+                  {isAuthenticated && keyConfigured && keyUpdatedAt ? (
+                    <p className="mt-1 text-xs text-muted-foreground/70">
+                      App credentials last saved{" "}
+                      {new Date(keyUpdatedAt * 1000).toLocaleDateString()}.
+                    </p>
+                  ) : null}
                 </div>
-                <div className="max-w-[220px]">
-                  <ThemeToggle />
-                </div>
+                {isAuthenticated ? (
+                  <div className="space-y-3">
+                    <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                      {keyLoading
+                        ? "Loading..."
+                        : keyConfigured
+                          ? "Update Strava app credentials"
+                          : "Enter Strava app credentials"}
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="settings-client-id" className="text-sm">
+                        Client ID
+                      </Label>
+                      <Input
+                        id="settings-client-id"
+                        value={clientId}
+                        onChange={(event) => setClientId(event.target.value)}
+                        placeholder="123456"
+                        disabled={keyLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="settings-client-secret"
+                        className="text-sm"
+                      >
+                        Client Secret
+                      </Label>
+                      <Input
+                        id="settings-client-secret"
+                        type="password"
+                        value={clientSecret}
+                        onChange={(event) => setClientSecret(event.target.value)}
+                        placeholder={
+                          keyConfigured
+                            ? "Enter new secret to rotate"
+                            : "Paste your Client Secret"
+                        }
+                        disabled={keyLoading}
+                      />
+                    </div>
+                    {keyStatus ? (
+                      <p className="text-sm text-muted-foreground">
+                        {keyStatus}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </CardContent>
+              <CardFooter className="flex-wrap justify-between gap-3">
+                <Link
+                  to="/?workspace=tools"
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Open tools workspace
+                  <ChevronRight className="size-4" />
+                </Link>
+                {isAuthenticated ? (
+                  <Button
+                    size="sm"
+                    onClick={handleSaveAndConnect}
+                    disabled={
+                      keySaving || keyLoading || !clientId.trim() || !clientSecret.trim()
+                    }
+                    className="shrink-0 gap-2"
+                  >
+                    <MoonStar className="size-4" />
+                    {keySaving
+                      ? "Saving..."
+                      : keyConfigured
+                        ? "Save and reconnect Strava"
+                        : "Save and connect Strava"}
+                  </Button>
+                ) : null}
+              </CardFooter>
             </Card>
 
             <Card className="border border-border/70 bg-background/80">
@@ -388,111 +439,6 @@ export function SettingsPage() {
                 <Button size="sm" variant="outline" onClick={handleSaveMaxHR}>
                   Save
                 </Button>
-              </CardFooter>
-            </Card>
-
-            <Card className="border border-border/70 bg-background/80">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ShieldCheck className="size-4 text-muted-foreground" />
-                  Connections
-                </CardTitle>
-                <CardDescription>
-                  Keep your training data source connected and ready to sync.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="rounded-xl border border-border/70 bg-muted/30 p-4">
-                  <p className="text-sm font-medium text-foreground">Strava</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {!isAuthenticated
-                      ? "Sign in first to link your Strava account."
-                      : needsStravaConnect
-                        ? "Connection required before your activities can sync."
-                        : "Connected and ready to sync."}
-                  </p>
-                  {isAuthenticated && keyConfigured && keyUpdatedAt ? (
-                    <p className="mt-1 text-xs text-muted-foreground/70">
-                      App credentials last saved{" "}
-                      {new Date(keyUpdatedAt * 1000).toLocaleDateString()}.
-                    </p>
-                  ) : null}
-                </div>
-
-                {isAuthenticated ? (
-                  <div className="space-y-3">
-                    <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                      {keyLoading
-                        ? "Loading..."
-                        : keyConfigured
-                          ? "Update Strava app credentials"
-                          : "Enter Strava app credentials"}
-                    </p>
-                    <div className="space-y-2">
-                      <Label htmlFor="settings-client-id" className="text-sm">
-                        Client ID
-                      </Label>
-                      <Input
-                        id="settings-client-id"
-                        value={clientId}
-                        onChange={(event) => setClientId(event.target.value)}
-                        placeholder="123456"
-                        disabled={keyLoading}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="settings-client-secret"
-                        className="text-sm"
-                      >
-                        Client Secret
-                      </Label>
-                      <Input
-                        id="settings-client-secret"
-                        type="password"
-                        value={clientSecret}
-                        onChange={(event) => setClientSecret(event.target.value)}
-                        placeholder={
-                          keyConfigured
-                            ? "Enter new secret to rotate"
-                            : "Paste your Client Secret"
-                        }
-                        disabled={keyLoading}
-                      />
-                    </div>
-                    {keyStatus ? (
-                      <p className="text-sm text-muted-foreground">
-                        {keyStatus}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
-              </CardContent>
-              <CardFooter className="flex-wrap justify-between gap-3">
-                <Link
-                  to="/?workspace=tools"
-                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Open tools workspace
-                  <ChevronRight className="size-4" />
-                </Link>
-                {isAuthenticated ? (
-                  <Button
-                    size="sm"
-                    onClick={handleSaveAndConnect}
-                    disabled={
-                      keySaving || keyLoading || !clientId.trim() || !clientSecret.trim()
-                    }
-                    className="shrink-0 gap-2"
-                  >
-                    <MoonStar className="size-4" />
-                    {keySaving
-                      ? "Saving..."
-                      : keyConfigured
-                        ? "Save and reconnect Strava"
-                        : "Save and connect Strava"}
-                  </Button>
-                ) : null}
               </CardFooter>
             </Card>
           </div>
