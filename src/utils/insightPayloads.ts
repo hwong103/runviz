@@ -263,6 +263,10 @@ function getWeeklyTotalsEndingAt(activities: Activity[], anchorDate: Date, weeks
     return totals;
 }
 
+function countActiveRollingWeeks(activities: Activity[], anchorDate: Date, weeks: number): number {
+    return getWeeklyTotalsEndingAt(activities, anchorDate, weeks).filter((total) => total > 0).length;
+}
+
 function get3WeekRampRate(weeklyTotals: number[]): number {
     if (weeklyTotals.length < 4) return 0;
     const recent = weeklyTotals.slice(-3);
@@ -361,11 +365,10 @@ function deriveTrainingPhaseContext(
     baselineAvgWeeklyKm: number,
     weeklyChange: number | null,
 ): TrainingPhaseContext {
-    const recent42 = getActivitiesInWindowEndingAt(activities, anchorDate, 42);
     const recent14RunDays = getRunDaysInWindow(activities, anchorDate, 14).length;
-    const activeWeeksLast6 = countActiveWeeks(recent42);
-    const longestGapDaysLast42 = getLongestGapDaysInWindow(activities, anchorDate, 42);
     const weeklyTotals = getWeeklyTotalsEndingAt(activities, anchorDate, 6);
+    const activeWeeksLast6 = countActiveRollingWeeks(activities, anchorDate, 6);
+    const longestGapDaysLast42 = getLongestGapDaysInWindow(activities, anchorDate, 42);
     const currentWeeklyKm = weeklyTotals[weeklyTotals.length - 1] ?? 0;
     const previousWeeklyKm = weeklyTotals[weeklyTotals.length - 2] ?? 0;
     const lowBaseline = baselineAvgWeeklyKm > 0 && currentWeeklyKm <= baselineAvgWeeklyKm * 0.7;
