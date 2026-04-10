@@ -76,18 +76,13 @@ function useActivitiesState(enabled: boolean): ActivitiesContextValue {
 
     const silent = options.silent === true
     if (syncInFlight.current) {
-      if (!silent) {
-        setState((prev) => (prev.syncing ? prev : { ...prev, syncing: true }))
-      }
+      setState((prev) => (prev.syncing ? prev : { ...prev, syncing: true }))
       return
     }
 
     syncInFlight.current = true
-    if (!silent) {
-      setState((prev) => ({ ...prev, syncing: true, error: null }))
-    } else {
-      setState((prev) => ({ ...prev, error: null }))
-    }
+    // Keep initial/background sync visually visible so sign-in flows show real progress.
+    setState((prev) => ({ ...prev, syncing: true, error: silent ? prev.error : null }))
 
     try {
       const isFullSync = options.forceFull === true
