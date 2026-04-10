@@ -2,8 +2,9 @@
 
 import { openDB } from 'idb';
 import type { DBSchema, IDBPDatabase } from 'idb';
-import type { Activity, ActivityStreams } from '../types/activity';
-import type { FormAnalysis } from '../types/formAnalysis';
+
+import type { Activity, ActivityStreams } from '@/types/activity';
+import type { FormAnalysis } from '@/types/formAnalysis';
 
 interface RunVizDB extends DBSchema {
     activities: {
@@ -44,7 +45,6 @@ async function getDB(): Promise<IDBPDatabase<RunVizDB>> {
     db = await openDB<RunVizDB>('runviz', 2, {
         upgrade(database, oldVersion) {
             if (oldVersion < 1) {
-                // Activities store
                 if (!database.objectStoreNames.contains('activities')) {
                     const activityStore = database.createObjectStore('activities', {
                         keyPath: 'id',
@@ -52,14 +52,12 @@ async function getDB(): Promise<IDBPDatabase<RunVizDB>> {
                     activityStore.createIndex('by-date', 'start_date_local');
                 }
 
-                // Streams store
                 if (!database.objectStoreNames.contains('streams')) {
                     database.createObjectStore('streams', {
                         keyPath: 'activityId',
                     });
                 }
 
-                // Meta store for sync state
                 if (!database.objectStoreNames.contains('meta')) {
                     database.createObjectStore('meta', {
                         keyPath: 'key',
@@ -68,7 +66,6 @@ async function getDB(): Promise<IDBPDatabase<RunVizDB>> {
             }
 
             if (oldVersion < 2) {
-                // Form Analysis store
                 if (!database.objectStoreNames.contains('form_analyses')) {
                     const formStore = database.createObjectStore('form_analyses', {
                         keyPath: 'id',
@@ -82,7 +79,6 @@ async function getDB(): Promise<IDBPDatabase<RunVizDB>> {
     return db;
 }
 
-// Activity operations
 export async function cacheActivities(activities: Activity[]): Promise<void> {
     const database = await getDB();
     const tx = database.transaction('activities', 'readwrite');
@@ -93,7 +89,7 @@ export async function cacheActivities(activities: Activity[]): Promise<void> {
 export async function getCachedActivities(): Promise<Activity[]> {
     const database = await getDB();
     const activities = await database.getAllFromIndex('activities', 'by-date');
-    return activities.reverse(); // Most recent first
+    return activities.reverse();
 }
 
 export async function getCachedActivity(id: number): Promise<Activity | undefined> {
@@ -106,7 +102,6 @@ export async function getActivityCount(): Promise<number> {
     return database.count('activities');
 }
 
-// Streams operations
 export async function cacheStreams(activityId: number, streams: ActivityStreams): Promise<void> {
     const database = await getDB();
     await database.put('streams', { activityId, streams });
@@ -118,7 +113,6 @@ export async function getCachedStreams(activityId: number): Promise<ActivityStre
     return result?.streams;
 }
 
-// Meta operations
 export async function setMeta(key: string, value: string | number | Date): Promise<void> {
     const database = await getDB();
     await database.put('meta', { key, value });
@@ -139,7 +133,6 @@ export async function setLastSyncDate(date: Date): Promise<void> {
     await setMeta('lastSync', date.toISOString());
 }
 
-// Clear all data (for logout)
 export async function clearCache(): Promise<void> {
     const database = await getDB();
     await database.clear('activities');
@@ -148,7 +141,6 @@ export async function clearCache(): Promise<void> {
     await database.clear('form_analyses');
 }
 
-// Form Analysis operations
 export async function saveFormAnalysis(analysis: FormAnalysis): Promise<void> {
     const database = await getDB();
     await database.put('form_analyses', analysis);

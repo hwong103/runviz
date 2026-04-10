@@ -87,7 +87,11 @@ function useActivitiesState(enabled: boolean): ActivitiesContextValue {
     if (!silent) {
       setState((prev) => ({ ...prev, syncing: true, error: null }))
     } else {
-      setState((prev) => ({ ...prev, error: null }))
+      setState((prev) => ({
+        ...prev,
+        syncing: prev.lastSync === null,
+        error: null,
+      }))
     }
 
     try {

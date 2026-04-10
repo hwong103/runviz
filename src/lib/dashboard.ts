@@ -15,6 +15,8 @@ export interface ViewPeriod {
   month: number | null
 }
 
+export type DashboardFilterStyle = "relative" | "calendar"
+
 export type DashboardWorkspace =
   | "overview"
   | "training"
@@ -143,4 +145,29 @@ export function isDashboardWorkspace(
     value === "race" ||
     value === "logbook" ||
     value === "tools"
+}
+
+export function formatLastSync(lastSync: Date | null, currentTime = Date.now()) {
+  if (!lastSync) return "Never synced"
+
+  const diffMs = currentTime - lastSync.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+
+  if (diffMins < 1) return "Just synced"
+  if (diffMins < 60) return `${diffMins}m ago`
+
+  const diffHrs = Math.floor(diffMins / 60)
+  if (diffHrs < 24) return `${diffHrs}h ago`
+
+  return `${Math.floor(diffHrs / 24)}d ago`
+}
+
+export function describeViewPeriod(viewPeriod: ViewPeriod) {
+  if (viewPeriod.mode === "all") return "All time"
+  if (viewPeriod.mode === "year") return String(viewPeriod.year)
+  if (viewPeriod.mode === "month") return `${MONTHS[viewPeriod.month ?? 0]} ${viewPeriod.year}`
+  if (viewPeriod.mode === "30d") return "Last 30 days"
+  if (viewPeriod.mode === "90d") return "Last 90 days"
+  if (viewPeriod.mode === "365d") return "Last 365 days"
+  return `${MONTHS[viewPeriod.month ?? 0]} ${viewPeriod.year}`
 }
