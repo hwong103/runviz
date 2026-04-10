@@ -2,13 +2,13 @@ import { Suspense, useMemo } from 'react';
 
 import { CalendarIcon } from '@radix-ui/react-icons';
 
-import { ActivityList } from '@/components/ActivityList';
-import { CalendarHeatmap } from '@/components/CalendarHeatmap';
 import type { Activity } from '@/types/activity';
 import type { Gear } from '@/types/gear';
 import type { ViewPeriod } from '@/lib/dashboard';
 import { ShoeTracker } from '@/features/dashboard/lazyDashboardPanels';
 import { PanelFallback } from '@/features/dashboard/components/PanelFallback';
+import { ActivityList } from '@/features/dashboard/logbook/ActivityList';
+import { CalendarHeatmap } from '@/features/dashboard/logbook/CalendarHeatmap';
 
 interface LogbookWorkspaceProps {
     filteredActivities: Activity[];

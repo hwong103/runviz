@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-import { SetupPage } from '@/components/SetupPage';
+import { SetupPage } from '@/features/setup/SetupPage';
 
 const LOADING_QUIPS = [
     'Tying shoelaces...',

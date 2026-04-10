@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 
-import { StatsOverview } from '@/components/StatsOverview';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Activity } from '@/types/activity';
 import type { Gear } from '@/types/gear';
@@ -16,6 +15,7 @@ import {
     WeeklyRampChart,
 } from '@/features/dashboard/lazyDashboardPanels';
 import { PanelFallback } from '@/features/dashboard/components/PanelFallback';
+import { StatsOverviewPanel as StatsOverview } from '@/features/dashboard/stats/StatsOverviewPanel';
 
 const workspaceTabTriggerClass =
     'min-w-0 rounded-lg border border-border bg-background px-2 py-1.5 text-[0.8rem] text-foreground/75 hover:text-foreground sm:px-4 sm:py-2 sm:text-sm data-[state=active]:!border-foreground/20 data-[state=active]:!bg-foreground data-[state=active]:!text-background dark:data-[state=active]:!bg-foreground dark:data-[state=active]:!text-background';

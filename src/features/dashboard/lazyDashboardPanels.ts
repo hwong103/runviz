@@ -1,41 +1,41 @@
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
 export const FitnessChart = lazyWithRetry(
-    () => import('@/components/FitnessChart').then((module) => ({ default: module.FitnessChart })),
+    () => import('@/features/dashboard/charts/FitnessChart').then((module) => ({ default: module.FitnessChart })),
     'fitness-chart'
 );
 
 export const MileageTrendChart = lazyWithRetry(
-    () => import('@/components/MileageTrendChart').then((module) => ({ default: module.MileageTrendChart })),
+    () => import('@/features/dashboard/charts/MileageTrendChart').then((module) => ({ default: module.MileageTrendChart })),
     'mileage-trend-chart'
 );
 
 export const YearOnYearChart = lazyWithRetry(
-    () => import('@/components/YearOnYearChart').then((module) => ({ default: module.YearOnYearChart })),
+    () => import('@/features/dashboard/charts/YearOnYearChart').then((module) => ({ default: module.YearOnYearChart })),
     'year-on-year-chart'
 );
 
 export const RunDetails = lazyWithRetry(
-    () => import('@/components/RunDetails').then((module) => ({ default: module.RunDetails })),
+    () => import('@/features/run-details/RunDetailsModal').then((module) => ({ default: module.RunDetailsModal })),
     'run-details'
 );
 
 export const ShoeTracker = lazyWithRetry(
-    () => import('@/components/ShoeTracker').then((module) => ({ default: module.ShoeTracker })),
+    () => import('@/features/gear/ShoeTracker').then((module) => ({ default: module.ShoeTracker })),
     'shoe-tracker'
 );
 
 export const VDOTPanel = lazyWithRetry(
-    () => import('@/components/VDOTPanel').then((module) => ({ default: module.VDOTPanel })),
+    () => import('@/features/dashboard/charts/VDOTPanel').then((module) => ({ default: module.VDOTPanel })),
     'vdot-panel'
 );
 
 export const WeeklyRampChart = lazyWithRetry(
-    () => import('@/components/WeeklyRampChart').then((module) => ({ default: module.WeeklyRampChart })),
+    () => import('@/features/dashboard/charts/WeeklyRampChart').then((module) => ({ default: module.WeeklyRampChart })),
     'weekly-ramp-chart'
 );
 
 export const CadenceTrendChart = lazyWithRetry(
-    () => import('@/components/CadenceTrendChart').then((module) => ({ default: module.CadenceTrendChart })),
+    () => import('@/features/dashboard/charts/CadenceTrendChart').then((module) => ({ default: module.CadenceTrendChart })),
     'cadence-trend-chart'
 );

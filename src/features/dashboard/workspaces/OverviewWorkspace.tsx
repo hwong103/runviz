@@ -1,10 +1,10 @@
 import { Suspense } from 'react';
 
-import { StatsOverview } from '@/components/StatsOverview';
 import type { Activity } from '@/types/activity';
 import type { ViewPeriod } from '@/lib/dashboard';
 import { YearOnYearChart } from '@/features/dashboard/lazyDashboardPanels';
 import { PanelFallback } from '@/features/dashboard/components/PanelFallback';
+import { StatsOverviewPanel as StatsOverview } from '@/features/dashboard/stats/StatsOverviewPanel';
 
 interface OverviewWorkspaceProps {
     activities: Activity[];
