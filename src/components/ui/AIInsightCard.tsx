@@ -1,6 +1,15 @@
 import { Bot, Sparkles, RefreshCw, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PERSONAS, useCoachPersona, type CoachPersona } from '@/hooks/useCoachPersona';
 import { useInsight } from '@/hooks/useInsight';
@@ -55,12 +64,6 @@ const INSIGHT_LABELS: Record<InsightType, string> = {
     'run-detail': 'Run Insight',
 };
 
-function getNextPersona(currentPersona: CoachPersona): CoachPersona {
-    const currentIndex = PERSONAS.findIndex((candidate) => candidate.id === currentPersona);
-    const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % PERSONAS.length : 0;
-    return PERSONAS[nextIndex]?.id ?? 'neutral';
-}
-
 export function AIInsightCard({
     insightType,
     payload,
@@ -86,8 +89,6 @@ export function AIInsightCard({
     });
     const resolvedPersona = persona ?? activePersona;
     const coach = PERSONAS.find((candidate) => candidate.id === resolvedPersona) ?? PERSONAS[1];
-    const nextPersona = getNextPersona(resolvedPersona);
-    const nextCoach = PERSONAS.find((candidate) => candidate.id === nextPersona) ?? PERSONAS[1];
     const showSkeleton = loading && !insight;
 
     // If condition not met, don't render anything
@@ -144,18 +145,40 @@ export function AIInsightCard({
 
                     {!showSkeleton && (
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="xs"
-                                onClick={() => setPersona(nextPersona)}
-                                className="h-auto rounded-full bg-background/70 px-2.5 py-1 text-[0.68rem] text-muted-foreground shadow-sm"
-                                title={`Switch coach to ${nextCoach.name}`}
-                                aria-label={`Switch coach persona from ${coach.name} to ${nextCoach.name}`}
-                            >
-                                <Bot data-icon="inline-start" />
-                                {coach.name}
-                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="xs"
+                                        className="h-auto rounded-full bg-background/70 px-2.5 py-1 text-[0.68rem] text-muted-foreground shadow-sm"
+                                        aria-label={`Select coach persona. Current coach: ${coach.name}`}
+                                    >
+                                        <Bot data-icon="inline-start" />
+                                        {coach.name}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="min-w-56">
+                                    <DropdownMenuLabel>Choose coach persona</DropdownMenuLabel>
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuRadioGroup
+                                            value={resolvedPersona}
+                                            onValueChange={(value) => setPersona(value as CoachPersona)}
+                                        >
+                                            {PERSONAS.map((candidate) => (
+                                                <DropdownMenuRadioItem key={candidate.id} value={candidate.id}>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span>{candidate.name}</span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {candidate.title}: {candidate.description}
+                                                        </span>
+                                                    </div>
+                                                </DropdownMenuRadioItem>
+                                            ))}
+                                        </DropdownMenuRadioGroup>
+                                    </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <div className="flex items-center gap-2">
                                 <Button
                                     type="button"
