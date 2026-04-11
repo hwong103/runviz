@@ -14,8 +14,15 @@ import { parseActivityLocalDate } from '@/utils/activityDate';
 import { generateActivitySummary, generateCommentary } from './commentary';
 import { historyBaselines } from './history';
 import { processSamples, SAMPLE_FPS, type PoseSample } from './poseProcessing';
-
-const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-matroska'];
+import {
+    ACCEPTED_VIDEO_TYPES,
+    buildClipRange,
+    createVideoSession,
+    isAcceptedVideoType,
+    revokeVideoSession,
+    seekVideo,
+    updateVideoSessionMetadata as applyVideoSessionMetadata,
+} from './videoSession';
 
 export function useFormAnalysisWorkflow() {
     const { activities } = useActivities();
@@ -37,6 +44,7 @@ export function useFormAnalysisWorkflow() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const selectedVideoRef = useRef<FormVideo | null>(null);
 
     useEffect(() => {
         const init = async () => {
@@ -51,6 +59,16 @@ export function useFormAnalysisWorkflow() {
 
         void init();
     }, []);
+
+    useEffect(() => {
+        selectedVideoRef.current = selectedVideo;
+    }, [selectedVideo]);
+
+    useEffect(() => (
+        () => {
+            revokeVideoSession(selectedVideoRef.current);
+        }
+    ), []);
 
     useEffect(() => {
         if (!selectedVideo) {
@@ -80,35 +98,19 @@ export function useFormAnalysisWorkflow() {
     const activeActivity = selectedActivityManual || matchingActivity;
 
     const handleFileSelect = (file: File) => {
-        if (!ACCEPTED_VIDEO_TYPES.includes(file.type)) {
+        if (!isAcceptedVideoType(file)) {
             alert('Please select a video file (MP4, MOV, WebM, AVI, or MKV).');
             return;
         }
 
-        const objectUrl = URL.createObjectURL(file);
-        const creationTime = file.lastModified
-            ? new Date(file.lastModified).toISOString()
-            : new Date().toISOString();
-
-        setSelectedVideo({
-            id: crypto.randomUUID(),
-            filename: file.name,
-            mimeType: file.type,
-            creationTime,
-            durationSec: 0,
-            width: 0,
-            height: 0,
-            mediaItemId: '',
-            baseUrl: objectUrl,
-        });
-        setClipRange([0, 30]);
+        revokeVideoSession(selectedVideoRef.current);
+        setSelectedVideo(createVideoSession(file));
+        setClipRange(buildClipRange());
         setCurrentAnalysis(null);
     };
 
     const clearVideo = () => {
-        if (selectedVideo?.baseUrl?.startsWith('blob:')) {
-            URL.revokeObjectURL(selectedVideo.baseUrl);
-        }
+        revokeVideoSession(selectedVideo);
         setSelectedVideo(null);
     };
 
@@ -138,10 +140,7 @@ export function useFormAnalysisWorkflow() {
             });
 
             const video = videoRef.current;
-            video.currentTime = clipRange[0];
-            await new Promise((resolve) => {
-                video.onseeked = resolve;
-            });
+            await seekVideo(video, clipRange[0]);
 
             const duration = clipRange[1] - clipRange[0];
             const sampleInterval = 1 / SAMPLE_FPS;
@@ -149,10 +148,7 @@ export function useFormAnalysisWorkflow() {
             const startTime = Date.now();
 
             for (let time = clipRange[0]; time < clipRange[1]; time += sampleInterval) {
-                video.currentTime = time;
-                await new Promise((resolve) => {
-                    video.onseeked = resolve;
-                });
+                await seekVideo(video, time);
 
                 const result = poseLandmarker.detectForVideo(video, Date.now() - startTime);
                 if (result.landmarks && result.landmarks.length > 0) {
@@ -240,8 +236,8 @@ export function useFormAnalysisWorkflow() {
     };
 
     const updateSelectedVideoMetadata = (durationSec: number, width: number, height: number) => {
-        setClipRange([0, Math.min(30, durationSec)]);
-        setSelectedVideo((previous) => previous ? { ...previous, durationSec, width, height } : null);
+        setClipRange(buildClipRange(durationSec));
+        setSelectedVideo((previous) => previous ? applyVideoSessionMetadata(previous, durationSec, width, height) : null);
     };
 
     return {

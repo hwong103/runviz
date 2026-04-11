@@ -18,10 +18,10 @@ import {
     calculateTrainingLoadHistory,
     interpretTSB,
 } from '@/analytics/trainingLoad';
+import { buildFitnessPayload } from '@/domain/insights';
 import { useChartTheme } from '@/hooks/useChartTheme';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
 import { useCoachPersona } from '@/hooks/useCoachPersona';
-import { buildFitnessPayload } from '@/utils/insightPayloads';
 
 ChartJS.register(
     CategoryScale,

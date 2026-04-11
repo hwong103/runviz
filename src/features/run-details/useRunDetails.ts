@@ -4,13 +4,13 @@ import { format } from 'date-fns';
 
 import { useChartTheme } from '@/hooks/useChartTheme';
 import { useSimilarRuns } from '@/hooks/useSimilarRuns';
+import { buildRunDetailPayload } from '@/domain/insights';
 import { activities as activitiesApi } from '@/services/api/activitiesApi';
 import { gear as gearApi } from '@/services/api/gearApi';
 import type { Activity, ActivityStreams } from '@/types/activity';
 import { isRun } from '@/types/activity';
 import type { Gear } from '@/types/gear';
 import { parseActivityLocalDate } from '@/utils/activityDate';
-import { buildRunDetailPayload } from '@/utils/insightPayloads';
 
 import {
     buildHeartRateChartData,

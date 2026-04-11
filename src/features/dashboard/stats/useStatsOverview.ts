@@ -2,15 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { CSSProperties } from 'react';
 
-import { useCoachPersona } from '@/hooks/useCoachPersona';
-import { buildCurrentWeekSummary } from '@/utils/currentWeekSummary';
 import {
     buildInjuryRiskPayload,
     buildOverviewPayload,
     buildTrainingHealthPayload,
     getInsightWindowLabel,
     viewPeriodToDays,
-} from '@/utils/insightPayloads';
+} from '@/domain/insights';
+import { useCoachPersona } from '@/hooks/useCoachPersona';
+import { buildCurrentWeekSummary } from '@/utils/currentWeekSummary';
 import type { Activity } from '@/types/activity';
 import type { ViewPeriod } from '@/lib/dashboard';
 

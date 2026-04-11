@@ -7,10 +7,10 @@ import {
     activitiesToDailyLoads,
     calculateTrainingLoadHistory,
 } from '@/analytics/trainingLoad';
+import { buildRacePredictionPayload } from '@/domain/insights';
 import { parseActivityLocalDate } from '@/utils/activityDate';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
 import { useCoachPersona } from '@/hooks/useCoachPersona';
-import { buildRacePredictionPayload } from '@/utils/insightPayloads';
 import type { ViewPeriod } from '@/lib/dashboard';
 
 interface VDOTPanelProps {

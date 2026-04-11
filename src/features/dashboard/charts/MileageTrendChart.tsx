@@ -14,13 +14,13 @@ import {
 } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 import { format, subDays, startOfDay, eachDayOfInterval, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
+import { buildVolumePayload, getInsightWindowLabel, viewPeriodToDays } from '@/domain/insights';
 import { TrendingUp } from 'lucide-react';
 import type { Activity } from '@/types/activity';
 import { parseActivityLocalDate } from '@/utils/activityDate';
 import { useChartTheme } from '@/hooks/useChartTheme';
 import { AIInsightCard } from '@/components/ui/AIInsightCard';
 import { useCoachPersona } from '@/hooks/useCoachPersona';
-import { buildVolumePayload, getInsightWindowLabel, viewPeriodToDays } from '@/utils/insightPayloads';
 
 ChartJS.register(
     CategoryScale,
