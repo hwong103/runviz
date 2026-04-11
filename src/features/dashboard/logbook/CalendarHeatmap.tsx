@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Activity } from '@/types/activity';
 import { isRun } from '@/types/activity';
 import { format, parseISO } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CalendarHeatmapProps {
     activities: Activity[];
@@ -24,9 +25,10 @@ interface YearGridMonthProps {
     selectedDate?: string | null;
     onSelectDay?: (date: string) => void;
     setHoveredDay: (v: { date: string; distance: number; x: number; y: number } | null) => void;
+    isMobile: boolean;
 }
 
-function YearGridMonth({ mg, maxDistance, selectedDate, onSelectDay, setHoveredDay }: YearGridMonthProps) {
+function YearGridMonth({ mg, maxDistance, selectedDate, onSelectDay, setHoveredDay, isMobile }: YearGridMonthProps) {
     const getCellClass = (distance: number, isSelected: boolean, inRange: boolean): string => {
         const baseCell = 'border border-[var(--rv-border)] transition-transform duration-100 hover:scale-110 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
         if (isSelected) return `${baseCell} bg-[var(--rv-blue)] ring-1 ring-[var(--rv-blue)]/40`;
@@ -64,8 +66,12 @@ function YearGridMonth({ mg, maxDistance, selectedDate, onSelectDay, setHoveredD
                         <button
                             key={day.date}
                             type="button"
-                            onClick={() => onSelectDay?.(day.date)}
+                            onClick={() => {
+                                setHoveredDay(null);
+                                onSelectDay?.(day.date);
+                            }}
                             onMouseEnter={(e) => {
+                                if (isMobile) return;
                                 const rect = e.currentTarget.getBoundingClientRect();
                                 const TOOLTIP_WIDTH = 140;
                                 const clampedX = Math.min(
@@ -75,6 +81,7 @@ function YearGridMonth({ mg, maxDistance, selectedDate, onSelectDay, setHoveredD
                                 setHoveredDay({ date: day.date, distance: day.distance, x: clampedX, y: rect.top - 10 });
                             }}
                             onMouseLeave={() => setHoveredDay(null)}
+                            onTouchStart={() => setHoveredDay(null)}
                             className={`aspect-square w-full rounded-[3px] ${getCellClass(day.distance, isSelected, day.inRange)}`}
                             aria-label={`${format(parseISO(day.date), 'MMMM d, yyyy')}, ${day.distance.toFixed(1)} km`}
                         />
@@ -95,6 +102,11 @@ export function CalendarHeatmap({
     selectedDate
 }: CalendarHeatmapProps) {
     const [hoveredDay, setHoveredDay] = useState<{ date: string; distance: number; x: number; y: number } | null>(null);
+    const isMobile = useIsMobile();
+
+    useEffect(() => {
+        setHoveredDay(null);
+    }, [selectedDate, isMobile]);
 
     // Check if we're in month-only view or relative date view
     const isMonthView = month !== undefined;
@@ -306,6 +318,7 @@ export function CalendarHeatmap({
                             selectedDate={selectedDate}
                             onSelectDay={onSelectDay}
                             setHoveredDay={setHoveredDay}
+                            isMobile={isMobile}
                         />
                     ))}
                 </div>
@@ -327,7 +340,7 @@ export function CalendarHeatmap({
                     )}
                 </div>
 
-                {hoveredDay && (
+                {!isMobile && hoveredDay && (
                     <div
                         className="rv-panel fixed z-[200] pointer-events-none -translate-x-1/2 -translate-y-full px-3 py-2 animate-in fade-in zoom-in-95 duration-150"
                         style={{ left: hoveredDay.x, top: hoveredDay.y }}
@@ -386,8 +399,13 @@ export function CalendarHeatmap({
                                             <button
                                                 key={dayIdx}
                                                 type="button"
-                                                onClick={() => isInteractive && onSelectDay?.(day!.date)}
+                                                onClick={() => {
+                                                    if (!isInteractive) return;
+                                                    setHoveredDay(null);
+                                                    onSelectDay?.(day!.date);
+                                                }}
                                                 onMouseEnter={(e) => {
+                                                    if (isMobile) return;
                                                     if (isInteractive) {
                                                         const rect = e.currentTarget.getBoundingClientRect();
                                                         const TOOLTIP_WIDTH = 140;
@@ -404,6 +422,7 @@ export function CalendarHeatmap({
                                                     }
                                                 }}
                                                 onMouseLeave={() => setHoveredDay(null)}
+                                                onTouchStart={() => setHoveredDay(null)}
                                                 className={`relative ${isMonthView ? 'h-5 w-5 rounded-[3px]' : 'h-3 w-3 rounded-[2px]'} transition-all duration-200 focus-visible:scale-125 focus-visible:ring-2 focus-visible:ring-[var(--rv-border-strong)] ${day ? getColor(day.distance, isMonthView ? day.inRange : day.currentMonth, selectedDate === day.date) : 'border border-transparent bg-transparent'
                                                     } ${isInteractive ? 'cursor-pointer hover:scale-110 hover:ring-2 hover:ring-white/30' : ''}`}
                                                 disabled={!isInteractive}
@@ -437,7 +456,7 @@ export function CalendarHeatmap({
             </div>
 
             {/* Custom Tooltip */}
-            {hoveredDay && (
+            {!isMobile && hoveredDay && (
                 <div
                     className="rv-panel fixed z-[200] pointer-events-none -translate-x-1/2 -translate-y-full px-3 py-2 animate-in fade-in zoom-in-95 duration-150"
                     style={{ left: hoveredDay.x, top: hoveredDay.y }}
