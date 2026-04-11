@@ -151,7 +151,7 @@ export function AIInsightCard({
                                         type="button"
                                         variant="outline"
                                         size="xs"
-                                        className="h-auto rounded-full bg-background/70 px-2.5 py-1 text-[0.68rem] text-muted-foreground shadow-sm"
+                                        className="h-auto rounded-full bg-background/70 px-2.5 py-1 text-[0.68rem] font-normal text-muted-foreground shadow-sm"
                                         aria-label={`Select coach persona. Current coach: ${coach.name}`}
                                     >
                                         <Bot data-icon="inline-start" />
@@ -186,7 +186,7 @@ export function AIInsightCard({
                                     size="xs"
                                     onClick={refresh}
                                     disabled={loading}
-                                    className="h-auto px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+                                    className="h-auto px-1.5 py-1 text-[0.68rem] font-normal text-muted-foreground hover:text-foreground"
                                 >
                                     <RefreshCw
                                         data-icon="inline-start"
@@ -200,7 +200,7 @@ export function AIInsightCard({
                                     size="xs"
                                     onClick={dismiss}
                                     disabled={loading}
-                                    className="h-auto px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+                                    className="h-auto px-1.5 py-1 text-[0.68rem] font-normal text-muted-foreground hover:text-foreground"
                                 >
                                     <X data-icon="inline-start" />
                                     Dismiss
