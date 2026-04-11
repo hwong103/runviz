@@ -11,10 +11,11 @@ import {
 } from "react"
 
 import { useAuth } from "@/hooks/useAuth"
-import { activities as activitiesApi, memory as memoryApi } from "@/services/api"
+import { activities as activitiesApi } from "@/services/api/activitiesApi"
+import { memory as memoryApi } from "@/services/api/memoryApi"
 import * as cache from "@/services/cache"
-import type { Activity } from "@/types"
-import { isRun } from "@/types"
+import type { Activity } from "@/types/activity"
+import { isRun } from "@/types/activity"
 import { parseActivityLocalDate } from "@/utils/activityDate"
 
 interface SyncState {
@@ -81,8 +82,16 @@ function useActivitiesState(enabled: boolean): ActivitiesContextValue {
     }
 
     syncInFlight.current = true
-    // Keep initial/background sync visually visible so sign-in flows show real progress.
-    setState((prev) => ({ ...prev, syncing: true, error: silent ? prev.error : null }))
+    // Keep the very first background sync visibly active so initial sign-in reflects real progress.
+    if (!silent) {
+      setState((prev) => ({ ...prev, syncing: true, error: null }))
+    } else {
+      setState((prev) => ({
+        ...prev,
+        syncing: prev.lastSync === null,
+        error: null,
+      }))
+    }
 
     try {
       const isFullSync = options.forceFull === true

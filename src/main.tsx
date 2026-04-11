@@ -3,22 +3,22 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
-import { GoogleAuthCallback } from './components/GoogleAuthCallback.tsx'
-import { Callback } from './components/Callback.tsx'
-import { GoogleSignInComplete } from './components/GoogleSignInComplete.tsx'
-import { MagicLinkVerify } from './components/MagicLinkVerify.tsx'
+import { GoogleAuthCallback } from './features/auth/GoogleAuthCallback.tsx'
+import { Callback } from './features/auth/Callback.tsx'
+import { GoogleSignInComplete } from './features/auth/GoogleSignInComplete.tsx'
+import { MagicLinkVerify } from './features/auth/MagicLinkVerify.tsx'
+import { PrivacyPage } from './features/legal/PrivacyPage.tsx'
+import { SettingsPage } from './features/settings/SettingsPage.tsx'
+import { SetupRoute } from './features/setup/SetupRoute.tsx'
+import { StravaAuthStart } from './features/auth/StravaAuthStart.tsx'
 import { ToolRouteFrame } from './components/layout/tool-route-frame.tsx'
-import { PrivacyPage } from './components/PrivacyPage.tsx'
-import { SettingsPage } from './components/SettingsPage.tsx'
-import { SetupRoute } from './components/SetupRoute.tsx'
-import { StravaAuthStart } from './components/StravaAuthStart.tsx'
 import { Badge } from './components/ui/Badge.tsx'
 import { ActivitiesProvider } from './hooks/useActivities.ts'
 import { AuthProvider } from './hooks/useAuth.ts'
 import { lazyWithRetry } from './lib/lazyWithRetry.ts'
 
-const RoutePlanner = lazyWithRetry(() => import('./components/RoutePlanner.tsx'), 'route-planner')
-const FormAnalysis = lazyWithRetry(() => import('./components/FormAnalysis.tsx'), 'form-analysis')
+const RoutePlanner = lazyWithRetry(() => import('./features/route-planner/RoutePlannerPage.tsx'), 'route-planner')
+const FormAnalysis = lazyWithRetry(() => import('./features/form-analysis/FormAnalysisPage.tsx'), 'form-analysis')
 const routerBase = import.meta.env.BASE_URL.endsWith('/')
   ? import.meta.env.BASE_URL.slice(0, -1) || '/'
   : import.meta.env.BASE_URL

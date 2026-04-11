@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { magicLink } from "better-auth/plugins";
 import { Resend } from "resend";
-import type { Env } from "./index";
+import type { Env } from "./env";
 
 export function createAuth(env: Env, baseURL: string) {
   const resend = new Resend(env.RESEND_API_KEY);

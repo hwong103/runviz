@@ -201,17 +201,31 @@ npx wrangler d1 migrations apply runviz-db --remote
 ```
 runviz/
 ├── src/
-│   ├── analytics/     # GAP, HR zones, training load
-│   ├── components/    # React components
-│   ├── hooks/         # Custom hooks
-│   ├── services/      # API and caching
-│   └── types/         # TypeScript types
+│   ├── app/           # App-level routing and shell orchestration
+│   ├── analytics/     # Shared training calculations
+│   ├── components/    # Shared layout and UI primitives only
+│   ├── features/      # Feature-owned pages, panels, hooks, and helpers
+│   ├── hooks/         # Shared cross-feature hooks
+│   ├── services/      # API clients and caches
+│   └── types/         # Domain-specific shared types
 ├── workers/           # Worker source used by the root Cloudflare deploy
 │   └── src/
-│       └── index.ts   # OAuth, auth, Strava proxy, asset fallback
+│       ├── domain/    # Insight and memory business logic
+│       ├── http/      # CORS, response helpers, routing
+│       ├── routes/    # Endpoint handlers
+│       ├── services/  # Auth/session and third-party integrations
+│       └── index.ts   # Thin Worker bootstrap
+├── docs/              # Architecture and module-boundary notes
 └── .github/
-    └── workflows/     # GitHub Actions deployment
+    ├── workflows/     # GitHub Actions deployment
+    └── pull_request_template.md
 ```
+
+## 🧭 Architecture Notes
+
+- [App architecture](./docs/app-architecture.md)
+- [Worker architecture](./docs/worker-architecture.md)
+- [Feature module conventions](./docs/feature-module-conventions.md)
 
 ## ⚙️ Configuration
 

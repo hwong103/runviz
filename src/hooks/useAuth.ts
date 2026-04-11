@@ -8,10 +8,10 @@ import {
     useState,
     type ReactNode,
 } from 'react';
-import { auth } from '../services/api';
+import { auth } from '../services/api/authApi';
+import type { Athlete } from '../types/athlete';
 import { syncMaxHRForUser } from './useMaxHR';
 import * as cache from '../services/cache';
-import type { Athlete } from '../types';
 
 interface AuthState {
     isAuthenticated: boolean;

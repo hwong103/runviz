@@ -5,7 +5,7 @@
  * Replicates Strava's paywalled heart rate analysis feature.
  */
 
-import type { HeartRateZone, HeartRateZoneAnalysis } from '../types';
+import type { HeartRateZone, HeartRateZoneAnalysis } from '../types/analytics';
 
 /**
  * Default 5-zone model based on percentage of max heart rate

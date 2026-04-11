@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from "react"
 import { AppShell } from "@/components/layout/app-shell"
 import { useActivities } from "@/hooks/useActivities"
 import { useAuth } from "@/hooks/useAuth"
+import { formatLastSync } from "@/lib/dashboard"
 
 interface ToolRouteFrameProps {
   eyebrow: string
@@ -35,15 +36,6 @@ export function ToolRouteFrame({
     return () => window.clearInterval(timer)
   }, [])
 
-  const formatLastSync = (date: Date | null) => {
-    if (!date) return "Never synced"
-    const diff = currentTime - date.getTime()
-    if (diff < 60_000) return "Just now"
-    if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`
-    if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`
-    return date.toLocaleDateString()
-  }
-
   return (
     <AppShell
       eyebrow={eyebrow}
@@ -57,7 +49,7 @@ export function ToolRouteFrame({
           : syncing
             ? "Syncing now"
             : isAuthenticated
-              ? formatLastSync(lastSync)
+              ? formatLastSync(lastSync, currentTime)
               : "Browsing without an account"
       }
       syncing={syncing}

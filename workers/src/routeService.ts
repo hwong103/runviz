@@ -1,9 +1,10 @@
 // Route generation handler for Cloudflare Workers
 // Integrates with OpenRouteService for distance-based route generation
 
-import { createAuth } from './auth';
-import { Env, corsHeaders } from './index';
-import { resolveStravaAccess } from './session';
+import type { Auth } from './auth';
+import { corsHeaders } from './http/cors';
+import type { Env } from './env';
+import { resolveStravaAccess } from './services/sessionService';
 
 interface RouteRequest {
     startLat: number;
@@ -34,7 +35,7 @@ export async function handleRouteGeneration(
     request: Request,
     env: Env,
     origin: string,
-    auth: ReturnType<typeof createAuth>
+    auth: Auth
 ): Promise<Response> {
     const access = await resolveStravaAccess(request, env, auth);
     if (!access) {

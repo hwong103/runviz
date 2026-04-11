@@ -1,6 +1,6 @@
 import { format, startOfISOWeek } from 'date-fns';
-import type { Activity } from '../types';
-import { isRun } from '../types';
+import type { Activity } from '../types/activity';
+import { isRun } from '../types/activity';
 import { parseActivityLocalDate } from '../utils/activityDate';
 
 export interface WeekBucket {
