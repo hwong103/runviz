@@ -1,6 +1,5 @@
 import { Bot, Sparkles, RefreshCw, X } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -146,17 +145,12 @@ export function AIInsightCard({
                     {!showSkeleton && (
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="xs"
-                                        className="h-auto rounded-full bg-background/70 px-2.5 py-1 text-[0.68rem] font-normal text-muted-foreground shadow-sm"
-                                        aria-label={`Select coach persona. Current coach: ${coach.name}`}
-                                    >
-                                        <Bot data-icon="inline-start" />
-                                        {coach.name}
-                                    </Button>
+                                <DropdownMenuTrigger
+                                    aria-label={`Select coach persona. Current coach: ${coach.name}`}
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background/70 px-2.5 py-1 text-[0.68rem] font-normal text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    <Bot className="size-3" />
+                                    {coach.name}
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="start" className="min-w-56">
                                     <DropdownMenuLabel>Choose coach persona</DropdownMenuLabel>
