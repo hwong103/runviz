@@ -117,7 +117,7 @@ export function useInsight({
     }), [insightType, mostRecentActivityId, payloadHash, parsedPayload]);
 
     const fetchInsight = useCallback(
-        async (forceRefresh = false) => {
+        async (forceRefresh = false, clearExisting = false) => {
             if (!enabled) {
                 setLoading(false);
                 setDismissed(false);
@@ -135,6 +135,9 @@ export function useInsight({
             setDismissed(false);
             setLoading(true);
             setError(null);
+            if (clearExisting) {
+                setInsight(null);
+            }
 
             try {
                 const response = await fetch('/api/insights', {
@@ -188,7 +191,7 @@ export function useInsight({
             // Ignore cache deletion errors
         }
 
-        await fetchInsight(true);
+        await fetchInsight(true, true);
     }, [dismissKey, fetchInsight, insightType, mostRecentActivityId, payloadHash, persona]);
 
     const dismiss = useCallback(() => {
@@ -198,7 +201,7 @@ export function useInsight({
     }, [dismissKey]);
 
     useEffect(() => {
-        fetchInsight();
+        fetchInsight(false, true);
     }, [fetchInsight]);
 
     return {
