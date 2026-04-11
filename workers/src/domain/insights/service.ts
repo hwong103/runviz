@@ -4,7 +4,7 @@ import {
     findSimilarWeeks,
     formatSimilarActivitiesContext,
     formatSimilarWeeksContext,
-} from '../../activityMemory';
+} from '../memory';
 import type { Env } from '../../env';
 import { errorResponse, jsonResponse } from '../../http/response';
 import { getAuthenticatedUserId } from '../../services/sessionService';
