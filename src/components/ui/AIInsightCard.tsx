@@ -180,31 +180,24 @@ export function AIInsightCard({
                                 </DropdownMenuContent>
                             </DropdownMenu>
                             <div className="flex items-center gap-2">
-                                <Button
+                                <button
                                     type="button"
-                                    variant="ghost"
-                                    size="xs"
                                     onClick={refresh}
                                     disabled={loading}
-                                    className="h-auto px-1.5 py-1 text-[0.68rem] font-normal text-muted-foreground hover:text-foreground"
+                                    className="inline-flex items-center gap-1 px-1.5 py-1 text-[0.68rem] font-normal text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
                                 >
-                                    <RefreshCw
-                                        data-icon="inline-start"
-                                        className={cn(loading && 'animate-spin')}
-                                    />
+                                    <RefreshCw className={cn('size-3', loading && 'animate-spin')} />
                                     Refresh
-                                </Button>
-                                <Button
+                                </button>
+                                <button
                                     type="button"
-                                    variant="ghost"
-                                    size="xs"
                                     onClick={dismiss}
                                     disabled={loading}
-                                    className="h-auto px-1.5 py-1 text-[0.68rem] font-normal text-muted-foreground hover:text-foreground"
+                                    className="inline-flex items-center gap-1 px-1.5 py-1 text-[0.68rem] font-normal text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
                                 >
-                                    <X data-icon="inline-start" />
+                                    <X className="size-3" />
                                     Dismiss
-                                </Button>
+                                </button>
                             </div>
                         </div>
                     )}
