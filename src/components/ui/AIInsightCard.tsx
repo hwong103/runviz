@@ -167,10 +167,10 @@ export function AIInsightCard({
                                         >
                                             {PERSONAS.map((candidate) => (
                                                 <DropdownMenuRadioItem key={candidate.id} value={candidate.id}>
-                                                    <div className="flex flex-col gap-0.5">
+                                                    <div className="flex items-center gap-2">
                                                         <span>{candidate.name}</span>
                                                         <span className="text-xs text-muted-foreground">
-                                                            {candidate.title}: {candidate.description}
+                                                            {candidate.title}
                                                         </span>
                                                     </div>
                                                 </DropdownMenuRadioItem>
