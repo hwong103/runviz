@@ -1,7 +1,17 @@
 import { Bot, Sparkles, RefreshCw, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { PERSONAS, type CoachPersona } from '@/hooks/useCoachPersona';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PERSONAS, useCoachPersona, type CoachPersona } from '@/hooks/useCoachPersona';
 import { useInsight } from '@/hooks/useInsight';
 import { cn } from '@/lib/utils';
 
@@ -66,17 +76,19 @@ export function AIInsightCard({
     activityContext,
     weekContext,
 }: AIInsightCardProps) {
+    const { persona: activePersona, setPersona } = useCoachPersona();
     const { insight, loading, error, dismissed, refresh, dismiss } = useInsight({
         insightType,
         payload,
         mostRecentActivityId,
         enabled: conditionMet,
-        persona,
+        persona: persona ?? activePersona,
         useMemory,
         activityContext,
         weekContext,
     });
-    const coachName = PERSONAS.find((candidate) => candidate.id === (persona ?? 'neutral'))?.name ?? 'Jordan';
+    const resolvedPersona = persona ?? activePersona;
+    const coach = PERSONAS.find((candidate) => candidate.id === resolvedPersona) ?? PERSONAS[1];
     const showSkeleton = loading && !insight;
 
     // If condition not met, don't render anything
@@ -111,9 +123,10 @@ export function AIInsightCard({
                     </div>
 
                     {showSkeleton ? (
-                        <div className="mt-2 space-y-1.5">
-                            <div className="h-4 w-full animate-pulse rounded bg-muted-foreground/20" />
-                            <div className="h-4 w-2/3 animate-pulse rounded bg-muted-foreground/20" />
+                        <div className="mt-2 flex flex-col gap-1.5">
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-5/6" />
+                            <Skeleton className="h-4 w-2/3" />
                         </div>
                     ) : (
                         <p className={cn(
@@ -132,29 +145,64 @@ export function AIInsightCard({
 
                     {!showSkeleton && (
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background/70 px-2.5 py-1 text-[0.68rem] font-medium text-muted-foreground shadow-sm">
-                                <Bot className="size-3" />
-                                {coachName}
-                            </span>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="xs"
+                                        className="h-auto rounded-full bg-background/70 px-2.5 py-1 text-[0.68rem] text-muted-foreground shadow-sm"
+                                        aria-label={`Select coach persona. Current coach: ${coach.name}`}
+                                    >
+                                        <Bot data-icon="inline-start" />
+                                        {coach.name}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="min-w-56">
+                                    <DropdownMenuLabel>Choose coach persona</DropdownMenuLabel>
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuRadioGroup
+                                            value={resolvedPersona}
+                                            onValueChange={(value) => setPersona(value as CoachPersona)}
+                                        >
+                                            {PERSONAS.map((candidate) => (
+                                                <DropdownMenuRadioItem key={candidate.id} value={candidate.id}>
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{candidate.name}</span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {candidate.title}
+                                                        </span>
+                                                    </div>
+                                                </DropdownMenuRadioItem>
+                                            ))}
+                                        </DropdownMenuRadioGroup>
+                                    </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <div className="flex items-center gap-2">
                                 <Button
+                                    type="button"
                                     variant="ghost"
-                                    size="sm"
+                                    size="xs"
                                     onClick={refresh}
                                     disabled={loading}
                                     className="h-auto px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground"
                                 >
-                                    <RefreshCw className="mr-1 size-3" />
+                                    <RefreshCw
+                                        data-icon="inline-start"
+                                        className={cn(loading && 'animate-spin')}
+                                    />
                                     Refresh
                                 </Button>
                                 <Button
+                                    type="button"
                                     variant="ghost"
-                                    size="sm"
+                                    size="xs"
                                     onClick={dismiss}
                                     disabled={loading}
                                     className="h-auto px-1.5 py-1 text-xs text-muted-foreground hover:text-foreground"
                                 >
-                                    <X className="mr-1 size-3" />
+                                    <X data-icon="inline-start" />
                                     Dismiss
                                 </Button>
                             </div>
