@@ -23,6 +23,7 @@ import type {
 } from './payloadTypes';
 import {
     countActiveWeeks,
+    classifyRunEffort,
     deriveTrainingPhaseContext,
     findLatestRaceLikeRun,
     get3WeekRampRate,
@@ -40,7 +41,9 @@ import {
     getTotalDistanceKm,
     getWeeklyTotalsEndingAt,
     hasExtendedGap,
+    inferRunEffortPattern,
     roundTo,
+    summarizeRunEffortMix,
     viewPeriodToDays,
 } from './payloadUtils';
 
@@ -55,6 +58,7 @@ export function buildOverviewPayload(activities: Activity[], viewPeriod?: ViewPe
     const efficiency = calculateEfficiencyIndex(windowActivities, anchorDate, Math.min(windowDays, 28)) ?? 0;
     const baselineEfficiency = calculateEfficiencyIndex(baselineActivities, anchorDate, 28) ?? efficiency;
     const baselineAvgWeeklyKm = roundTo(getTotalDistanceKm(baselineActivities) / Math.max(180 / 7, 1), 1);
+    const recentEffortMix = summarizeRunEffortMix(activities, anchorDate, 14);
     const phaseContext = deriveTrainingPhaseContext(
         activities,
         anchorDate,
@@ -74,6 +78,12 @@ export function buildOverviewPayload(activities: Activity[], viewPeriod?: ViewPe
         baselineAvgWeeklyKm,
         baselineLoadRatio: roundTo(baselineLoadRatio, 2),
         baselineEfficiency: roundTo(baselineEfficiency, 2),
+        recentEasyRuns14d: recentEffortMix.easy,
+        recentSteadyRuns14d: recentEffortMix.steady,
+        recentThresholdRuns14d: recentEffortMix.threshold,
+        recentIntervalRuns14d: recentEffortMix.interval,
+        recentRaceRuns14d: recentEffortMix.race,
+        recentLongRuns14d: recentEffortMix.long,
         ...phaseContext,
     };
 }
@@ -90,6 +100,7 @@ export function buildTrainingHealthPayload(activities: Activity[], viewPeriod?: 
     const baselineTrimp = baselineActivities.reduce((sum, activity) => sum + calculateActivityTRIMP(activity, maxHR, 60), 0);
     const baselineAvgWeeklyKm = getTotalDistanceKm(baselineActivities) / Math.max(windowDays / 7, 1);
     const weeklyRamp = calculateWeeklyRamp(windowActivities, anchorDate);
+    const recentEffortMix = summarizeRunEffortMix(activities, anchorDate, 14);
     const phaseContext = deriveTrainingPhaseContext(
         activities,
         anchorDate,
@@ -111,6 +122,12 @@ export function buildTrainingHealthPayload(activities: Activity[], viewPeriod?: 
         baselineMonotony: roundTo(calculateMonotony(baselineActivities, baselineAnchor, maxHR), 2),
         baselineStrain: Math.round(calculateStrainScore(baselineActivities, baselineAnchor, maxHR)),
         baselineTrimp: Math.round(baselineTrimp),
+        recentEasyRuns14d: recentEffortMix.easy,
+        recentSteadyRuns14d: recentEffortMix.steady,
+        recentThresholdRuns14d: recentEffortMix.threshold,
+        recentIntervalRuns14d: recentEffortMix.interval,
+        recentRaceRuns14d: recentEffortMix.race,
+        recentLongRuns14d: recentEffortMix.long,
         ...phaseContext,
     };
 }
@@ -119,6 +136,7 @@ export function buildFitnessPayload(activities: Activity[], maxHR = 185): Fitnes
     const endDate = new Date();
     const metrics60 = getLatestTrainingMetrics(activities, endDate, 60, maxHR);
     const metrics90 = getLatestTrainingMetrics(activities, endDate, 90, maxHR);
+    const recentEffortMix = summarizeRunEffortMix(activities, endDate, 14);
     const latest = metrics60[metrics60.length - 1];
     const first = metrics60[0];
 
@@ -131,6 +149,12 @@ export function buildFitnessPayload(activities: Activity[], maxHR = 185): Fitnes
             ctlPeak90Days: 0,
             daysSincePeak: 0,
             baselineCTL: 0,
+            recentEasyRuns14d: 0,
+            recentSteadyRuns14d: 0,
+            recentThresholdRuns14d: 0,
+            recentIntervalRuns14d: 0,
+            recentRaceRuns14d: 0,
+            recentLongRuns14d: 0,
         };
     }
 
@@ -152,6 +176,12 @@ export function buildFitnessPayload(activities: Activity[], maxHR = 185): Fitnes
         ctlPeak90Days: roundTo(peakMetric?.ctl ?? latest.ctl, 1),
         daysSincePeak,
         baselineCTL: roundTo(baselineCtl, 1),
+        recentEasyRuns14d: recentEffortMix.easy,
+        recentSteadyRuns14d: recentEffortMix.steady,
+        recentThresholdRuns14d: recentEffortMix.threshold,
+        recentIntervalRuns14d: recentEffortMix.interval,
+        recentRaceRuns14d: recentEffortMix.race,
+        recentLongRuns14d: recentEffortMix.long,
     };
 }
 
@@ -176,6 +206,7 @@ export function buildVolumePayload(activities: Activity[], viewPeriod?: ViewPeri
         ? baselineWeeklyKm.reduce((sum, value) => sum + value, 0) / baselineWeeklyKm.length
         : avgWeeklyKm;
     const baselinePeakWeeklyKm = baselineWeeklyKm.length > 0 ? Math.max(...baselineWeeklyKm) : maxWeeklyKm;
+    const recentEffortMix = summarizeRunEffortMix(activities, anchorDate, 14);
     const phaseContext = deriveTrainingPhaseContext(
         activities,
         anchorDate,
@@ -195,6 +226,12 @@ export function buildVolumePayload(activities: Activity[], viewPeriod?: ViewPeri
         phaseExplanation: phaseContext.phaseExplanation,
         activeWeeksLast6: phaseContext.activeWeeksLast6,
         longestGapDaysLast42: phaseContext.longestGapDaysLast42,
+        recentEasyRuns14d: recentEffortMix.easy,
+        recentSteadyRuns14d: recentEffortMix.steady,
+        recentThresholdRuns14d: recentEffortMix.threshold,
+        recentIntervalRuns14d: recentEffortMix.interval,
+        recentRaceRuns14d: recentEffortMix.race,
+        recentLongRuns14d: recentEffortMix.long,
     };
 }
 
@@ -212,6 +249,7 @@ export function buildInjuryRiskPayload(activities: Activity[], windowDays = 30):
     const baselineActivities = getPriorWindowActivities(activities, anchorDate, windowDays);
     const baselineLoadRatio = calculateAcwr(baselineActivities, baselineAnchor) ?? loadRatio;
     const baselineAvgWeeklyKm = getTotalDistanceKm(baselineActivities) / Math.max(windowDays / 7, 1);
+    const recentEffortMix = summarizeRunEffortMix(activities, anchorDate, 14);
     const phaseContext = deriveTrainingPhaseContext(
         activities,
         anchorDate,
@@ -240,6 +278,12 @@ export function buildInjuryRiskPayload(activities: Activity[], windowDays = 30):
         activeWeeksLast6: phaseContext.activeWeeksLast6,
         longestGapDaysLast42: phaseContext.longestGapDaysLast42,
         currentWeeklyKm: phaseContext.currentWeeklyKm,
+        recentEasyRuns14d: recentEffortMix.easy,
+        recentSteadyRuns14d: recentEffortMix.steady,
+        recentThresholdRuns14d: recentEffortMix.threshold,
+        recentIntervalRuns14d: recentEffortMix.interval,
+        recentRaceRuns14d: recentEffortMix.race,
+        recentLongRuns14d: recentEffortMix.long,
         shouldShow,
     };
 }
@@ -248,6 +292,7 @@ export function buildRacePredictionPayload(activities: Activity[], maxHR = 185):
     const endDate = new Date();
     const last90Days = getActivitiesInWindowEndingAt(activities, endDate, 90);
     const prior90Days = getPriorWindowActivities(activities, endDate, 90);
+    const recentEffortMix = summarizeRunEffortMix(activities, endDate, 14);
     const currentResult = calcVDOTFromActivities(last90Days);
     if (!currentResult) {
         return {};
@@ -314,13 +359,20 @@ export function buildRacePredictionPayload(activities: Activity[], maxHR = 185):
         lastRaceDistanceKm: latestRace ? roundTo(latestRace.distance / 1000, 1) : undefined,
         lastRaceTimeMins: latestRace ? Math.round(latestRace.moving_time / 60) : undefined,
         lastRaceDate: latestRace ? latestRace.start_date_local.split('T')[0] : undefined,
+        recentEasyRuns14d: recentEffortMix.easy,
+        recentSteadyRuns14d: recentEffortMix.steady,
+        recentThresholdRuns14d: recentEffortMix.threshold,
+        recentIntervalRuns14d: recentEffortMix.interval,
+        recentRaceRuns14d: recentEffortMix.race,
+        recentLongRuns14d: recentEffortMix.long,
         ...phaseContext,
     };
 }
 
 export function buildRunDetailPayload(
     activity: Activity,
-    allActivities: Activity[]
+    allActivities: Activity[],
+    streams?: Activity['streams'] | null,
 ): RunDetailPayload & { shouldShow: boolean } {
     const anchorDate = parseActivityLocalDate(activity.start_date_local);
     const similarEffortRuns = getSimilarEffortBaselineRuns(activity, allActivities, 30);
@@ -351,6 +403,11 @@ export function buildRunDetailPayload(
     const isNearPriorBest = priorBestEfficiency > 0
         ? !isPbEffort && activityEfficiency >= priorBestEfficiency * 0.97
         : false;
+    const referencePace = similarEffortRuns.length > 0
+        ? getAveragePaceMinPerKm(similarEffortRuns)
+        : getAveragePaceMinPerKm(previous60Runs);
+    const inferredSessionType = classifyRunEffort(activity, referencePace > 0 ? referencePace : null);
+    const effortPattern = inferRunEffortPattern(streams ?? null);
     const efficiencyComparison: RunDetailPayload['efficiencyComparison'] =
         priorBestEfficiency <= 0
             ? 'no-baseline'
@@ -378,6 +435,8 @@ export function buildRunDetailPayload(
         isPbEffort,
         isFastForEffort,
         isLongest60Days,
+        inferredSessionType,
+        effortPattern,
         shouldShow,
     };
 }

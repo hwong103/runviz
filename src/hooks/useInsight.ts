@@ -17,6 +17,7 @@ interface UseInsightOptions {
         elevationPerKm: number | null;
         movingTimeMins: number;
         runProfile: string;
+        effortPattern?: string;
     };
     weekContext?: {
         totalKm: number;
@@ -24,8 +25,11 @@ interface UseInsightOptions {
         avgPaceMinPerKm: number | null;
         avgHR: number | null;
         easyRuns: number;
+        steadyRuns: number;
         thresholdRuns: number;
+        intervalRuns: number;
         raceRuns: number;
+        longRuns: number;
         loadRatio: number | null;
         currentWeekKey?: string;
     };

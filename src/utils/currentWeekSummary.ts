@@ -1,4 +1,5 @@
 import type { Activity } from '../types/activity';
+import { classifyRunEffort } from '../domain/insights/payloadUtils';
 import { isRun } from '../types/activity';
 import { parseActivityLocalDate } from './activityDate';
 
@@ -8,8 +9,11 @@ export interface CurrentWeekSummary {
     avgPaceMinPerKm: number | null;
     avgHR: number | null;
     easyRuns: number;
+    steadyRuns: number;
     thresholdRuns: number;
+    intervalRuns: number;
     raceRuns: number;
+    longRuns: number;
     loadRatio: number | null;
     currentWeekKey: string;
 }
@@ -54,8 +58,11 @@ export function buildCurrentWeekSummary(
             avgPaceMinPerKm: null,
             avgHR: null,
             easyRuns: 0,
+            steadyRuns: 0,
             thresholdRuns: 0,
+            intervalRuns: 0,
             raceRuns: 0,
+            longRuns: 0,
             loadRatio,
             currentWeekKey,
         };
@@ -72,17 +79,15 @@ export function buildCurrentWeekSummary(
         ? Math.round(runsWithHR.reduce((sum, activity) => sum + activity.average_heartrate!, 0) / runsWithHR.length)
         : null;
 
-    const medianPace = avgPaceMinPerKm ?? 0;
-    const classified = thisWeekRuns.map((activity) => {
-        const pace = activity.average_speed > 0
-            ? (1 / activity.average_speed) * 1000 / 60
-            : medianPace;
-        const ratio = medianPace > 0 && pace > 0 ? medianPace / pace : 1;
-
-        if (ratio > 1.08) return 'race';
-        if (ratio > 1.02) return 'threshold';
-        return 'easy';
-    });
+    const referencePace = avgPaceMinPerKm;
+    const classified = thisWeekRuns.map((activity) => classifyRunEffort(activity, referencePace));
+    const distanceThresholdKm = Math.max(
+        14,
+        ((thisWeekRuns.reduce((sum, activity) => sum + (activity.distance / 1000), 0) / thisWeekRuns.length) || 0) * 1.35,
+    );
+    const longRuns = thisWeekRuns.filter((activity) =>
+        activity.moving_time >= 75 * 60 || (activity.distance / 1000) >= distanceThresholdKm
+    ).length;
 
     return {
         totalKm: Math.round((totalDistance / 1000) * 10) / 10,
@@ -90,8 +95,11 @@ export function buildCurrentWeekSummary(
         avgPaceMinPerKm: avgPaceMinPerKm !== null ? Math.round(avgPaceMinPerKm * 100) / 100 : null,
         avgHR,
         easyRuns: classified.filter((value) => value === 'easy').length,
+        steadyRuns: classified.filter((value) => value === 'steady').length,
         thresholdRuns: classified.filter((value) => value === 'threshold').length,
+        intervalRuns: classified.filter((value) => value === 'interval').length,
         raceRuns: classified.filter((value) => value === 'race').length,
+        longRuns,
         loadRatio,
         currentWeekKey,
     };
