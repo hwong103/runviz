@@ -22,6 +22,12 @@ export interface OverviewPayload extends TrainingPhaseContext {
     baselineAvgWeeklyKm: number;
     baselineLoadRatio: number;
     baselineEfficiency: number;
+    recentEasyRuns14d: number;
+    recentSteadyRuns14d: number;
+    recentThresholdRuns14d: number;
+    recentIntervalRuns14d: number;
+    recentRaceRuns14d: number;
+    recentLongRuns14d: number;
 }
 
 export interface TrainingHealthPayload extends TrainingPhaseContext {
@@ -35,6 +41,12 @@ export interface TrainingHealthPayload extends TrainingPhaseContext {
     baselineMonotony: number;
     baselineStrain: number;
     baselineTrimp: number;
+    recentEasyRuns14d: number;
+    recentSteadyRuns14d: number;
+    recentThresholdRuns14d: number;
+    recentIntervalRuns14d: number;
+    recentRaceRuns14d: number;
+    recentLongRuns14d: number;
 }
 
 export interface FitnessPayload {
@@ -45,6 +57,12 @@ export interface FitnessPayload {
     ctlPeak90Days: number;
     daysSincePeak: number;
     baselineCTL: number;
+    recentEasyRuns14d: number;
+    recentSteadyRuns14d: number;
+    recentThresholdRuns14d: number;
+    recentIntervalRuns14d: number;
+    recentRaceRuns14d: number;
+    recentLongRuns14d: number;
 }
 
 export interface VolumePayload {
@@ -59,6 +77,12 @@ export interface VolumePayload {
     phaseExplanation: string;
     activeWeeksLast6: number;
     longestGapDaysLast42: number;
+    recentEasyRuns14d: number;
+    recentSteadyRuns14d: number;
+    recentThresholdRuns14d: number;
+    recentIntervalRuns14d: number;
+    recentRaceRuns14d: number;
+    recentLongRuns14d: number;
 }
 
 export interface InjuryRiskPayload {
@@ -74,6 +98,12 @@ export interface InjuryRiskPayload {
     longestGapDaysLast42: number;
     currentWeeklyKm: number;
     baselineAvgWeeklyKm: number;
+    recentEasyRuns14d: number;
+    recentSteadyRuns14d: number;
+    recentThresholdRuns14d: number;
+    recentIntervalRuns14d: number;
+    recentRaceRuns14d: number;
+    recentLongRuns14d: number;
 }
 
 export interface RacePredictionPayload {
@@ -100,6 +130,12 @@ export interface RacePredictionPayload {
     activeWeeksLast6?: number;
     longestGapDaysLast42?: number;
     recentRunDays14d?: number;
+    recentEasyRuns14d?: number;
+    recentSteadyRuns14d?: number;
+    recentThresholdRuns14d?: number;
+    recentIntervalRuns14d?: number;
+    recentRaceRuns14d?: number;
+    recentLongRuns14d?: number;
 }
 
 export interface RunDetailPayload {
@@ -119,4 +155,6 @@ export interface RunDetailPayload {
     isPbEffort: boolean;
     isFastForEffort: boolean;
     isLongest60Days: boolean;
+    inferredSessionType: 'easy' | 'steady' | 'threshold' | 'interval' | 'race' | 'unknown';
+    effortPattern: 'steady' | 'progressive' | 'surging' | 'fading' | 'unknown';
 }

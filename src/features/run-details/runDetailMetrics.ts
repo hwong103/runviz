@@ -1,5 +1,8 @@
 import type { Activity, ActivityStreams } from '@/types/activity';
 import type { Gear } from '@/types/gear';
+import { classifyRunEffort, inferRunEffortPattern, type RunEffortPattern, type RunEffortProfile } from '@/domain/insights/payloadUtils';
+import { isRun } from '@/types/activity';
+import { parseActivityLocalDate } from '@/utils/activityDate';
 
 const FOOD_EQUIVALENTS = [
     { name: 'Mozzarella Sticks', cals: 100 },
@@ -35,7 +38,8 @@ export interface RunInsightContext {
     avgHR: number | null;
     elevationPerKm: number | null;
     movingTimeMins: number;
-    runProfile: 'unknown';
+    runProfile: RunEffortProfile;
+    effortPattern: RunEffortPattern;
 }
 
 export interface HeartRateSummary {
@@ -176,13 +180,32 @@ export function buildRunStats(
     };
 }
 
-export function buildRunInsightContext(activity: Activity): RunInsightContext {
+export function buildRunInsightContext(
+    activity: Activity,
+    allActivities: Activity[] = [],
+    streams: ActivityStreams | null = null,
+): RunInsightContext {
     const paceMinPerKm = activity.average_speed > 0
         ? (1 / activity.average_speed) * 1000 / 60
         : null;
     const elevationPerKm = activity.total_elevation_gain > 0 && activity.distance > 0
         ? (activity.total_elevation_gain / activity.distance) * 1000
         : null;
+    const anchorDate = parseActivityLocalDate(activity.start_date_local);
+    const recentRuns = allActivities
+        .filter((candidate) => isRun(candidate) && candidate.id !== activity.id)
+        .filter((candidate) => {
+            const date = parseActivityLocalDate(candidate.start_date_local);
+            const diffMs = Math.abs(anchorDate.getTime() - date.getTime());
+            return diffMs <= 90 * 86400000;
+        });
+    const referencePaces = recentRuns
+        .filter((candidate) => candidate.average_speed > 0)
+        .map((candidate) => (1 / candidate.average_speed) * 1000 / 60)
+        .filter((pace) => Number.isFinite(pace) && pace > 0);
+    const referencePace = referencePaces.length > 0
+        ? referencePaces.reduce((sum, pace) => sum + pace, 0) / referencePaces.length
+        : paceMinPerKm;
 
     return {
         distanceKm: activity.distance / 1000,
@@ -190,7 +213,8 @@ export function buildRunInsightContext(activity: Activity): RunInsightContext {
         avgHR: activity.average_heartrate ?? null,
         elevationPerKm,
         movingTimeMins: activity.moving_time / 60,
-        runProfile: 'unknown',
+        runProfile: classifyRunEffort(activity, referencePace ?? null),
+        effortPattern: inferRunEffortPattern(streams),
     };
 }
 

@@ -17,7 +17,7 @@ const OUTPUT_RULES = `Hard output rules:
 - If Training Phase is "rebuild" or "build", treat some load elevation as expected from a low or rising baseline and only recommend pulling back when multiple red flags agree.
 - If Training Phase is "down-week", treat reduced volume as intentional consolidation unless the provided data clearly says otherwise.`;
 
-export const INSIGHT_PROMPT_VERSION = 'v10';
+export const INSIGHT_PROMPT_VERSION = 'v11';
 
 export const PERSONA_NUDGES: Record<string, string> = {
     gentle: `Persona-specific guidance:
@@ -46,66 +46,87 @@ export const PERSONA_NUDGES: Record<string, string> = {
 export const INSIGHT_TYPE_NUDGES: Record<string, string> = {
     overview: `Overview-specific guidance:
 - If the block reflects a rebuild with only a moderate load rise, say that plainly and do not call it unstable by default.
+- Use the recent session-mix fields when present so the block summary reflects whether your training is easy-heavy, quality-heavy, or long-run anchored.
 - Do not invent routine-score targets, run-count goals, long-run durations, pace targets, or other made-up thresholds.
 - Differentiate the personas through framing and phrasing, not by changing the core recommendation.
 - Gentle should sound supportive with a small next step, neutral should sound coach-like and practical, blunt should be terse, and drill should sound like an order.`,
     'training-health': `Training-health-specific guidance:
 - Explain the stress pattern clearly, then give one practical adjustment.
+- Use the recent session-mix fields when present to say whether stress is coming from quality sessions, long runs, or generally even distribution.
+- Keep this card focused on stress distribution and absorbability, not injury warnings.
 - Do not invent precise percentage cuts, exact rest prescriptions, run counts, or other made-up numeric targets.
 - If rebuild context is present and the stress pattern is manageable, say so instead of defaulting to overload language.`,
     'injury-risk': `Injury-risk-specific guidance:
 - Rebuild context should usually lead to stabilize-and-monitor language rather than alarm.
+- Use the recent session-mix fields when present to judge whether risk is being driven by stacked quality/long-run density versus a calmer mix.
+- Keep this card focused on progression risk and short-term safeguards, not general training-fatigue commentary.
 - Gentle should reassure without becoming vague.
 - Neutral should explain the risk pattern and the short-term plan.
 - Blunt should be short and matter-of-fact.
 - Drill should sound commanding, with sentence 2 phrased as an order.
 - Do not invent pace targets, percentage reductions, or new weekly-kilometer goals unless those exact numbers are already in the Data.`,
+    fitness: `Fitness-specific guidance:
+- Use the recent session-mix fields when present to explain whether current fatigue and freshness are likely coming from easy volume, quality sessions, or long-run load.
+- Keep this card about readiness and form state, not generic injury warning language.
+- Do not invent race-specific workouts or taper prescriptions unless the data directly supports them.`,
+    volume: `Volume-specific guidance:
+- Use the recent session-mix fields when present so volume guidance distinguishes pure mileage growth from added quality or long-run density.
+- Keep this card focused on trajectory and sustainability rather than general fitness or injury commentary.
+- Do not invent target weekly kilometer numbers unless they already appear in the Data.`,
+    'race-prediction': `Race-prediction-specific guidance:
+- Use the recent session-mix fields when present to explain whether the recent training pattern supports the race forecast or leaves it under-supported.
+- Keep this card centered on race readiness and performance outlook, not generic block management.
+- Do not invent workout prescriptions, splits, or target races that are not present in the Data.`,
+    'run-detail': `Run-detail-specific guidance:
+- Use the inferred session type and effort pattern fields when present to describe what kind of run this most likely was.
+- Prefer language like easy run, steady run, threshold-style run, interval-style run, race-like effort, progressive pacing, or surging pacing when supported by the provided data.
+- Keep the recommendation tied to the next 1-2 runs rather than drifting into broader weekly planning.`,
 };
 
 export const INSIGHT_PROMPTS: Record<string, (payload: Record<string, unknown>) => string> = {
-    overview: (payload) => `Analyse your current training block - specifically your load ratio, routine consistency, weekly change trend, aerobic efficiency, and training phase context. Explain what state the block is in, what is most likely driving that state, and what you should do over the next 7-10 days. If the block is unstable, guide the runner toward a steadier approach without sounding harsh. If Training Phase is "rebuild" or "build", do not treat a moderate rise from a low baseline as a problem by itself. Only recommend pulling back when at least two red flags agree, such as very high load ratio plus worsening efficiency, or a steep ramp plus poor routine. If the data is mixed, prefer hold-steady or gradual rebuild guidance over cutback advice. Do not just restate the numbers; interpret them into a plan.
+    overview: (payload) => `Analyse your current training block - specifically your load ratio, routine consistency, weekly change trend, aerobic efficiency, recent session mix, and training phase context. Explain what state the block is in, what is most likely driving that state, and what you should do over the next 7-10 days. Use the session mix when present so the block reads as easy-heavy, quality-heavy, long-run anchored, or balanced rather than only as averages. If the block is unstable, guide the runner toward a steadier approach without sounding harsh. If Training Phase is "rebuild" or "build", do not treat a moderate rise from a low baseline as a problem by itself. Only recommend pulling back when at least two red flags agree, such as very high load ratio plus worsening efficiency, or a steep ramp plus poor routine. If the data is mixed, prefer hold-steady or gradual rebuild guidance over cutback advice. Do not just restate the numbers; interpret them into a plan.
 
 ${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
-    'training-health': (payload) => `Analyse your training stress, monotony, strain, load ratio, and training phase context. Explain what they suggest about stress distribution, why that pattern is likely happening, and what change to make in the next 7 days. Give one concrete coaching instruction about recovery, intensity, or session spacing. Do not assume that higher stress automatically means overload: if Training Phase is "rebuild" or "build", acknowledge when the pattern can simply reflect a return to structure or a planned increase. Recommend a pullback only when stress markers stack up clearly rather than from one ratio alone. Avoid made-up precision like exact percentage cuts or recovery prescriptions unless the data directly supports them.
+    'training-health': (payload) => `Analyse your training stress, monotony, strain, load ratio, recent session mix, and training phase context. Explain what they suggest about stress distribution, why that pattern is likely happening, and what change to make in the next 7 days. Use the session mix to distinguish between easy running, quality work, and long-run density when those fields are present. Give one concrete coaching instruction about recovery, intensity, or session spacing. Do not assume that higher stress automatically means overload: if Training Phase is "rebuild" or "build", acknowledge when the pattern can simply reflect a return to structure or a planned increase. Recommend a pullback only when stress markers stack up clearly rather than from one ratio alone. Avoid injury-risk language here unless the provided data explicitly says risk. Avoid made-up precision like exact percentage cuts or recovery prescriptions unless the data directly supports them.
 
 ${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
-    fitness: (payload) => `Analyse your fitness (CTL), fatigue (ATL), and training stress balance (TSB). Explain your current form state, why it looks that way, and what that means for training or racing in the next 3-10 days. Be explicit about whether you should push, maintain, absorb training, or freshen up, but do not default to freshen-up advice unless the fatigue markers clearly support it.
+    fitness: (payload) => `Analyse your fitness (CTL), fatigue (ATL), training stress balance (TSB), and recent session mix. Explain your current form state, why it looks that way, and what that means for training or racing in the next 3-10 days. Use the session mix when present to explain whether your current state is being shaped mostly by easy volume, long-run load, or harder sessions. Be explicit about whether you should push, maintain, absorb training, or freshen up, but do not default to freshen-up advice unless the fatigue markers clearly support it.
 
 ${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
-    volume: (payload) => `Analyse your weekly volume trend over the supplied analysis window, including ramp rate and training phase context. Explain whether the current trajectory is sustainable, what is likely driving it relative to baseline, and what to do with volume over the next 1-2 weeks. Be explicit about whether to hold, cut back, or keep building, but treat a rebuild or early build as a valid reason for moderate week-to-week increases. If volume is down after a setback or interruption, frame a gradual rebuild as a valid option rather than a problem.
+    volume: (payload) => `Analyse your weekly volume trend over the supplied analysis window, including ramp rate, recent session mix, and training phase context. Explain whether the current trajectory is sustainable, what is likely driving it relative to baseline, and what to do with volume over the next 1-2 weeks. Use the session mix when present to distinguish pure mileage growth from added quality or long-run density. Be explicit about whether to hold, cut back, or keep building, but treat a rebuild or early build as a valid reason for moderate week-to-week increases. If volume is down after a setback or interruption, frame a gradual rebuild as a valid option rather than a problem.
 
 ${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
-    'injury-risk': (payload) => `Analyse the current risk pattern calmly and give a specific short-term plan to reduce risk. Base your entire response only on the fields provided. The "had extended training gap" field only indicates whether a 21+ day break appears in history; it does not indicate injury. Do not mention injury history, past injuries, illness, or any cause not directly supported by the numeric data. Do not speculate about why gaps occurred. If Training Phase is "rebuild" and recent training history is shallow, acknowledge that risk metrics can be inflated by a low baseline and prefer controlled progression advice over alarmist pullback language unless the ramp is extreme. When rebuild context is present, do not open by saying the runner has crossed a risk threshold. Prefer "hold steady and stabilize" over "cut back" when the risk appears to come from a shallow baseline rather than stacked warning signs.
+    'injury-risk': (payload) => `Analyse the current risk pattern calmly and give a specific short-term plan to reduce risk. Base your entire response only on the fields provided. The "had extended training gap" field only indicates whether a 21+ day break appears in history; it does not indicate injury. Do not mention injury history, past injuries, illness, or any cause not directly supported by the numeric data. Do not speculate about why gaps occurred. Use the recent session mix when present to identify whether risk is tied to stacked quality sessions, long-run density, or simply a shallow baseline. If Training Phase is "rebuild" and recent training history is shallow, acknowledge that risk metrics can be inflated by a low baseline and prefer controlled progression advice over alarmist pullback language unless the ramp is extreme. When rebuild context is present, do not open by saying the runner has crossed a risk threshold. Prefer "hold steady and stabilize" over "cut back" when the risk appears to come from a shallow baseline rather than stacked warning signs.
 
 ${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
-    'race-prediction': (payload) => `Analyse your VDOT trend, race time predictions, current readiness context, and training phase context. Explain what your race potential looks like right now, why it is likely moving that way, and what to do over the next 7-14 days to respond. If current fatigue or freshness suggests caution, say so clearly but gently, but avoid reflexively telling the runner to back off when they are clearly rebuilding or returning to structure.
+    'race-prediction': (payload) => `Analyse your VDOT trend, race time predictions, current readiness context, recent session mix, and training phase context. Explain what your race potential looks like right now, why it is likely moving that way, and what to do over the next 7-14 days to respond. Use the session mix when present to judge whether the current race outlook looks supported by the recent training pattern. If current fatigue or freshness suggests caution, say so clearly but gently, but avoid reflexively telling the runner to back off when they are clearly rebuilding or returning to structure.
 
 ${OUTPUT_RULES}
 
 Data:
 ${formatPayload(payload)}`,
 
-    'run-detail': (payload) => `Analyse this specific run in the context of your recent history. Explain what was notable about it, why it matters for your current fitness or fatigue, and how your next 1-2 runs should change because of it. If it was a breakthrough, say how to build on it; if it was a warning sign, say how to absorb it without sounding severe or discouraging.
+    'run-detail': (payload) => `Analyse this specific run in the context of your recent history. Use the inferred session type and effort pattern when present to describe what kind of run this most likely was. Explain what was notable about it, why it matters for your current fitness or fatigue, and how your next 1-2 runs should change because of it. If it was a breakthrough, say how to build on it; if it was a warning sign, say how to absorb it without sounding severe or discouraging.
 
 ${OUTPUT_RULES}
 

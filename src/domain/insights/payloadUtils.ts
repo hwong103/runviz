@@ -1,11 +1,24 @@
 import { activitiesToDailyLoads, calculateTrainingLoadHistory } from '@/analytics/trainingLoad';
 import type { ViewPeriod } from '@/lib/dashboard';
-import type { Activity } from '@/types/activity';
+import type { Activity, ActivityStreams } from '@/types/activity';
 import type { TrainingLoadMetrics } from '@/types/analytics';
 import { isRun } from '@/types/activity';
 import { parseActivityLocalDate } from '@/utils/activityDate';
 
 import type { TrainingPhaseContext } from './payloadTypes';
+
+export type RunEffortProfile = 'easy' | 'steady' | 'threshold' | 'race' | 'interval' | 'unknown';
+
+export interface RunEffortMix {
+    easy: number;
+    steady: number;
+    threshold: number;
+    interval: number;
+    race: number;
+    long: number;
+}
+
+export type RunEffortPattern = 'steady' | 'progressive' | 'surging' | 'fading' | 'unknown';
 
 export function roundTo(value: number, digits = 1): number {
     if (!Number.isFinite(value)) return 0;
@@ -91,6 +104,132 @@ export function getAveragePaceMinPerKm(activities: Activity[]): number {
 
     if (totals.distance <= 0 || totals.time <= 0) return 0;
     return (totals.time / totals.distance) * 1000 / 60;
+}
+
+function getMedian(values: number[]): number | null {
+    if (values.length === 0) return null;
+    const sorted = [...values].sort((left, right) => left - right);
+    const middle = Math.floor(sorted.length / 2);
+    if (sorted.length % 2 === 1) {
+        return sorted[middle];
+    }
+
+    return (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+export function classifyRunEffort(activity: Activity, referencePaceMinPerKm: number | null): RunEffortProfile {
+    if (!referencePaceMinPerKm || referencePaceMinPerKm <= 0 || activity.average_speed <= 0) {
+        return 'unknown';
+    }
+
+    const activityPaceMinPerKm = (1 / activity.average_speed) * 1000 / 60;
+    if (!Number.isFinite(activityPaceMinPerKm) || activityPaceMinPerKm <= 0) {
+        return 'unknown';
+    }
+
+    const referencePaceSecPerM = (referencePaceMinPerKm * 60) / 1000;
+    const activityPaceSecPerM = (activityPaceMinPerKm * 60) / 1000;
+    const paceRatio = referencePaceSecPerM / activityPaceSecPerM;
+
+    if (!activity.average_heartrate || !activity.max_heartrate) {
+        if (paceRatio > 1.08) return 'race';
+        if (paceRatio > 1.02) return 'threshold';
+        if (paceRatio > 0.95) return 'steady';
+        return 'easy';
+    }
+
+    const hrRatio = activity.max_heartrate / activity.average_heartrate;
+
+    if (hrRatio > 1.18) return 'interval';
+    if (paceRatio > 1.08 && hrRatio < 1.08) return 'race';
+    if (paceRatio > 1.02 && hrRatio < 1.12) return 'threshold';
+    if (paceRatio > 0.95) return 'steady';
+    return 'easy';
+}
+
+export function summarizeRunEffortMix(
+    activities: Activity[],
+    anchorDate: Date,
+    days: number,
+): RunEffortMix {
+    const runs = getActivitiesInWindowEndingAt(activities, anchorDate, days);
+    if (runs.length === 0) {
+        return {
+            easy: 0,
+            steady: 0,
+            threshold: 0,
+            interval: 0,
+            race: 0,
+            long: 0,
+        };
+    }
+
+    const validPaces = runs
+        .filter((activity) => activity.average_speed > 0)
+        .map((activity) => (1 / activity.average_speed) * 1000 / 60)
+        .filter((pace) => Number.isFinite(pace) && pace > 0);
+    const referencePaceMinPerKm = getMedian(validPaces);
+    const distancesKm = runs.map((activity) => activity.distance / 1000).filter((distance) => distance > 0);
+    const medianDistanceKm = getMedian(distancesKm) ?? 0;
+    const longRunDistanceThresholdKm = Math.max(14, roundTo(medianDistanceKm * 1.5, 1));
+
+    const mix: RunEffortMix = {
+        easy: 0,
+        steady: 0,
+        threshold: 0,
+        interval: 0,
+        race: 0,
+        long: 0,
+    };
+
+    for (const run of runs) {
+        const effort = classifyRunEffort(run, referencePaceMinPerKm);
+        if (effort !== 'unknown') {
+            mix[effort] += 1;
+        }
+
+        const isLongRun = run.moving_time >= 75 * 60 || (run.distance / 1000) >= longRunDistanceThresholdKm;
+        if (isLongRun) {
+            mix.long += 1;
+        }
+    }
+
+    return mix;
+}
+
+export function inferRunEffortPattern(streams?: ActivityStreams | null): RunEffortPattern {
+    const velocity = streams?.velocity_smooth?.data?.filter((value): value is number => value > 0) ?? [];
+    if (velocity.length < 12) {
+        return 'unknown';
+    }
+
+    const third = Math.max(4, Math.floor(velocity.length / 3));
+    const opening = velocity.slice(0, third);
+    const middle = velocity.slice(third, third * 2);
+    const closing = velocity.slice(-third);
+
+    const average = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    const openAvg = average(opening);
+    const middleAvg = average(middle);
+    const closeAvg = average(closing);
+
+    const closeVsOpen = (closeAvg - openAvg) / openAvg;
+    const middleVsOpen = (middleAvg - openAvg) / openAvg;
+    const maxVelocity = Math.max(...velocity);
+    const minVelocity = Math.min(...velocity);
+    const variation = (maxVelocity - minVelocity) / openAvg;
+
+    if (variation > 0.3 && Math.abs(closeVsOpen) < 0.06) {
+        return 'surging';
+    }
+    if (closeVsOpen > 0.06 && middleVsOpen >= -0.02) {
+        return 'progressive';
+    }
+    if (closeVsOpen < -0.06) {
+        return 'fading';
+    }
+
+    return 'steady';
 }
 
 export function getAverageOutingMinutes(activities: Activity[]): number {

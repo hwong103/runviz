@@ -149,12 +149,12 @@ export function useRunDetails({
 
     const averageHeartrate = activity.average_heartrate ? Math.round(activity.average_heartrate) : null;
     const runInsightPayload = useMemo(
-        () => buildRunDetailPayload(activity, allActivities),
-        [activity, allActivities]
+        () => buildRunDetailPayload(activity, allActivities, streams),
+        [activity, allActivities, streams]
     );
     const runInsightContext = useMemo(
-        () => buildRunInsightContext(activity),
-        [activity]
+        () => buildRunInsightContext(activity, allActivities, streams),
+        [activity, allActivities, streams]
     );
     const { similar, loading: similarLoading } = useSimilarRuns({
         activityId: activity.id,

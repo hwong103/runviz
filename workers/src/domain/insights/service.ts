@@ -37,6 +37,7 @@ interface InsightRequestBody {
         elevationPerKm: number | null;
         movingTimeMins: number;
         runProfile: string;
+        effortPattern?: string;
     };
     weekContext?: {
         totalKm: number;
@@ -44,8 +45,11 @@ interface InsightRequestBody {
         avgPaceMinPerKm: number | null;
         avgHR: number | null;
         easyRuns: number;
+        steadyRuns: number;
         thresholdRuns: number;
+        intervalRuns: number;
         raceRuns: number;
+        longRuns: number;
         loadRatio: number | null;
         currentWeekKey?: string;
     };
@@ -101,6 +105,9 @@ async function handleGenerateInsight(
             activityContext.runProfile && activityContext.runProfile !== 'unknown'
                 ? `${activityContext.runProfile} effort`
                 : '',
+            activityContext.effortPattern && activityContext.effortPattern !== 'unknown'
+                ? `${activityContext.effortPattern} pacing pattern`
+                : '',
             activityContext.paceMinPerKm !== null
                 ? `pace ${formatPace(activityContext.paceMinPerKm)}`
                 : '',
@@ -120,7 +127,7 @@ async function handleGenerateInsight(
 
     let weekHistoryContext = '';
     if (useMemory && (insightType === 'overview' || insightType === 'training-health') && weekContext) {
-        const qualityRuns = weekContext.thresholdRuns + weekContext.raceRuns;
+        const qualityRuns = weekContext.thresholdRuns + weekContext.raceRuns + weekContext.intervalRuns;
         const queryParts = [
             `${weekContext.totalKm.toFixed(1)}km week`,
             `${weekContext.runCount} runs`,
@@ -132,6 +139,13 @@ async function handleGenerateInsight(
         }
         if (weekContext.avgHR) {
             queryParts.push(`average heart rate ${weekContext.avgHR} bpm`);
+        }
+        if (weekContext.longRuns > 0) {
+            queryParts.push(
+                weekContext.longRuns === 1
+                    ? 'included one long run'
+                    : `included ${weekContext.longRuns} long runs`,
+            );
         }
         if (weekContext.loadRatio !== null) {
             queryParts.push(
