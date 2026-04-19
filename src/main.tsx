@@ -1,6 +1,7 @@
 import { StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
 import { GoogleAuthCallback } from './features/auth/GoogleAuthCallback.tsx'
@@ -16,6 +17,7 @@ import { Badge } from './components/ui/Badge.tsx'
 import { ActivitiesProvider } from './hooks/useActivities.ts'
 import { AuthProvider } from './hooks/useAuth.ts'
 import { lazyWithRetry } from './lib/lazyWithRetry.ts'
+import { OfflineNotice } from './components/pwa/OfflineNotice.tsx'
 
 const RoutePlanner = lazyWithRetry(() => import('./features/route-planner/RoutePlannerPage.tsx'), 'route-planner')
 const FormAnalysis = lazyWithRetry(() => import('./features/form-analysis/FormAnalysisPage.tsx'), 'form-analysis')
@@ -42,11 +44,16 @@ const routerBase = import.meta.env.BASE_URL.endsWith('/')
   }
 })()
 
+registerSW({
+  immediate: true,
+})
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={routerBase}>
       <AuthProvider>
         <ActivitiesProvider>
+          <OfflineNotice />
           <Suspense fallback={<div className="min-h-screen bg-background text-foreground" />}>
             <Routes>
               <Route path="/" element={<App />} />
