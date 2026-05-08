@@ -2,7 +2,6 @@ import type { Activity, ActivityStreams, LatLng } from '@/types/activity';
 import { parseActivityLocalDate } from '@/utils/activityDate';
 
 export type HeatmapColorTheme = 'ember' | 'blue' | 'mono';
-export type HeatmapDateScope = 'current' | 'all';
 
 export interface HeatmapRoute {
     activity: Activity;
@@ -172,16 +171,13 @@ export function estimateCoveredAreaKm2(bounds: HeatmapBounds | null): number {
 export function filterActivitiesForHeatmap(
     activities: Activity[],
     visibleActivities: Activity[],
-    dateScope: HeatmapDateScope,
-    shoeId: string,
-    sportType: string
+    shoeId: string
 ): Activity[] {
     const visibleIds = new Set(visibleActivities.map((activity) => activity.id));
 
     return activities.filter((activity) => {
-        if (dateScope === 'current' && !visibleIds.has(activity.id)) return false;
+        if (!visibleIds.has(activity.id)) return false;
         if (shoeId !== 'all' && activity.gear_id !== shoeId) return false;
-        if (sportType !== 'all' && activity.sport_type !== sportType && activity.type !== sportType) return false;
         return true;
     });
 }
@@ -192,8 +188,4 @@ export function sortActivitiesOldestFirst(activities: Activity[]): Activity[] {
             parseActivityLocalDate(left.start_date_local).getTime() -
             parseActivityLocalDate(right.start_date_local).getTime()
     );
-}
-
-export function heatmapRouteKey(route: HeatmapRoute): string {
-    return `${route.activity.id}:${route.points.length}:${route.points[0]?.join(',')}:${route.points.at(-1)?.join(',')}`;
 }

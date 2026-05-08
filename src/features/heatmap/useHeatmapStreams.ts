@@ -14,6 +14,7 @@ interface HeatmapStreamState {
     streamsByActivityId: Map<number, ActivityStreams>;
     skippedActivityIds: Set<number>;
     loadingCache: boolean;
+    backfillActive: boolean;
     backfillPaused: boolean;
     backfillError: string | null;
     fetchingActivityId: number | null;
@@ -29,6 +30,7 @@ export interface HeatmapStreamStatus {
     pendingRuns: number;
     fetchedThisSession: number;
     loadingCache: boolean;
+    backfillActive: boolean;
     backfillPaused: boolean;
     backfillError: string | null;
     fetchingActivityId: number | null;
@@ -69,6 +71,7 @@ export function useHeatmapStreams(runActivities: Activity[]) {
         streamsByActivityId: new Map(),
         skippedActivityIds: new Set(),
         loadingCache: true,
+        backfillActive: false,
         backfillPaused: false,
         backfillError: null,
         fetchingActivityId: null,
@@ -90,6 +93,7 @@ export function useHeatmapStreams(runActivities: Activity[]) {
             setState((previous) => ({
                 ...previous,
                 loadingCache: true,
+                backfillActive: false,
                 backfillPaused: false,
                 backfillError: null,
                 fetchingActivityId: null,
@@ -119,6 +123,7 @@ export function useHeatmapStreams(runActivities: Activity[]) {
                 streamsByActivityId: nextStreams,
                 skippedActivityIds: nextSkipped,
                 loadingCache: false,
+                backfillActive: false,
                 backfillPaused: false,
                 backfillError: null,
                 fetchingActivityId: null,
@@ -137,6 +142,7 @@ export function useHeatmapStreams(runActivities: Activity[]) {
             setState((previous) => ({
                 ...previous,
                 loadingCache: false,
+                backfillActive: false,
                 backfillPaused: true,
                 backfillError: error instanceof Error ? error.message : 'Failed to load cached GPS data',
             }));
@@ -162,6 +168,7 @@ export function useHeatmapStreams(runActivities: Activity[]) {
             setState((previous) => ({
                 ...previous,
                 fetchingActivityId: null,
+                backfillActive: false,
                 backfillProcessedThisSession: 0,
                 backfillTotalThisSession: 0,
             }));
@@ -170,6 +177,7 @@ export function useHeatmapStreams(runActivities: Activity[]) {
 
         setState((previous) => ({
             ...previous,
+            backfillActive: true,
             backfillProcessedThisSession: 0,
             backfillTotalThisSession: pending.length,
         }));
@@ -182,6 +190,7 @@ export function useHeatmapStreams(runActivities: Activity[]) {
 
                 setState((previous) => ({
                     ...previous,
+                    backfillActive: true,
                     fetchingActivityId: activity.id,
                     backfillError: null,
                 }));
@@ -222,6 +231,7 @@ export function useHeatmapStreams(runActivities: Activity[]) {
                     if (error instanceof ApiError && (error.status === 401 || error.status === 403 || error.status === 429)) {
                         setState((previous) => ({
                             ...previous,
+                            backfillActive: false,
                             backfillPaused: true,
                             backfillError: error.status === 429
                                 ? 'Strava rate limit reached. Heatmap backfill will resume when you revisit this workspace later.'
@@ -235,6 +245,7 @@ export function useHeatmapStreams(runActivities: Activity[]) {
 
                     setState((previous) => ({
                         ...previous,
+                        backfillActive: false,
                         backfillPaused: true,
                         backfillError: error instanceof Error ? error.message : 'Failed to fetch GPS streams',
                         fetchingActivityId: null,
@@ -257,6 +268,7 @@ export function useHeatmapStreams(runActivities: Activity[]) {
                 setState((previous) => ({
                     ...previous,
                     fetchingActivityId: null,
+                    backfillActive: false,
                     backfillProcessedThisSession: pending.length,
                     backfillTotalThisSession: pending.length,
                 }));
@@ -288,6 +300,7 @@ export function useHeatmapStreams(runActivities: Activity[]) {
             pendingRuns,
             fetchedThisSession: state.fetchedThisSession,
             loadingCache: state.loadingCache,
+            backfillActive: state.backfillActive,
             backfillPaused: state.backfillPaused,
             backfillError: state.backfillError,
             fetchingActivityId: state.fetchingActivityId,

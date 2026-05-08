@@ -27,7 +27,6 @@ import {
     filterActivitiesForHeatmap,
     type HeatmapBounds,
     type HeatmapColorTheme,
-    type HeatmapDateScope,
 } from './heatmapUtils';
 import { useHeatmapStreams } from './useHeatmapStreams';
 
@@ -124,9 +123,7 @@ export function HeatmapWorkspace({
     allShoes,
 }: HeatmapWorkspaceProps) {
     const { resolved } = useTheme();
-    const [dateScope, setDateScope] = useState<HeatmapDateScope>('all');
     const [shoeFilter, setShoeFilter] = useState('all');
-    const [sportType, setSportType] = useState('all');
     const [colorTheme, setColorTheme] = useState<HeatmapColorTheme>('ember');
     const [opacity, setOpacity] = useState(0.74);
     const [intensity, setIntensity] = useState(1);
@@ -149,11 +146,9 @@ export function HeatmapWorkspace({
         () => filterActivitiesForHeatmap(
             runActivities,
             filteredActivities,
-            dateScope,
-            shoeFilter,
-            sportType
+            shoeFilter
         ),
-        [dateScope, filteredActivities, runActivities, shoeFilter, sportType]
+        [filteredActivities, runActivities, shoeFilter]
     );
 
     const routes = useMemo(
@@ -179,17 +174,9 @@ export function HeatmapWorkspace({
     const cachedPercent = status.totalRuns > 0
         ? Math.round(((status.cachedRuns + status.skippedRuns) / status.totalRuns) * 100)
         : 0;
-    const backfillPosition = status.backfillTotalThisSession > 0
+    const backfillPosition = status.fetchingActivityId && status.backfillTotalThisSession > 0
         ? Math.min(status.backfillProcessedThisSession + 1, status.backfillTotalThisSession)
         : 0;
-    const sportOptions = useMemo(
-        () => Array.from(new Set(
-            runActivities
-                .map((activity) => activity.sport_type || activity.type)
-                .filter(Boolean)
-        )).sort(),
-        [runActivities]
-    );
     const shoeOptions = useMemo(() => {
         const usedShoeIds = new Set(runActivities.map((activity) => activity.gear_id).filter(Boolean));
         return allShoes
@@ -210,9 +197,7 @@ export function HeatmapWorkspace({
                     : null;
 
     const resetFilters = () => {
-        setDateScope('all');
         setShoeFilter('all');
-        setSportType('all');
         setColorTheme('ember');
         setOpacity(0.74);
         setIntensity(1);
@@ -229,12 +214,12 @@ export function HeatmapWorkspace({
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                             <p className="text-sm font-semibold text-foreground">Personal heatmap</p>
-                            <Badge tone={status.backfillPaused ? 'orange' : status.pendingRuns > 0 ? 'blue' : 'emerald'} size="sm">
-                                {status.backfillPaused ? 'Paused' : status.pendingRuns > 0 ? 'Backfilling' : 'Ready'}
+                            <Badge tone={status.backfillPaused ? 'orange' : status.backfillActive ? 'blue' : 'emerald'} size="sm">
+                                {status.backfillPaused ? 'Paused' : status.backfillActive ? 'Backfilling' : 'Ready'}
                             </Badge>
                         </div>
                         <p className="mt-1 truncate text-xs text-muted-foreground">
-                            {status.fetchingActivityId
+                            {status.backfillActive && status.fetchingActivityId
                                 ? `Fetching GPS stream ${backfillPosition} of ${status.backfillTotalThisSession}`
                                 : `${cachedPercent}% stream cache complete`}
                         </p>
@@ -242,16 +227,6 @@ export function HeatmapWorkspace({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                    <Select value={dateScope} onValueChange={(value) => setDateScope(value as HeatmapDateScope)}>
-                        <SelectTrigger className="h-9 min-w-[130px] bg-background/70">
-                            <SelectValue aria-label="Date scope" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All history</SelectItem>
-                            <SelectItem value="current">Current period</SelectItem>
-                        </SelectContent>
-                    </Select>
-
                     <Select value={shoeFilter} onValueChange={setShoeFilter}>
                         <SelectTrigger className="h-9 min-w-[130px] bg-background/70">
                             <SelectValue aria-label="Shoe filter" />
@@ -264,18 +239,6 @@ export function HeatmapWorkspace({
                         </SelectContent>
                     </Select>
 
-                    <Select value={sportType} onValueChange={setSportType}>
-                        <SelectTrigger className="h-9 min-w-[128px] bg-background/70">
-                            <SelectValue aria-label="Activity type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All run types</SelectItem>
-                            {sportOptions.map((option) => (
-                                <SelectItem key={option} value={option}>{option}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
                     <Button
                         type="button"
                         variant="outline"
@@ -283,7 +246,8 @@ export function HeatmapWorkspace({
                         className="size-9 bg-background/70"
                         onClick={() => setFitRequestId((value) => value + 1)}
                         disabled={!bounds}
-                        aria-label="Fit map to runs"
+                        aria-label="Fit map to visible runs"
+                        title="Fit map to visible runs"
                     >
                         <Crosshair className="size-4" />
                     </Button>
