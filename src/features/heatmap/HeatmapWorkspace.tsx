@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Activity, Crosshair, Flame, Loader2, RotateCcw, Shield, SlidersHorizontal } from 'lucide-react';
+import { Activity, Crosshair, Expand, Flame, Loader2, RotateCcw, Shield, SlidersHorizontal } from 'lucide-react';
 import L from 'leaflet';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -23,6 +23,7 @@ import { HeatmapCanvasLayer } from './HeatmapCanvasLayer';
 import {
     buildHeatmapRoute,
     calculateHeatmapBounds,
+    calculateMainClusterBounds,
     estimateCoveredAreaKm2,
     filterActivitiesForHeatmap,
     type HeatmapBounds,
@@ -129,6 +130,7 @@ export function HeatmapWorkspace({
     const [intensity, setIntensity] = useState(1);
     const [privacyRadius, setPrivacyRadius] = useState(readPersistedPrivacyRadius);
     const [fitRequestId, setFitRequestId] = useState(0);
+    const [fitAllRequestId, setFitAllRequestId] = useState(0);
     const {
         streamsByActivityId,
         status,
@@ -162,6 +164,7 @@ export function HeatmapWorkspace({
     );
 
     const bounds = useMemo(() => calculateHeatmapBounds(routes), [routes]);
+    const mainClusterBounds = useMemo(() => calculateMainClusterBounds(routes), [routes]);
     const visibleDistanceMeters = useMemo(
         () => routes.reduce((sum, route) => sum + route.distanceMeters, 0),
         [routes]
@@ -245,11 +248,23 @@ export function HeatmapWorkspace({
                         size="icon"
                         className="size-9 bg-background/70"
                         onClick={() => setFitRequestId((value) => value + 1)}
-                        disabled={!bounds}
-                        aria-label="Fit map to visible runs"
-                        title="Fit map to visible runs"
+                        disabled={!mainClusterBounds}
+                        aria-label="Focus main running area"
+                        title="Focus main running area"
                     >
                         <Crosshair className="size-4" />
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="size-9 bg-background/70"
+                        onClick={() => setFitAllRequestId((value) => value + 1)}
+                        disabled={!bounds}
+                        aria-label="Fit all visible runs"
+                        title="Fit all visible runs"
+                    >
+                        <Expand className="size-4" />
                     </Button>
                     <Button
                         type="button"
@@ -291,7 +306,8 @@ export function HeatmapWorkspace({
                                 opacity={opacity}
                                 intensity={intensity}
                             />
-                            <FitHeatmapBounds bounds={bounds} requestId={fitRequestId} />
+                            <FitHeatmapBounds bounds={mainClusterBounds} requestId={fitRequestId} />
+                            <FitHeatmapBounds bounds={bounds} requestId={fitAllRequestId} />
                         </MapContainer>
 
                         {emptyMessage ? (
