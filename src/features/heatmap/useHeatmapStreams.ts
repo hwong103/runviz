@@ -18,6 +18,8 @@ interface HeatmapStreamState {
     backfillError: string | null;
     fetchingActivityId: number | null;
     fetchedThisSession: number;
+    backfillProcessedThisSession: number;
+    backfillTotalThisSession: number;
 }
 
 export interface HeatmapStreamStatus {
@@ -30,6 +32,8 @@ export interface HeatmapStreamStatus {
     backfillPaused: boolean;
     backfillError: string | null;
     fetchingActivityId: number | null;
+    backfillProcessedThisSession: number;
+    backfillTotalThisSession: number;
 }
 
 function wait(ms: number) {
@@ -69,8 +73,13 @@ export function useHeatmapStreams(runActivities: Activity[]) {
         backfillError: null,
         fetchingActivityId: null,
         fetchedThisSession: 0,
+        backfillProcessedThisSession: 0,
+        backfillTotalThisSession: 0,
     });
     const loadTokenRef = useRef(0);
+    const backfillTokenRef = useRef(0);
+    const streamsRef = useRef(state.streamsByActivityId);
+    const skippedRef = useRef(state.skippedActivityIds);
 
     useEffect(() => {
         let cancelled = false;
@@ -84,6 +93,8 @@ export function useHeatmapStreams(runActivities: Activity[]) {
                 backfillPaused: false,
                 backfillError: null,
                 fetchingActivityId: null,
+                backfillProcessedThisSession: 0,
+                backfillTotalThisSession: 0,
             }));
 
             const skippedFromMeta = parseSkippedIds(await cache.getMeta(SKIPPED_STREAMS_META_KEY));
@@ -101,6 +112,9 @@ export function useHeatmapStreams(runActivities: Activity[]) {
 
             if (cancelled || loadTokenRef.current !== loadToken) return;
 
+            streamsRef.current = nextStreams;
+            skippedRef.current = nextSkipped;
+
             setState({
                 streamsByActivityId: nextStreams,
                 skippedActivityIds: nextSkipped,
@@ -109,6 +123,8 @@ export function useHeatmapStreams(runActivities: Activity[]) {
                 backfillError: null,
                 fetchingActivityId: null,
                 fetchedThisSession: 0,
+                backfillProcessedThisSession: 0,
+                backfillTotalThisSession: 0,
             });
 
             if (nextSkipped.size !== skippedFromMeta.size) {
@@ -135,16 +151,34 @@ export function useHeatmapStreams(runActivities: Activity[]) {
         if (state.loadingCache || state.backfillPaused) return;
 
         let cancelled = false;
+        const backfillToken = backfillTokenRef.current + 1;
+        backfillTokenRef.current = backfillToken;
         const pending = sortActivitiesOldestFirst(runActivities).filter((activity) =>
-            !state.streamsByActivityId.has(activity.id) &&
-            !state.skippedActivityIds.has(activity.id)
+            !streamsRef.current.has(activity.id) &&
+            !skippedRef.current.has(activity.id)
         );
 
-        if (pending.length === 0) return;
+        if (pending.length === 0) {
+            setState((previous) => ({
+                ...previous,
+                fetchingActivityId: null,
+                backfillProcessedThisSession: 0,
+                backfillTotalThisSession: 0,
+            }));
+            return;
+        }
+
+        setState((previous) => ({
+            ...previous,
+            backfillProcessedThisSession: 0,
+            backfillTotalThisSession: pending.length,
+        }));
 
         const backfill = async () => {
+            let processed = 0;
+
             for (const activity of pending) {
-                if (cancelled) return;
+                if (cancelled || backfillTokenRef.current !== backfillToken) return;
 
                 setState((previous) => ({
                     ...previous,
@@ -158,6 +192,9 @@ export function useHeatmapStreams(runActivities: Activity[]) {
 
                     if (gpsPoints.length >= 2) {
                         await cache.cacheStreams(activity.id, streams);
+                        streamsRef.current = new Map(streamsRef.current);
+                        streamsRef.current.set(activity.id, streams);
+
                         setState((previous) => {
                             const streamsByActivityId = new Map(previous.streamsByActivityId);
                             streamsByActivityId.set(activity.id, streams);
@@ -168,10 +205,13 @@ export function useHeatmapStreams(runActivities: Activity[]) {
                             };
                         });
                     } else {
+                        skippedRef.current = new Set(skippedRef.current);
+                        skippedRef.current.add(activity.id);
+                        void persistSkippedIds(skippedRef.current);
+
                         setState((previous) => {
                             const skippedActivityIds = new Set(previous.skippedActivityIds);
                             skippedActivityIds.add(activity.id);
-                            void persistSkippedIds(skippedActivityIds);
                             return {
                                 ...previous,
                                 skippedActivityIds,
@@ -187,6 +227,8 @@ export function useHeatmapStreams(runActivities: Activity[]) {
                                 ? 'Strava rate limit reached. Heatmap backfill will resume when you revisit this workspace later.'
                                 : error.message,
                             fetchingActivityId: null,
+                            backfillProcessedThisSession: processed,
+                            backfillTotalThisSession: pending.length,
                         }));
                         return;
                     }
@@ -196,9 +238,17 @@ export function useHeatmapStreams(runActivities: Activity[]) {
                         backfillPaused: true,
                         backfillError: error instanceof Error ? error.message : 'Failed to fetch GPS streams',
                         fetchingActivityId: null,
+                        backfillProcessedThisSession: processed,
+                        backfillTotalThisSession: pending.length,
                     }));
                     return;
                 }
+
+                processed += 1;
+                setState((previous) => ({
+                    ...previous,
+                    backfillProcessedThisSession: processed,
+                }));
 
                 await wait(FETCH_DELAY_MS);
             }
@@ -207,6 +257,8 @@ export function useHeatmapStreams(runActivities: Activity[]) {
                 setState((previous) => ({
                     ...previous,
                     fetchingActivityId: null,
+                    backfillProcessedThisSession: pending.length,
+                    backfillTotalThisSession: pending.length,
                 }));
             }
         };
@@ -217,11 +269,10 @@ export function useHeatmapStreams(runActivities: Activity[]) {
             cancelled = true;
         };
     }, [
+        activityIds,
         runActivities,
         state.backfillPaused,
         state.loadingCache,
-        state.skippedActivityIds,
-        state.streamsByActivityId,
     ]);
 
     const status = useMemo<HeatmapStreamStatus>(() => {
@@ -240,6 +291,8 @@ export function useHeatmapStreams(runActivities: Activity[]) {
             backfillPaused: state.backfillPaused,
             backfillError: state.backfillError,
             fetchingActivityId: state.fetchingActivityId,
+            backfillProcessedThisSession: state.backfillProcessedThisSession,
+            backfillTotalThisSession: state.backfillTotalThisSession,
         };
     }, [runActivities, state]);
 

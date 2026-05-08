@@ -179,6 +179,9 @@ export function HeatmapWorkspace({
     const cachedPercent = status.totalRuns > 0
         ? Math.round(((status.cachedRuns + status.skippedRuns) / status.totalRuns) * 100)
         : 0;
+    const backfillPosition = status.backfillTotalThisSession > 0
+        ? Math.min(status.backfillProcessedThisSession + 1, status.backfillTotalThisSession)
+        : 0;
     const sportOptions = useMemo(
         () => Array.from(new Set(
             runActivities
@@ -232,7 +235,7 @@ export function HeatmapWorkspace({
                         </div>
                         <p className="mt-1 truncate text-xs text-muted-foreground">
                             {status.fetchingActivityId
-                                ? `Fetching GPS stream ${status.fetchedThisSession + 1} of ${status.fetchedThisSession + status.pendingRuns}`
+                                ? `Fetching GPS stream ${backfillPosition} of ${status.backfillTotalThisSession}`
                                 : `${cachedPercent}% stream cache complete`}
                         </p>
                     </div>
