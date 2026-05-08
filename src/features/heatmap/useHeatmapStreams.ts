@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 
 import { activities as activitiesApi } from '@/services/api/activitiesApi';
 import { ApiError } from '@/services/api/http';
@@ -62,14 +62,185 @@ function streamHasGps(streams: ActivityStreams | undefined): streams is Activity
     return extractLatLngPoints(streams).length >= 2;
 }
 
-export function useHeatmapStreams(runActivities: Activity[]) {
-    const activityIds = useMemo(
-        () => runActivities.map((activity) => activity.id).join(','),
-        [runActivities]
+const initialStreamState: HeatmapStreamState = {
+    streamsByActivityId: new Map(),
+    skippedActivityIds: new Set(),
+    loadingCache: true,
+    backfillActive: false,
+    backfillPaused: false,
+    backfillError: null,
+    fetchingActivityId: null,
+    fetchedThisSession: 0,
+    backfillProcessedThisSession: 0,
+    backfillTotalThisSession: 0,
+};
+
+let streamState = initialStreamState;
+let activeActivityKey: string | null = null;
+let activeActivities: Activity[] = [];
+let loadToken = 0;
+let backfillToken = 0;
+let backfillRunning = false;
+const listeners = new Set<() => void>();
+
+function emit() {
+    listeners.forEach((listener) => listener());
+}
+
+function updateStreamState(updater: (previous: HeatmapStreamState) => HeatmapStreamState) {
+    streamState = updater(streamState);
+    emit();
+}
+
+function subscribe(listener: () => void) {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+}
+
+function getSnapshot() {
+    return streamState;
+}
+
+function activityKey(activities: Activity[]) {
+    return activities.map((activity) => activity.id).join(',');
+}
+
+function startBackfill(token: number) {
+    if (backfillRunning || streamState.loadingCache || streamState.backfillPaused) return;
+
+    const pending = sortActivitiesOldestFirst(activeActivities).filter((activity) =>
+        !streamState.streamsByActivityId.has(activity.id) &&
+        !streamState.skippedActivityIds.has(activity.id)
     );
-    const [state, setState] = useState<HeatmapStreamState>({
-        streamsByActivityId: new Map(),
-        skippedActivityIds: new Set(),
+
+    if (pending.length === 0) {
+        updateStreamState((previous) => ({
+            ...previous,
+            fetchingActivityId: null,
+            backfillActive: false,
+            backfillProcessedThisSession: 0,
+            backfillTotalThisSession: 0,
+        }));
+        return;
+    }
+
+    backfillRunning = true;
+    updateStreamState((previous) => ({
+        ...previous,
+        backfillActive: true,
+        backfillProcessedThisSession: 0,
+        backfillTotalThisSession: pending.length,
+    }));
+
+    const backfill = async () => {
+        let processed = 0;
+
+        for (const activity of pending) {
+            if (backfillToken !== token) {
+                backfillRunning = false;
+                return;
+            }
+
+            updateStreamState((previous) => ({
+                ...previous,
+                backfillActive: true,
+                fetchingActivityId: activity.id,
+                backfillError: null,
+            }));
+
+            try {
+                const streams = await activitiesApi.getStreams(activity.id);
+                if (backfillToken !== token) {
+                    backfillRunning = false;
+                    return;
+                }
+
+                const gpsPoints = extractLatLngPoints(streams);
+
+                if (gpsPoints.length >= 2) {
+                    await cache.cacheStreams(activity.id, streams);
+                    if (backfillToken !== token) {
+                        backfillRunning = false;
+                        return;
+                    }
+
+                    updateStreamState((previous) => {
+                        const streamsByActivityId = new Map(previous.streamsByActivityId);
+                        streamsByActivityId.set(activity.id, streams);
+                        return {
+                            ...previous,
+                            streamsByActivityId,
+                            fetchedThisSession: previous.fetchedThisSession + 1,
+                        };
+                    });
+                } else {
+                    updateStreamState((previous) => {
+                        const skippedActivityIds = new Set(previous.skippedActivityIds);
+                        skippedActivityIds.add(activity.id);
+                        void persistSkippedIds(skippedActivityIds);
+                        return {
+                            ...previous,
+                            skippedActivityIds,
+                        };
+                    });
+                }
+            } catch (error) {
+                backfillRunning = false;
+
+                if (error instanceof ApiError && (error.status === 401 || error.status === 403 || error.status === 429)) {
+                    updateStreamState((previous) => ({
+                        ...previous,
+                        backfillActive: false,
+                        backfillPaused: true,
+                        backfillError: error.status === 429
+                            ? 'Strava rate limit reached. Heatmap backfill will resume when you revisit this workspace later.'
+                            : error.message,
+                        fetchingActivityId: null,
+                        backfillProcessedThisSession: processed,
+                        backfillTotalThisSession: pending.length,
+                    }));
+                    return;
+                }
+
+                updateStreamState((previous) => ({
+                    ...previous,
+                    backfillActive: false,
+                    backfillPaused: true,
+                    backfillError: error instanceof Error ? error.message : 'Failed to fetch GPS streams',
+                    fetchingActivityId: null,
+                    backfillProcessedThisSession: processed,
+                    backfillTotalThisSession: pending.length,
+                }));
+                return;
+            }
+
+            processed += 1;
+            updateStreamState((previous) => ({
+                ...previous,
+                backfillProcessedThisSession: processed,
+            }));
+
+            await wait(FETCH_DELAY_MS);
+        }
+
+        backfillRunning = false;
+        if (backfillToken === token) {
+            updateStreamState((previous) => ({
+                ...previous,
+                fetchingActivityId: null,
+                backfillActive: false,
+                backfillProcessedThisSession: pending.length,
+                backfillTotalThisSession: pending.length,
+            }));
+        }
+    };
+
+    void backfill();
+}
+
+async function loadCachedStreams(activities: Activity[], token: number) {
+    updateStreamState((previous) => ({
+        ...previous,
         loadingCache: true,
         backfillActive: false,
         backfillPaused: false,
@@ -78,68 +249,57 @@ export function useHeatmapStreams(runActivities: Activity[]) {
         fetchedThisSession: 0,
         backfillProcessedThisSession: 0,
         backfillTotalThisSession: 0,
-    });
-    const loadTokenRef = useRef(0);
-    const backfillTokenRef = useRef(0);
-    const streamsRef = useRef(state.streamsByActivityId);
-    const skippedRef = useRef(state.skippedActivityIds);
+    }));
 
-    useEffect(() => {
-        let cancelled = false;
-        const loadToken = loadTokenRef.current + 1;
-        loadTokenRef.current = loadToken;
+    const skippedFromMeta = parseSkippedIds(await cache.getMeta(SKIPPED_STREAMS_META_KEY));
+    const nextStreams = new Map<number, ActivityStreams>();
+    const nextSkipped = new Set(skippedFromMeta);
 
-        const loadCachedStreams = async () => {
-            setState((previous) => ({
-                ...previous,
-                loadingCache: true,
-                backfillActive: false,
-                backfillPaused: false,
-                backfillError: null,
-                fetchingActivityId: null,
-                backfillProcessedThisSession: 0,
-                backfillTotalThisSession: 0,
-            }));
+    await Promise.all(activities.map(async (activity) => {
+        const streams = await cache.getCachedStreams(activity.id);
+        if (streamHasGps(streams)) {
+            nextStreams.set(activity.id, streams);
+        } else if (streams) {
+            nextSkipped.add(activity.id);
+        }
+    }));
 
-            const skippedFromMeta = parseSkippedIds(await cache.getMeta(SKIPPED_STREAMS_META_KEY));
-            const nextStreams = new Map<number, ActivityStreams>();
-            const nextSkipped = new Set(skippedFromMeta);
+    if (loadToken !== token) return;
 
-            await Promise.all(runActivities.map(async (activity) => {
-                const streams = await cache.getCachedStreams(activity.id);
-                if (streamHasGps(streams)) {
-                    nextStreams.set(activity.id, streams);
-                } else if (streams) {
-                    nextSkipped.add(activity.id);
-                }
-            }));
+    updateStreamState(() => ({
+        streamsByActivityId: nextStreams,
+        skippedActivityIds: nextSkipped,
+        loadingCache: false,
+        backfillActive: false,
+        backfillPaused: false,
+        backfillError: null,
+        fetchingActivityId: null,
+        fetchedThisSession: 0,
+        backfillProcessedThisSession: 0,
+        backfillTotalThisSession: 0,
+    }));
 
-            if (cancelled || loadTokenRef.current !== loadToken) return;
+    if (nextSkipped.size !== skippedFromMeta.size) {
+        await persistSkippedIds(nextSkipped);
+    }
 
-            streamsRef.current = nextStreams;
-            skippedRef.current = nextSkipped;
+    startBackfill(token);
+}
 
-            setState({
-                streamsByActivityId: nextStreams,
-                skippedActivityIds: nextSkipped,
-                loadingCache: false,
-                backfillActive: false,
-                backfillPaused: false,
-                backfillError: null,
-                fetchingActivityId: null,
-                fetchedThisSession: 0,
-                backfillProcessedThisSession: 0,
-                backfillTotalThisSession: 0,
-            });
+function ensureHeatmapStreams(activities: Activity[]) {
+    const nextActivityKey = activityKey(activities);
+    activeActivities = activities;
 
-            if (nextSkipped.size !== skippedFromMeta.size) {
-                await persistSkippedIds(nextSkipped);
-            }
-        };
+    if (nextActivityKey !== activeActivityKey) {
+        activeActivityKey = nextActivityKey;
+        loadToken += 1;
+        backfillToken = loadToken;
+        backfillRunning = false;
+        const token = loadToken;
 
-        void loadCachedStreams().catch((error) => {
-            if (cancelled) return;
-            setState((previous) => ({
+        void loadCachedStreams(activities, token).catch((error) => {
+            if (loadToken !== token) return;
+            updateStreamState((previous) => ({
                 ...previous,
                 loadingCache: false,
                 backfillActive: false,
@@ -147,145 +307,22 @@ export function useHeatmapStreams(runActivities: Activity[]) {
                 backfillError: error instanceof Error ? error.message : 'Failed to load cached GPS data',
             }));
         });
+        return;
+    }
 
-        return () => {
-            cancelled = true;
-        };
-    }, [activityIds, runActivities]);
+    startBackfill(backfillToken);
+}
+
+export function useHeatmapStreams(runActivities: Activity[]) {
+    const activityIds = useMemo(
+        () => runActivities.map((activity) => activity.id).join(','),
+        [runActivities]
+    );
+    const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
     useEffect(() => {
-        if (state.loadingCache || state.backfillPaused) return;
-
-        let cancelled = false;
-        const backfillToken = backfillTokenRef.current + 1;
-        backfillTokenRef.current = backfillToken;
-        const pending = sortActivitiesOldestFirst(runActivities).filter((activity) =>
-            !streamsRef.current.has(activity.id) &&
-            !skippedRef.current.has(activity.id)
-        );
-
-        if (pending.length === 0) {
-            setState((previous) => ({
-                ...previous,
-                fetchingActivityId: null,
-                backfillActive: false,
-                backfillProcessedThisSession: 0,
-                backfillTotalThisSession: 0,
-            }));
-            return;
-        }
-
-        setState((previous) => ({
-            ...previous,
-            backfillActive: true,
-            backfillProcessedThisSession: 0,
-            backfillTotalThisSession: pending.length,
-        }));
-
-        const backfill = async () => {
-            let processed = 0;
-
-            for (const activity of pending) {
-                if (cancelled || backfillTokenRef.current !== backfillToken) return;
-
-                setState((previous) => ({
-                    ...previous,
-                    backfillActive: true,
-                    fetchingActivityId: activity.id,
-                    backfillError: null,
-                }));
-
-                try {
-                    const streams = await activitiesApi.getStreams(activity.id);
-                    const gpsPoints = extractLatLngPoints(streams);
-
-                    if (gpsPoints.length >= 2) {
-                        await cache.cacheStreams(activity.id, streams);
-                        streamsRef.current = new Map(streamsRef.current);
-                        streamsRef.current.set(activity.id, streams);
-
-                        setState((previous) => {
-                            const streamsByActivityId = new Map(previous.streamsByActivityId);
-                            streamsByActivityId.set(activity.id, streams);
-                            return {
-                                ...previous,
-                                streamsByActivityId,
-                                fetchedThisSession: previous.fetchedThisSession + 1,
-                            };
-                        });
-                    } else {
-                        skippedRef.current = new Set(skippedRef.current);
-                        skippedRef.current.add(activity.id);
-                        void persistSkippedIds(skippedRef.current);
-
-                        setState((previous) => {
-                            const skippedActivityIds = new Set(previous.skippedActivityIds);
-                            skippedActivityIds.add(activity.id);
-                            return {
-                                ...previous,
-                                skippedActivityIds,
-                            };
-                        });
-                    }
-                } catch (error) {
-                    if (error instanceof ApiError && (error.status === 401 || error.status === 403 || error.status === 429)) {
-                        setState((previous) => ({
-                            ...previous,
-                            backfillActive: false,
-                            backfillPaused: true,
-                            backfillError: error.status === 429
-                                ? 'Strava rate limit reached. Heatmap backfill will resume when you revisit this workspace later.'
-                                : error.message,
-                            fetchingActivityId: null,
-                            backfillProcessedThisSession: processed,
-                            backfillTotalThisSession: pending.length,
-                        }));
-                        return;
-                    }
-
-                    setState((previous) => ({
-                        ...previous,
-                        backfillActive: false,
-                        backfillPaused: true,
-                        backfillError: error instanceof Error ? error.message : 'Failed to fetch GPS streams',
-                        fetchingActivityId: null,
-                        backfillProcessedThisSession: processed,
-                        backfillTotalThisSession: pending.length,
-                    }));
-                    return;
-                }
-
-                processed += 1;
-                setState((previous) => ({
-                    ...previous,
-                    backfillProcessedThisSession: processed,
-                }));
-
-                await wait(FETCH_DELAY_MS);
-            }
-
-            if (!cancelled) {
-                setState((previous) => ({
-                    ...previous,
-                    fetchingActivityId: null,
-                    backfillActive: false,
-                    backfillProcessedThisSession: pending.length,
-                    backfillTotalThisSession: pending.length,
-                }));
-            }
-        };
-
-        void backfill();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [
-        activityIds,
-        runActivities,
-        state.backfillPaused,
-        state.loadingCache,
-    ]);
+        ensureHeatmapStreams(runActivities);
+    }, [activityIds, runActivities]);
 
     const status = useMemo<HeatmapStreamStatus>(() => {
         const pendingRuns = runActivities.filter((activity) =>

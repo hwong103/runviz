@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -23,9 +24,7 @@ import {
     buildHeatmapRoute,
     calculateHeatmapBounds,
     calculateMainClusterBounds,
-    estimateCoveredAreaKm2,
     filterActivitiesForHeatmap,
-    selectMainClusterRoutes,
     type HeatmapBounds,
     type HeatmapColorTheme,
 } from './heatmapUtils';
@@ -38,6 +37,7 @@ interface HeatmapWorkspaceProps {
 }
 
 const PRIVACY_STORAGE_KEY = 'runviz_heatmap_privacy_radius_v1';
+const SETTINGS_STORAGE_KEY = 'runviz_heatmap_settings_v1';
 const PRIVACY_OPTIONS = [
     { value: '0', label: 'Off' },
     { value: '100', label: '100 m' },
@@ -45,15 +45,26 @@ const PRIVACY_OPTIONS = [
     { value: '400', label: '400 m' },
     { value: '800', label: '800 m' },
 ];
+const COLOR_THEMES: HeatmapColorTheme[] = ['ember', 'blue', 'mono'];
 
-function formatDistanceKm(meters: number) {
-    return `${(meters / 1000).toFixed(meters >= 100000 ? 0 : 1)} km`;
+interface PersistedHeatmapSettings {
+    colorTheme: HeatmapColorTheme;
+    opacity: number;
+    intensity: number;
+    privacyRadius: number;
 }
 
-function formatArea(areaKm2: number) {
-    if (areaKm2 >= 1000) return `${areaKm2.toFixed(0)} km²`;
-    if (areaKm2 >= 100) return `${areaKm2.toFixed(1)} km²`;
-    return `${areaKm2.toFixed(2)} km²`;
+const DEFAULT_HEATMAP_SETTINGS: PersistedHeatmapSettings = {
+    colorTheme: 'ember',
+    opacity: 0.74,
+    intensity: 1,
+    privacyRadius: 200,
+};
+
+function clampNumber(value: unknown, fallback: number, min: number, max: number) {
+    return typeof value === 'number' && Number.isFinite(value)
+        ? Math.max(min, Math.min(max, value))
+        : fallback;
 }
 
 function readPersistedPrivacyRadius() {
@@ -66,6 +77,37 @@ function readPersistedPrivacyRadius() {
         return [0, 100, 200, 400, 800].includes(value) ? value : 200;
     } catch {
         return 200;
+    }
+}
+
+function readPersistedHeatmapSettings(): PersistedHeatmapSettings {
+    if (typeof window === 'undefined') return DEFAULT_HEATMAP_SETTINGS;
+
+    try {
+        const stored = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (!stored) {
+            return {
+                ...DEFAULT_HEATMAP_SETTINGS,
+                privacyRadius: readPersistedPrivacyRadius(),
+            };
+        }
+
+        const parsed = JSON.parse(stored) as Partial<PersistedHeatmapSettings>;
+        return {
+            colorTheme: parsed.colorTheme && COLOR_THEMES.includes(parsed.colorTheme)
+                ? parsed.colorTheme
+                : DEFAULT_HEATMAP_SETTINGS.colorTheme,
+            opacity: clampNumber(parsed.opacity, DEFAULT_HEATMAP_SETTINGS.opacity, 0.25, 1),
+            intensity: clampNumber(parsed.intensity, DEFAULT_HEATMAP_SETTINGS.intensity, 0.5, 2),
+            privacyRadius: [0, 100, 200, 400, 800].includes(Number(parsed.privacyRadius))
+                ? Number(parsed.privacyRadius)
+                : readPersistedPrivacyRadius(),
+        };
+    } catch {
+        return {
+            ...DEFAULT_HEATMAP_SETTINGS,
+            privacyRadius: readPersistedPrivacyRadius(),
+        };
     }
 }
 
@@ -104,28 +146,6 @@ function FitHeatmapBounds({
     return null;
 }
 
-function StatTile({
-    label,
-    value,
-    detail,
-}: {
-    label: string;
-    value: string;
-    detail?: string;
-}) {
-    return (
-        <div className="rounded-lg border border-border/70 bg-background/72 px-3 py-2 backdrop-blur-sm">
-            <div className="text-[0.66rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                {label}
-            </div>
-            <div className="mt-1 text-base font-semibold tabular-nums text-foreground">{value}</div>
-            {detail ? (
-                <div className="mt-0.5 truncate text-xs text-muted-foreground">{detail}</div>
-            ) : null}
-        </div>
-    );
-}
-
 export function HeatmapWorkspace({
     runActivities,
     filteredActivities,
@@ -133,12 +153,10 @@ export function HeatmapWorkspace({
 }: HeatmapWorkspaceProps) {
     const { resolved } = useTheme();
     const [shoeFilter, setShoeFilter] = useState('all');
-    const [colorTheme, setColorTheme] = useState<HeatmapColorTheme>('ember');
-    const [opacity, setOpacity] = useState(0.74);
-    const [intensity, setIntensity] = useState(1);
-    const [privacyRadius, setPrivacyRadius] = useState(readPersistedPrivacyRadius);
+    const [settings, setSettings] = useState(readPersistedHeatmapSettings);
     const [fitRequestId, setFitRequestId] = useState(0);
     const [fitAllRequestId, setFitAllRequestId] = useState(0);
+    const { colorTheme, opacity, intensity, privacyRadius } = settings;
     const {
         streamsByActivityId,
         status,
@@ -146,11 +164,12 @@ export function HeatmapWorkspace({
 
     useEffect(() => {
         try {
-            window.localStorage.setItem(PRIVACY_STORAGE_KEY, String(privacyRadius));
+            window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+            window.localStorage.setItem(PRIVACY_STORAGE_KEY, String(settings.privacyRadius));
         } catch {
-            // Ignore storage failures; the selected privacy radius still applies for this session.
+            // Ignore storage failures; selected heatmap settings still apply for this session.
         }
-    }, [privacyRadius]);
+    }, [settings]);
 
     const visibleActivities = useMemo(
         () => filterActivitiesForHeatmap(
@@ -172,38 +191,17 @@ export function HeatmapWorkspace({
     );
 
     const bounds = useMemo(() => calculateHeatmapBounds(routes), [routes]);
-    const mainClusterRoutes = useMemo(() => selectMainClusterRoutes(routes), [routes]);
     const mainClusterBounds = useMemo(() => calculateMainClusterBounds(routes), [routes]);
-    const mainClusterCoverageBounds = useMemo(
-        () => calculateHeatmapBounds(mainClusterRoutes),
-        [mainClusterRoutes]
-    );
-    const visibleDistanceMeters = useMemo(
-        () => routes.reduce((sum, route) => sum + route.distanceMeters, 0),
-        [routes]
-    );
-    const originalPointCount = useMemo(
-        () => routes.reduce((sum, route) => sum + route.originalPoints, 0),
-        [routes]
-    );
-    const coveredAreaKm2 = useMemo(
-        () => estimateCoveredAreaKm2(mainClusterCoverageBounds ?? bounds),
-        [bounds, mainClusterCoverageBounds]
-    );
-    const coveredAreaDetail = mainClusterRoutes.length > 0 && mainClusterRoutes.length < routes.length
-        ? `${mainClusterRoutes.length.toLocaleString()} runs in main area`
-        : 'Approximate route extent';
-    const cachedPercent = status.totalRuns > 0
-        ? Math.round(((status.cachedRuns + status.skippedRuns) / status.totalRuns) * 100)
-        : 0;
     const backfillPosition = status.fetchingActivityId && status.backfillTotalThisSession > 0
         ? Math.min(status.backfillProcessedThisSession + 1, status.backfillTotalThisSession)
         : 0;
     const headerStatusText = status.backfillPaused
         ? (status.backfillError ?? 'GPS backfill paused')
-        : status.backfillActive && status.fetchingActivityId
+        : status.loadingCache
+            ? 'Loading cached GPS streams'
+            : status.backfillActive && status.fetchingActivityId
             ? `Fetching GPS stream ${backfillPosition} of ${status.backfillTotalThisSession}`
-            : null;
+            : `${routes.length.toLocaleString()} rendered ${routes.length === 1 ? 'run' : 'runs'}`;
     const shoeOptions = useMemo(() => {
         const usedShoeIds = new Set(runActivities.map((activity) => activity.gear_id).filter(Boolean));
         return allShoes
@@ -225,10 +223,23 @@ export function HeatmapWorkspace({
 
     const resetFilters = () => {
         setShoeFilter('all');
-        setColorTheme('ember');
-        setOpacity(0.74);
-        setIntensity(1);
-        setPrivacyRadius(200);
+        setSettings(DEFAULT_HEATMAP_SETTINGS);
+    };
+
+    const setColorTheme = (value: HeatmapColorTheme) => {
+        setSettings((previous) => ({ ...previous, colorTheme: value }));
+    };
+
+    const setOpacity = (value: number) => {
+        setSettings((previous) => ({ ...previous, opacity: value }));
+    };
+
+    const setIntensity = (value: number) => {
+        setSettings((previous) => ({ ...previous, intensity: value }));
+    };
+
+    const setPrivacyRadius = (value: number) => {
+        setSettings((previous) => ({ ...previous, privacyRadius: value }));
     };
 
     return (
@@ -240,14 +251,12 @@ export function HeatmapWorkspace({
                     </div>
                     <div className="min-w-0">
                         <p className="text-sm font-semibold text-foreground">Personal heatmap</p>
-                        {headerStatusText ? (
-                            <p className={cn(
-                                'mt-1 truncate text-xs',
-                                status.backfillPaused ? 'text-orange-500 dark:text-orange-300' : 'text-muted-foreground'
-                            )}>
-                                {headerStatusText}
-                            </p>
-                        ) : null}
+                        <p className={cn(
+                            'mt-1 truncate text-xs',
+                            status.backfillPaused ? 'text-orange-500 dark:text-orange-300' : 'text-muted-foreground'
+                        )}>
+                            {headerStatusText}
+                        </p>
                     </div>
                 </div>
 
@@ -298,19 +307,107 @@ export function HeatmapWorkspace({
                     >
                         <RotateCcw className="size-4" />
                     </Button>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="size-11 bg-background/70 md:size-9"
+                                aria-label="Heatmap settings"
+                                title="Heatmap settings"
+                            >
+                                <SlidersHorizontal className="size-4" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="end" className="w-[min(22rem,calc(100vw-2rem))] p-4">
+                            <div className="flex items-center gap-2">
+                                <SlidersHorizontal className="size-4 text-muted-foreground" />
+                                <p className="text-sm font-semibold text-foreground">Settings</p>
+                            </div>
+
+                            <div className="mt-4 space-y-5">
+                                <label className="grid gap-2 text-sm">
+                                    <span className="text-xs font-medium text-muted-foreground">Colour</span>
+                                    <Select value={colorTheme} onValueChange={(value) => setColorTheme(value as HeatmapColorTheme)}>
+                                        <SelectTrigger className="w-full bg-background">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="ember">Ember</SelectItem>
+                                            <SelectItem value="blue">Blue</SelectItem>
+                                            <SelectItem value="mono">Mono</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </label>
+
+                                <label className="grid gap-2 text-sm">
+                                    <span className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                                        Opacity
+                                        <span className="tabular-nums">{Math.round(opacity * 100)}%</span>
+                                    </span>
+                                    <input
+                                        type="range"
+                                        min={0.25}
+                                        max={1}
+                                        step={0.05}
+                                        value={opacity}
+                                        onChange={(event) => setOpacity(Number(event.target.value))}
+                                        style={rangeFillStyle(opacity, 0.25, 1)}
+                                        className="range-slider h-11 w-full"
+                                    />
+                                </label>
+
+                                <label className="grid gap-2 text-sm">
+                                    <span className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                                        Intensity
+                                        <span className="tabular-nums">{intensity.toFixed(1)}x</span>
+                                    </span>
+                                    <input
+                                        type="range"
+                                        min={0.5}
+                                        max={2}
+                                        step={0.1}
+                                        value={intensity}
+                                        onChange={(event) => setIntensity(Number(event.target.value))}
+                                        style={rangeFillStyle(intensity, 0.5, 2)}
+                                        className="range-slider h-11 w-full"
+                                    />
+                                </label>
+
+                                <div className="space-y-3 border-t border-border pt-4">
+                                    <div className="flex items-center gap-2">
+                                        <Shield className="size-4 text-muted-foreground" />
+                                        <p className="text-sm font-semibold text-foreground">Privacy trim</p>
+                                    </div>
+                                    <Select value={String(privacyRadius)} onValueChange={(value) => setPrivacyRadius(Number(value))}>
+                                        <SelectTrigger className="w-full bg-background">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {PRIVACY_OPTIONS.map((option) => (
+                                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className={cn(
+                                        'text-xs leading-5',
+                                        privacyRadius > 0 ? 'text-muted-foreground' : 'text-orange-500 dark:text-orange-300'
+                                    )}>
+                                        {privacyRadius > 0
+                                            ? `Start and finish points within ${privacyRadius} m are hidden before drawing. Cached GPS data is unchanged.`
+                                            : 'Routes are drawn exactly as Strava returns them for this browser session.'}
+                                    </p>
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <StatTile label="Rendered runs" value={routes.length.toLocaleString()} detail={`${visibleActivities.length.toLocaleString()} match filters`} />
-                <StatTile label="GPS distance" value={formatDistanceKm(visibleDistanceMeters)} detail={`${originalPointCount.toLocaleString()} source points`} />
-                <StatTile label="Covered area" value={formatArea(coveredAreaKm2)} detail={coveredAreaDetail} />
-                <StatTile label="Stream cache" value={`${cachedPercent}%`} detail={`${status.cachedRuns} cached / ${status.skippedRuns} skipped / ${status.pendingRuns} pending`} />
-            </div>
-
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="grid gap-4">
                 <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                    <div className="relative h-[58svh] min-h-[420px] xl:h-[calc(100svh-23rem)] xl:min-h-[560px]">
+                    <div className="relative h-[68svh] min-h-[460px] xl:h-[calc(100svh-13rem)] xl:min-h-[620px]">
                         <MapContainer
                             center={[-33.8688, 151.2093]}
                             zoom={11}
@@ -350,97 +447,11 @@ export function HeatmapWorkspace({
                     </div>
                 </div>
 
-                <aside className="space-y-3">
-                    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-                        <div className="flex items-center gap-2">
-                            <SlidersHorizontal className="size-4 text-muted-foreground" />
-                            <p className="text-sm font-semibold text-foreground">Layer controls</p>
-                        </div>
-
-                        <div className="mt-4 space-y-4">
-                            <label className="grid gap-2 text-sm">
-                                <span className="text-xs font-medium text-muted-foreground">Colour</span>
-                                <Select value={colorTheme} onValueChange={(value) => setColorTheme(value as HeatmapColorTheme)}>
-                                    <SelectTrigger className="w-full bg-background">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="ember">Ember</SelectItem>
-                                        <SelectItem value="blue">Blue</SelectItem>
-                                        <SelectItem value="mono">Mono</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </label>
-
-                            <label className="grid gap-2 text-sm">
-                                <span className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                                    Opacity
-                                    <span className="tabular-nums">{Math.round(opacity * 100)}%</span>
-                                </span>
-                                <input
-                                    type="range"
-                                    min={0.25}
-                                    max={1}
-                                    step={0.05}
-                                    value={opacity}
-                                    onChange={(event) => setOpacity(Number(event.target.value))}
-                                    style={rangeFillStyle(opacity, 0.25, 1)}
-                                    className="range-slider h-11 w-full"
-                                />
-                            </label>
-
-                            <label className="grid gap-2 text-sm">
-                                <span className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                                    Intensity
-                                    <span className="tabular-nums">{intensity.toFixed(1)}x</span>
-                                </span>
-                                <input
-                                    type="range"
-                                    min={0.5}
-                                    max={2}
-                                    step={0.1}
-                                    value={intensity}
-                                    onChange={(event) => setIntensity(Number(event.target.value))}
-                                    style={rangeFillStyle(intensity, 0.5, 2)}
-                                    className="range-slider h-11 w-full"
-                                />
-                            </label>
-                        </div>
-                    </div>
-
-                    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-                        <div className="flex items-center gap-2">
-                            <Shield className="size-4 text-muted-foreground" />
-                            <p className="text-sm font-semibold text-foreground">Privacy trim</p>
-                        </div>
-                        <div className="mt-4">
-                            <Select value={String(privacyRadius)} onValueChange={(value) => setPrivacyRadius(Number(value))}>
-                                <SelectTrigger className="w-full bg-background">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {PRIVACY_OPTIONS.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <p className={cn(
-                            'mt-3 text-xs leading-5',
-                            privacyRadius > 0 ? 'text-muted-foreground' : 'text-orange-500 dark:text-orange-300'
-                        )}>
-                            {privacyRadius > 0
-                                ? `Start and finish points within ${privacyRadius} m are hidden before drawing. Cached GPS data is unchanged.`
-                                : 'Routes are drawn exactly as Strava returns them for this browser session.'}
-                        </p>
-                    </div>
-
                     {status.backfillError ? (
                         <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-4 text-sm text-orange-600 dark:text-orange-300">
                             {status.backfillError}
                         </div>
                     ) : null}
-                </aside>
             </div>
         </section>
     );
