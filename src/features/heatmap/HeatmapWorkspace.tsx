@@ -5,7 +5,6 @@ import L from 'leaflet';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -180,6 +179,11 @@ export function HeatmapWorkspace({
     const backfillPosition = status.fetchingActivityId && status.backfillTotalThisSession > 0
         ? Math.min(status.backfillProcessedThisSession + 1, status.backfillTotalThisSession)
         : 0;
+    const headerStatusText = status.backfillPaused
+        ? (status.backfillError ?? 'GPS backfill paused')
+        : status.backfillActive && status.fetchingActivityId
+            ? `Fetching GPS stream ${backfillPosition} of ${status.backfillTotalThisSession}`
+            : null;
     const shoeOptions = useMemo(() => {
         const usedShoeIds = new Set(runActivities.map((activity) => activity.gear_id).filter(Boolean));
         return allShoes
@@ -215,17 +219,15 @@ export function HeatmapWorkspace({
                         <Flame className="size-4" />
                     </div>
                     <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-semibold text-foreground">Personal heatmap</p>
-                            <Badge tone={status.backfillPaused ? 'orange' : status.backfillActive ? 'blue' : 'emerald'} size="sm">
-                                {status.backfillPaused ? 'Paused' : status.backfillActive ? 'Backfilling' : 'Ready'}
-                            </Badge>
-                        </div>
-                        <p className="mt-1 truncate text-xs text-muted-foreground">
-                            {status.backfillActive && status.fetchingActivityId
-                                ? `Fetching GPS stream ${backfillPosition} of ${status.backfillTotalThisSession}`
-                                : `${cachedPercent}% stream cache complete`}
-                        </p>
+                        <p className="text-sm font-semibold text-foreground">Personal heatmap</p>
+                        {headerStatusText ? (
+                            <p className={cn(
+                                'mt-1 truncate text-xs',
+                                status.backfillPaused ? 'text-orange-500 dark:text-orange-300' : 'text-muted-foreground'
+                            )}>
+                                {headerStatusText}
+                            </p>
+                        ) : null}
                     </div>
                 </div>
 
