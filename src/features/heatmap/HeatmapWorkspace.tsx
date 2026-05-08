@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import { Activity, Crosshair, Expand, Flame, Loader2, RotateCcw, Shield, SlidersHorizontal } from 'lucide-react';
 import L from 'leaflet';
@@ -25,6 +25,7 @@ import {
     calculateMainClusterBounds,
     estimateCoveredAreaKm2,
     filterActivitiesForHeatmap,
+    selectMainClusterRoutes,
     type HeatmapBounds,
     type HeatmapColorTheme,
 } from './heatmapUtils';
@@ -66,6 +67,14 @@ function readPersistedPrivacyRadius() {
     } catch {
         return 200;
     }
+}
+
+function rangeFillStyle(value: number, min: number, max: number): CSSProperties {
+    const fill = ((value - min) / (max - min)) * 100;
+    return {
+        '--slider-fill': `${Math.max(0, Math.min(100, fill))}%`,
+        '--rv-blue': 'var(--rv-orange)',
+    } as CSSProperties;
 }
 
 function FitHeatmapBounds({
@@ -163,7 +172,12 @@ export function HeatmapWorkspace({
     );
 
     const bounds = useMemo(() => calculateHeatmapBounds(routes), [routes]);
+    const mainClusterRoutes = useMemo(() => selectMainClusterRoutes(routes), [routes]);
     const mainClusterBounds = useMemo(() => calculateMainClusterBounds(routes), [routes]);
+    const mainClusterCoverageBounds = useMemo(
+        () => calculateHeatmapBounds(mainClusterRoutes),
+        [mainClusterRoutes]
+    );
     const visibleDistanceMeters = useMemo(
         () => routes.reduce((sum, route) => sum + route.distanceMeters, 0),
         [routes]
@@ -172,7 +186,13 @@ export function HeatmapWorkspace({
         () => routes.reduce((sum, route) => sum + route.originalPoints, 0),
         [routes]
     );
-    const coveredAreaKm2 = useMemo(() => estimateCoveredAreaKm2(bounds), [bounds]);
+    const coveredAreaKm2 = useMemo(
+        () => estimateCoveredAreaKm2(mainClusterCoverageBounds ?? bounds),
+        [bounds, mainClusterCoverageBounds]
+    );
+    const coveredAreaDetail = mainClusterRoutes.length > 0 && mainClusterRoutes.length < routes.length
+        ? `${mainClusterRoutes.length.toLocaleString()} runs in main area`
+        : 'Approximate route extent';
     const cachedPercent = status.totalRuns > 0
         ? Math.round(((status.cachedRuns + status.skippedRuns) / status.totalRuns) * 100)
         : 0;
@@ -233,7 +253,7 @@ export function HeatmapWorkspace({
 
                 <div className="flex flex-wrap items-center gap-2">
                     <Select value={shoeFilter} onValueChange={setShoeFilter}>
-                        <SelectTrigger className="h-9 min-w-[130px] bg-background/70">
+                        <SelectTrigger className="h-11 min-w-[130px] bg-background/70 md:h-9">
                             <SelectValue aria-label="Shoe filter" />
                         </SelectTrigger>
                         <SelectContent>
@@ -248,7 +268,7 @@ export function HeatmapWorkspace({
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="size-9 bg-background/70"
+                        className="size-11 bg-background/70 md:size-9"
                         onClick={() => setFitRequestId((value) => value + 1)}
                         disabled={!mainClusterBounds}
                         aria-label="Focus main running area"
@@ -260,7 +280,7 @@ export function HeatmapWorkspace({
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="size-9 bg-background/70"
+                        className="size-11 bg-background/70 md:size-9"
                         onClick={() => setFitAllRequestId((value) => value + 1)}
                         disabled={!bounds}
                         aria-label="Fit all visible runs"
@@ -272,7 +292,7 @@ export function HeatmapWorkspace({
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="size-9 bg-background/70"
+                        className="size-11 bg-background/70 md:size-9"
                         onClick={resetFilters}
                         aria-label="Reset heatmap filters"
                     >
@@ -284,7 +304,7 @@ export function HeatmapWorkspace({
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <StatTile label="Rendered runs" value={routes.length.toLocaleString()} detail={`${visibleActivities.length.toLocaleString()} match filters`} />
                 <StatTile label="GPS distance" value={formatDistanceKm(visibleDistanceMeters)} detail={`${originalPointCount.toLocaleString()} source points`} />
-                <StatTile label="Covered area" value={formatArea(coveredAreaKm2)} detail="Approximate bounding area" />
+                <StatTile label="Covered area" value={formatArea(coveredAreaKm2)} detail={coveredAreaDetail} />
                 <StatTile label="Stream cache" value={`${cachedPercent}%`} detail={`${status.cachedRuns} cached / ${status.skippedRuns} skipped / ${status.pendingRuns} pending`} />
             </div>
 
@@ -364,7 +384,8 @@ export function HeatmapWorkspace({
                                     step={0.05}
                                     value={opacity}
                                     onChange={(event) => setOpacity(Number(event.target.value))}
-                                    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-[var(--rv-orange)]"
+                                    style={rangeFillStyle(opacity, 0.25, 1)}
+                                    className="range-slider h-11 w-full"
                                 />
                             </label>
 
@@ -380,7 +401,8 @@ export function HeatmapWorkspace({
                                     step={0.1}
                                     value={intensity}
                                     onChange={(event) => setIntensity(Number(event.target.value))}
-                                    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-[var(--rv-orange)]"
+                                    style={rangeFillStyle(intensity, 0.5, 2)}
+                                    className="range-slider h-11 w-full"
                                 />
                             </label>
                         </div>

@@ -19,6 +19,7 @@ export interface HeatmapBounds {
 
 const EARTH_RADIUS_METERS = 6371000;
 const MAIN_CLUSTER_CELL_DEGREES = 0.18;
+const MAIN_CLUSTER_RADIUS_METERS = 45000;
 
 export function isValidLatLng(point: unknown): point is LatLng {
     if (!Array.isArray(point) || point.length !== 2) return false;
@@ -171,28 +172,45 @@ function expandBounds(bounds: HeatmapBounds, paddingRatio: number): HeatmapBound
     };
 }
 
-export function calculateMainClusterBounds(routes: HeatmapRoute[]): HeatmapBounds | null {
-    if (routes.length === 0) return null;
+function routeCentroid(route: HeatmapRoute): LatLng | null {
+    if (route.points.length === 0) return null;
+
+    const sums = route.points.reduce(
+        (total, point) => ({
+            lat: total.lat + point[0],
+            lng: total.lng + point[1],
+        }),
+        { lat: 0, lng: 0 }
+    );
+
+    return [
+        sums.lat / route.points.length,
+        sums.lng / route.points.length,
+    ];
+}
+
+export function selectMainClusterRoutes(routes: HeatmapRoute[]): HeatmapRoute[] {
+    if (routes.length === 0) return [];
 
     const clusters = new Map<string, { count: number; latSum: number; lngSum: number }>();
 
     routes.forEach((route) => {
-        const anchor = route.points[0];
-        if (!anchor) return;
+        const centroid = routeCentroid(route);
+        if (!centroid) return;
 
         const key = [
-            Math.round(anchor[0] / MAIN_CLUSTER_CELL_DEGREES),
-            Math.round(anchor[1] / MAIN_CLUSTER_CELL_DEGREES),
+            Math.round(centroid[0] / MAIN_CLUSTER_CELL_DEGREES),
+            Math.round(centroid[1] / MAIN_CLUSTER_CELL_DEGREES),
         ].join(':');
         const cluster = clusters.get(key) ?? { count: 0, latSum: 0, lngSum: 0 };
         cluster.count += 1;
-        cluster.latSum += anchor[0];
-        cluster.lngSum += anchor[1];
+        cluster.latSum += centroid[0];
+        cluster.lngSum += centroid[1];
         clusters.set(key, cluster);
     });
 
     const mainCluster = Array.from(clusters.values()).sort((left, right) => right.count - left.count)[0];
-    if (!mainCluster) return calculateHeatmapBounds(routes);
+    if (!mainCluster) return routes;
 
     const center: LatLng = [
         mainCluster.latSum / mainCluster.count,
@@ -200,11 +218,21 @@ export function calculateMainClusterBounds(routes: HeatmapRoute[]): HeatmapBound
     ];
 
     const clusterRoutes = routes.filter((route) => {
-        const anchor = route.points[0];
-        return anchor ? haversineMeters(anchor, center) <= 45000 : false;
+        const centroid = routeCentroid(route);
+        return centroid ? haversineMeters(centroid, center) <= MAIN_CLUSTER_RADIUS_METERS : false;
     });
 
-    return expandBounds(calculateHeatmapBounds(clusterRoutes.length > 0 ? clusterRoutes : routes) ?? calculateHeatmapBounds(routes)!, 0.18);
+    return clusterRoutes.length > 0 ? clusterRoutes : routes;
+}
+
+export function calculateMainClusterBounds(routes: HeatmapRoute[]): HeatmapBounds | null {
+    if (routes.length === 0) return null;
+
+    const clusterBounds = calculateHeatmapBounds(selectMainClusterRoutes(routes));
+    const fallbackBounds = calculateHeatmapBounds(routes);
+    const bounds = clusterBounds ?? fallbackBounds;
+
+    return bounds ? expandBounds(bounds, 0.18) : null;
 }
 
 export function estimateCoveredAreaKm2(bounds: HeatmapBounds | null): number {

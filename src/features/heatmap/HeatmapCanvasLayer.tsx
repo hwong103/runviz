@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type MutableRefObject } from 'react';
 
 import L from 'leaflet';
 import { useMap } from 'react-leaflet';
@@ -27,24 +27,77 @@ interface ProjectedSegment {
     density: number;
 }
 
+interface SegmentCache {
+    routes: HeatmapRoute[];
+    zoom: number;
+    centerKey: string;
+    sizeKey: string;
+    segments: ProjectedSegment[];
+}
+
 const DENSITY_CELL_SIZE_PX = 18;
+const FALLBACK_COLORS = {
+    ember: {
+        light: '#c05c1a',
+        dark: '#df8759',
+    },
+    blue: {
+        light: '#2855d8',
+        dark: '#7c9cff',
+    },
+    mono: {
+        light: '#18181b',
+        dark: '#f4f4f5',
+    },
+};
+
+function readCssColor(variableName: string, fallback: string): string {
+    if (typeof window === 'undefined') return fallback;
+
+    const value = window.getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+    return value || fallback;
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+    const normalized = hex.trim().replace('#', '');
+    if (!/^[0-9a-f]{6}$/i.test(normalized)) return null;
+
+    return {
+        r: Number.parseInt(normalized.slice(0, 2), 16),
+        g: Number.parseInt(normalized.slice(2, 4), 16),
+        b: Number.parseInt(normalized.slice(4, 6), 16),
+    };
+}
+
+function withAlpha(color: string, alpha: number, fallback: string): string {
+    const rgb = hexToRgb(color) ?? hexToRgb(fallback);
+    if (!rgb) return fallback;
+
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+}
 
 function getPalette(colorTheme: HeatmapColorTheme, resolvedTheme: ResolvedTheme): StrokePalette {
+    const mode = resolvedTheme === 'light' ? 'light' : 'dark';
+    const themeColor = colorTheme === 'mono'
+        ? readCssColor('--foreground', FALLBACK_COLORS.mono[mode])
+        : readCssColor(colorTheme === 'blue' ? '--rv-blue' : '--rv-orange', FALLBACK_COLORS[colorTheme][mode]);
+    const fallback = FALLBACK_COLORS[colorTheme][mode];
+
     if (colorTheme === 'blue') {
         return resolvedTheme === 'light'
-            ? { glow: 'rgba(28, 95, 217, 0.12)', mid: 'rgba(26, 115, 232, 0.22)', hot: 'rgba(10, 82, 170, 0.42)' }
-            : { glow: 'rgba(94, 167, 255, 0.13)', mid: 'rgba(93, 187, 255, 0.25)', hot: 'rgba(198, 232, 255, 0.52)' };
+            ? { glow: withAlpha(themeColor, 0.11, fallback), mid: withAlpha(themeColor, 0.23, fallback), hot: withAlpha(themeColor, 0.44, fallback) }
+            : { glow: withAlpha(themeColor, 0.13, fallback), mid: withAlpha(themeColor, 0.26, fallback), hot: withAlpha(themeColor, 0.54, fallback) };
     }
 
     if (colorTheme === 'mono') {
         return resolvedTheme === 'light'
-            ? { glow: 'rgba(24, 24, 27, 0.08)', mid: 'rgba(24, 24, 27, 0.16)', hot: 'rgba(24, 24, 27, 0.34)' }
-            : { glow: 'rgba(244, 244, 245, 0.08)', mid: 'rgba(244, 244, 245, 0.18)', hot: 'rgba(255, 255, 255, 0.42)' };
+            ? { glow: withAlpha(themeColor, 0.08, fallback), mid: withAlpha(themeColor, 0.16, fallback), hot: withAlpha(themeColor, 0.34, fallback) }
+            : { glow: withAlpha(themeColor, 0.08, fallback), mid: withAlpha(themeColor, 0.18, fallback), hot: withAlpha(themeColor, 0.42, fallback) };
     }
 
     return resolvedTheme === 'light'
-        ? { glow: 'rgba(211, 81, 27, 0.10)', mid: 'rgba(223, 92, 34, 0.22)', hot: 'rgba(184, 72, 23, 0.46)' }
-        : { glow: 'rgba(255, 111, 55, 0.12)', mid: 'rgba(255, 141, 67, 0.26)', hot: 'rgba(255, 221, 155, 0.55)' };
+        ? { glow: withAlpha(themeColor, 0.10, fallback), mid: withAlpha(themeColor, 0.22, fallback), hot: withAlpha(themeColor, 0.46, fallback) }
+        : { glow: withAlpha(themeColor, 0.12, fallback), mid: withAlpha(themeColor, 0.26, fallback), hot: withAlpha(themeColor, 0.55, fallback) };
 }
 
 function segmentDensityKey(from: L.Point, to: L.Point): string {
@@ -85,31 +138,62 @@ function buildProjectedSegments(map: L.Map, routes: HeatmapRoute[]): ProjectedSe
     }));
 }
 
+function getProjectedSegments(map: L.Map, routes: HeatmapRoute[], cache: MutableRefObject<SegmentCache | null>): ProjectedSegment[] {
+    const zoom = map.getZoom();
+    const center = map.getCenter();
+    const size = map.getSize();
+    const centerKey = `${center.lat.toFixed(5)}:${center.lng.toFixed(5)}`;
+    const sizeKey = `${size.x}:${size.y}`;
+    const cached = cache.current;
+
+    if (
+        cached &&
+        cached.routes === routes &&
+        cached.zoom === zoom &&
+        cached.centerKey === centerKey &&
+        cached.sizeKey === sizeKey
+    ) {
+        return cached.segments;
+    }
+
+    const segments = buildProjectedSegments(map, routes);
+    cache.current = { routes, zoom, centerKey, sizeKey, segments };
+    return segments;
+}
+
+function ensureCanvasSize(canvas: HTMLCanvasElement, size: L.Point, dpr: number) {
+    const width = Math.max(1, Math.floor(size.x * dpr));
+    const height = Math.max(1, Math.floor(size.y * dpr));
+
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
+    if (canvas.style.width !== `${size.x}px`) canvas.style.width = `${size.x}px`;
+    if (canvas.style.height !== `${size.y}px`) canvas.style.height = `${size.y}px`;
+}
+
 function drawRoutes(
     canvas: HTMLCanvasElement,
     map: L.Map,
-    routes: HeatmapRoute[],
+    segments: ProjectedSegment[],
     palette: StrokePalette,
     opacity: number,
     intensity: number
 ) {
     const size = map.getSize();
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.max(1, Math.floor(size.x * dpr));
-    canvas.height = Math.max(1, Math.floor(size.y * dpr));
-    canvas.style.width = `${size.x}px`;
-    canvas.style.height = `${size.y}px`;
+    ensureCanvasSize(canvas, size, dpr);
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size.x, size.y);
+    if (segments.length === 0) return;
+
     ctx.globalCompositeOperation = 'lighter';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    const segments = buildProjectedSegments(map, routes);
     const maxDensity = Math.max(1, ...segments.map((segment) => segment.density));
 
     segments.forEach((segment) => {
@@ -145,6 +229,8 @@ export function HeatmapCanvasLayer({
     const map = useMap();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const frameRef = useRef<number | null>(null);
+    const resizeTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+    const segmentCacheRef = useRef<SegmentCache | null>(null);
     const palette = useMemo(
         () => getPalette(colorTheme, resolvedTheme),
         [colorTheme, resolvedTheme]
@@ -163,6 +249,9 @@ export function HeatmapCanvasLayer({
             if (frameRef.current !== null) {
                 cancelAnimationFrame(frameRef.current);
             }
+            if (resizeTimeoutRef.current !== null) {
+                window.clearTimeout(resizeTimeoutRef.current);
+            }
             canvas.remove();
             canvasRef.current = null;
         };
@@ -177,19 +266,36 @@ export function HeatmapCanvasLayer({
             frameRef.current = requestAnimationFrame(() => {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
-                drawRoutes(canvas, map, routes, palette, opacity, intensity);
+                const segments = getProjectedSegments(map, routes, segmentCacheRef);
+                drawRoutes(canvas, map, segments, palette, opacity, intensity);
             });
         };
 
+        const scheduleResizeDraw = () => {
+            scheduleDraw();
+
+            if (resizeTimeoutRef.current !== null) {
+                window.clearTimeout(resizeTimeoutRef.current);
+            }
+
+            resizeTimeoutRef.current = window.setTimeout(scheduleDraw, 120);
+        };
+
         scheduleDraw();
-        map.on('move zoom resize viewreset', scheduleDraw);
+        map.on('moveend zoomend viewreset', scheduleDraw);
+        map.on('resize', scheduleResizeDraw);
 
         return () => {
             if (frameRef.current !== null) {
                 cancelAnimationFrame(frameRef.current);
                 frameRef.current = null;
             }
-            map.off('move zoom resize viewreset', scheduleDraw);
+            if (resizeTimeoutRef.current !== null) {
+                window.clearTimeout(resizeTimeoutRef.current);
+                resizeTimeoutRef.current = null;
+            }
+            map.off('moveend zoomend viewreset', scheduleDraw);
+            map.off('resize', scheduleResizeDraw);
         };
     }, [intensity, map, opacity, palette, routes]);
 
