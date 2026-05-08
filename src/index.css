@@ -465,6 +465,29 @@ textarea {
     transform: scale(0.98);
 }
 
+.runviz-heatmap-canvas {
+    mix-blend-mode: plus-lighter;
+}
+
+[data-theme="light"] .runviz-heatmap-canvas {
+    mix-blend-mode: multiply;
+}
+
+.leaflet-container {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--rv-font-body);
+}
+
+.leaflet-control-attribution {
+    background: color-mix(in srgb, var(--card) 86%, transparent) !important;
+    color: var(--muted-foreground) !important;
+}
+
+.leaflet-control-attribution a {
+    color: var(--foreground) !important;
+}
+
 .rv-kicker {
     color: var(--rv-yellow);
     font-size: 0.74rem;

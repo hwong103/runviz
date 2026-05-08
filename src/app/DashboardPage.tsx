@@ -25,7 +25,7 @@ import { ChevronDown } from 'lucide-react';
 import { Suspense, type Dispatch, type SetStateAction } from 'react';
 
 import { ModalFallback } from '@/features/dashboard/components/ModalFallback';
-import { RunDetails } from '@/features/dashboard/lazyDashboardPanels';
+import { HeatmapWorkspace, RunDetails } from '@/features/dashboard/lazyDashboardPanels';
 import { LogbookWorkspace } from '@/features/dashboard/workspaces/LogbookWorkspace';
 import { OverviewWorkspace } from '@/features/dashboard/workspaces/OverviewWorkspace';
 import { RaceWorkspace } from '@/features/dashboard/workspaces/RaceWorkspace';
@@ -271,6 +271,16 @@ export function DashboardPage({
                         onSelectShoe={onSelectShoe}
                         onClearShoeFilter={onClearShoeFilter}
                     />
+                ) : null}
+
+                {dashboardWorkspace === 'heatmap' ? (
+                    <Suspense fallback={<ModalFallback />}>
+                        <HeatmapWorkspace
+                            runActivities={runActivities}
+                            filteredActivities={filteredActivities}
+                            allShoes={allShoes}
+                        />
+                    </Suspense>
                 ) : null}
 
                 {dashboardWorkspace === 'tools' ? <ToolsWorkspace /> : null}
