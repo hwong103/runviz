@@ -2,21 +2,19 @@
 
 A beautiful, mobile-friendly running stats dashboard that visualizes your Strava data with elite analytics on a Cloudflare stack.
 
-![RunViz Dashboard](public/screenshots/dashboard-stats.jpg)
+![RunViz overview dashboard](public/screenshots/readme-overview.jpeg)
+
+<p align="center"><em>Demo data shown. Screenshots are generated from the current dashboard UI.</em></p>
 
 ## 📸 Screenshots
 
-| Activity Frequency | Race Predictions |
+| Personal heatmap | Dark map mode |
 |:---:|:---:|
-| <img src="public/screenshots/activity-frequency.jpg" width="400" /> | <img src="public/screenshots/race-predictions.jpg" width="400" /> |
+| <img src="public/screenshots/readme-heatmap.jpeg" width="400" /> | <img src="public/screenshots/readme-heatmap-dark.jpeg" width="400" /> |
 
-| Run Analysis | Shoe Tracker |
+| Training load | Logbook and shoes |
 |:---:|:---:|
-| <img src="public/screenshots/run-details.jpg" width="400" /> | <img src="public/screenshots/shoe-tracker.jpg" width="400" /> |
-
-| Route Planner |
-|:---:|
-| <img src="public/screenshots/route_planner.jpg" width="800" /> |
+| <img src="public/screenshots/readme-training.jpeg" width="400" /> | <img src="public/screenshots/readme-logbook.jpeg" width="400" /> |
 
 ## ✨ Features
 
