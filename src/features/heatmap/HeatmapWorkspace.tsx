@@ -54,6 +54,7 @@ interface PersistedHeatmapSettings {
     intensity: number;
     privacyRadius: number;
     activityScope: HeatmapActivityScope;
+    shoeFilter: string;
 }
 
 const DEFAULT_HEATMAP_SETTINGS: PersistedHeatmapSettings = {
@@ -62,6 +63,7 @@ const DEFAULT_HEATMAP_SETTINGS: PersistedHeatmapSettings = {
     intensity: 1,
     privacyRadius: 200,
     activityScope: 'all',
+    shoeFilter: 'all',
 };
 
 function clampNumber(value: unknown, fallback: number, min: number, max: number) {
@@ -108,6 +110,9 @@ function readPersistedHeatmapSettings(): PersistedHeatmapSettings {
             activityScope: parsed.activityScope === 'period'
                 ? 'period'
                 : DEFAULT_HEATMAP_SETTINGS.activityScope,
+            shoeFilter: typeof parsed.shoeFilter === 'string' && parsed.shoeFilter
+                ? parsed.shoeFilter
+                : DEFAULT_HEATMAP_SETTINGS.shoeFilter,
         };
     } catch {
         return {
@@ -158,11 +163,10 @@ export function HeatmapWorkspace({
     allShoes,
 }: HeatmapWorkspaceProps) {
     const { resolved } = useTheme();
-    const [shoeFilter, setShoeFilter] = useState('all');
     const [settings, setSettings] = useState(readPersistedHeatmapSettings);
     const [fitRequestId, setFitRequestId] = useState(0);
     const [fitAllRequestId, setFitAllRequestId] = useState(0);
-    const { colorTheme, opacity, intensity, privacyRadius, activityScope } = settings;
+    const { colorTheme, opacity, intensity, privacyRadius, activityScope, shoeFilter } = settings;
     const {
         streamsByActivityId,
         status,
@@ -177,13 +181,25 @@ export function HeatmapWorkspace({
         }
     }, [settings]);
 
+    const shoeOptions = useMemo(() => {
+        const usedShoeIds = new Set(runActivities.map((activity) => activity.gear_id).filter(Boolean));
+        return allShoes
+            .filter((shoe) => usedShoeIds.has(shoe.id))
+            .sort((left, right) => left.name.localeCompare(right.name));
+    }, [allShoes, runActivities]);
+    const selectedShoeFilter = useMemo(
+        () => shoeFilter === 'all' || shoeOptions.some((shoe) => shoe.id === shoeFilter)
+            ? shoeFilter
+            : 'all',
+        [shoeFilter, shoeOptions]
+    );
     const visibleActivities = useMemo(
         () => filterActivitiesForHeatmap(
             runActivities,
             activityScope === 'period' ? filteredActivities : runActivities,
-            shoeFilter
+            selectedShoeFilter
         ),
-        [activityScope, filteredActivities, runActivities, shoeFilter]
+        [activityScope, filteredActivities, runActivities, selectedShoeFilter]
     );
 
     const routes = useMemo(
@@ -208,12 +224,6 @@ export function HeatmapWorkspace({
             : status.backfillActive && status.fetchingActivityId
             ? `Fetching GPS stream ${backfillPosition} of ${status.backfillTotalThisSession}`
             : `${routes.length.toLocaleString()} rendered ${routes.length === 1 ? 'run' : 'runs'}`;
-    const shoeOptions = useMemo(() => {
-        const usedShoeIds = new Set(runActivities.map((activity) => activity.gear_id).filter(Boolean));
-        return allShoes
-            .filter((shoe) => usedShoeIds.has(shoe.id))
-            .sort((left, right) => left.name.localeCompare(right.name));
-    }, [allShoes, runActivities]);
     const tileUrl = resolved === 'light'
         ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
         : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
@@ -228,7 +238,6 @@ export function HeatmapWorkspace({
                     : null;
 
     const resetFilters = () => {
-        setShoeFilter('all');
         setSettings(DEFAULT_HEATMAP_SETTINGS);
     };
 
@@ -252,6 +261,10 @@ export function HeatmapWorkspace({
         setSettings((previous) => ({ ...previous, activityScope: value }));
     };
 
+    const setShoeFilter = (value: string) => {
+        setSettings((previous) => ({ ...previous, shoeFilter: value }));
+    };
+
     return (
         <section className="space-y-4">
             <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-card/72 p-3 shadow-sm backdrop-blur-sm lg:flex-row lg:items-center lg:justify-between">
@@ -271,18 +284,6 @@ export function HeatmapWorkspace({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                    <Select value={shoeFilter} onValueChange={setShoeFilter}>
-                        <SelectTrigger className="h-11 min-w-[130px] bg-background/70 md:h-9">
-                            <SelectValue aria-label="Shoe filter" />
-                        </SelectTrigger>
-                        <SelectContent className="z-[750]">
-                            <SelectItem value="all">All shoes</SelectItem>
-                            {shoeOptions.map((shoe) => (
-                                <SelectItem key={shoe.id} value={shoe.id}>{shoe.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
                     <Button
                         type="button"
                         variant="outline"
@@ -346,6 +347,21 @@ export function HeatmapWorkspace({
                                         <SelectContent className="z-[750]">
                                             <SelectItem value="all">All activities</SelectItem>
                                             <SelectItem value="period">Current time filter</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </label>
+
+                                <label className="grid gap-2 text-sm">
+                                    <span className="text-xs font-medium text-muted-foreground">Shoes</span>
+                                    <Select value={selectedShoeFilter} onValueChange={setShoeFilter}>
+                                        <SelectTrigger className="w-full bg-background">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="z-[750]">
+                                            <SelectItem value="all">All shoes</SelectItem>
+                                            {shoeOptions.map((shoe) => (
+                                                <SelectItem key={shoe.id} value={shoe.id}>{shoe.name}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </label>
