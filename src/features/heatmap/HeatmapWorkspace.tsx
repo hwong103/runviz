@@ -265,7 +265,7 @@ export function HeatmapWorkspace({
                         <SelectTrigger className="h-11 min-w-[130px] bg-background/70 md:h-9">
                             <SelectValue aria-label="Shoe filter" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[750]">
                             <SelectItem value="all">All shoes</SelectItem>
                             {shoeOptions.map((shoe) => (
                                 <SelectItem key={shoe.id} value={shoe.id}>{shoe.name}</SelectItem>
@@ -320,7 +320,7 @@ export function HeatmapWorkspace({
                                 <SlidersHorizontal className="size-4" />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent align="end" className="w-[min(22rem,calc(100vw-2rem))] p-4">
+                        <PopoverContent align="end" className="z-[700] w-[min(22rem,calc(100vw-2rem))] p-4">
                             <div className="flex items-center gap-2">
                                 <SlidersHorizontal className="size-4 text-muted-foreground" />
                                 <p className="text-sm font-semibold text-foreground">Settings</p>
@@ -333,7 +333,7 @@ export function HeatmapWorkspace({
                                         <SelectTrigger className="w-full bg-background">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent className="z-[750]">
                                             <SelectItem value="ember">Ember</SelectItem>
                                             <SelectItem value="blue">Blue</SelectItem>
                                             <SelectItem value="mono">Mono</SelectItem>
@@ -384,7 +384,7 @@ export function HeatmapWorkspace({
                                         <SelectTrigger className="w-full bg-background">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent className="z-[750]">
                                             {PRIVACY_OPTIONS.map((option) => (
                                                 <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                                             ))}
