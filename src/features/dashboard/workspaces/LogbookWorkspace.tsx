@@ -69,9 +69,9 @@ export function LogbookWorkspace({
     };
 
     return (
-        <section className="space-y-4">
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
-                <div>
+        <section className="min-w-0 space-y-4 overflow-x-hidden">
+            <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)]">
+                <div className="min-w-0">
                     <div className="mb-3 flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4 text-[var(--rv-blue)]" />
                         <p className="rv-kicker">Calendar</p>

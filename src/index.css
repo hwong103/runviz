@@ -237,8 +237,11 @@ textarea {
     color: var(--rv-badge-text, var(--rv-text));
     display: inline-flex;
     font-weight: 700;
+    gap: 0.38rem;
     letter-spacing: 0.18em;
     line-height: 1.2;
+    max-width: 100%;
+    min-width: 0;
     text-transform: uppercase;
 }
 

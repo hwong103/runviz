@@ -18,14 +18,14 @@ export function SectionHeader({
     action,
 }: SectionHeaderProps) {
     return (
-        <div className={['flex flex-wrap items-center gap-3', className].filter(Boolean).join(' ')}>
-            <div>
+        <div className={['flex min-w-0 flex-wrap items-center gap-3', className].filter(Boolean).join(' ')}>
+            <div className="min-w-0">
                 <p className="rv-kicker mb-2">{kicker}</p>
                 <TitleTag className={['rv-section-title', titleClassName].filter(Boolean).join(' ')}>
                     {title}
                 </TitleTag>
             </div>
-            {action ? <div className="ml-auto self-start">{action}</div> : null}
+            {action ? <div className="ml-auto min-w-0 max-w-full self-start">{action}</div> : null}
         </div>
     );
 }

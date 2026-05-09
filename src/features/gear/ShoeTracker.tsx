@@ -117,7 +117,7 @@ export function ShoeTracker({ activities, allActivities, shoes, selectedShoeId, 
     const pairLabel = `${shoeStats.length} ${shoeStats.length === 1 ? 'pair' : 'pairs'}`;
 
     return (
-        <div className="rv-panel flex flex-col px-6 py-6 sm:px-7">
+        <div className="rv-panel min-w-0 overflow-hidden px-5 py-6 sm:px-7">
             <SectionHeader
                 className="mb-8"
                 kicker="Equipment Log"
@@ -127,23 +127,23 @@ export function ShoeTracker({ activities, allActivities, shoes, selectedShoeId, 
                 action={<Badge>{pairLabel}</Badge>}
             />
 
-            <div className="flex-1 space-y-4">
+            <div className="min-w-0 space-y-4">
                 {shoeStats.length > 0 ? (
                     shoeStats.map(shoe => (
                         <button
                             key={shoe.id}
                             type="button"
                             onClick={() => onSelectShoe?.(shoe.id)}
-                            className={`group block w-full rounded-[1.7rem] border p-5 text-left transition-all focus-visible:border-[var(--rv-blue)] ${selectedShoeId === shoe.id
+                            className={`group block min-w-0 max-w-full w-full rounded-[1.7rem] border p-5 text-left transition-all focus-visible:border-[var(--rv-blue)] ${selectedShoeId === shoe.id
                                 ? 'bg-[var(--rv-blue)]/10 border-[var(--rv-blue)] ring-1 ring-[var(--rv-blue)]/40'
                                 : 'bg-[var(--rv-bg-panel)] border-[var(--rv-border)] hover:border-[var(--rv-border-strong)]'
                                 }`}
                             aria-pressed={selectedShoeId === shoe.id}
                             aria-label={`${selectedShoeId === shoe.id ? 'Clear' : 'Filter by'} shoe ${shoe.name}`}
                         >
-                            <div className="flex justify-between items-start mb-4">
+                            <div className="mb-4 flex min-w-0 items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0 mr-2">
-                                    <div className="flex gap-3 items-start">
+                                    <div className="flex min-w-0 items-start gap-3">
                                         <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl border border-[var(--rv-border)] bg-[var(--rv-bg-elevated)] p-1.5 transition-colors group-hover:border-[var(--rv-blue)]/30">
                                             <BrandLogo key={shoe.brand_name} brandName={shoe.brand_name} className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity" />
                                         </div>
@@ -159,7 +159,7 @@ export function ShoeTracker({ activities, allActivities, shoes, selectedShoeId, 
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex flex-col items-end gap-1">
+                                <div className="flex shrink-0 flex-col items-end gap-1">
                                     {shoe.primary && (
                                         <Badge tone="blue">Primary</Badge>
                                     )}
