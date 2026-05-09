@@ -21,6 +21,7 @@ A beautiful, mobile-friendly running stats dashboard that visualizes your Strava
 ## ✨ Features
 
 - **Advanced Analytics** - GAP, HR zones, and CTL/ATL/TSB tracking
+- **Personal Heatmap** - Strava-like GPS route density map with privacy trimming, shoe filters, all-time or period-scoped views, and light/dark-aware map styling
 - **AI Route Planner** - Generate personalized round-trip running routes based on distance
 - **Intelligent Search** - Geocoding with autocorrect and current location support
 - **PR Progress** - Track personal records over time
@@ -28,9 +29,20 @@ A beautiful, mobile-friendly running stats dashboard that visualizes your Strava
 
 ### Beautiful Visualizations
 - 📅 **Calendar Heatmap** - GitHub-style activity visualization
+- 🗺️ **Personal Run Heatmap** - Canvas-rendered GPS route density from Strava activity streams
 - 📊 **Fitness/Freshness Chart** - Track your training over time
 - 🏆 **PR Progress** - Personal record tracking
 - 📱 **Mobile-First Design** - Looks great on any device
+
+### Personal Heatmap
+
+RunViz 5.1 adds a map-first personal heatmap workspace between Logbook and Tools. It uses Strava activity stream GPS data for completed runs, caches streams locally in IndexedDB, and progressively backfills historical GPS traces so repeat visits get faster.
+
+Heatmap controls live in the settings popover:
+- **Activities** - Show all activities by default, or respect the current dashboard time filter.
+- **Shoes** - Filter the heatmap by the selected pair without cluttering the map header.
+- **Colour, opacity, and intensity** - Tune the layer for light or dark mode.
+- **Privacy trim** - Hide route points near the start and finish before drawing, without mutating cached GPS data.
 
 ## 🚀 Quick Start (For Your Own Copy)
 

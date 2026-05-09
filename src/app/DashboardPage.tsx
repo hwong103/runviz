@@ -287,7 +287,7 @@ export function DashboardPage({
 
                 <footer className="border-t border-border px-1 py-4">
                     <div className="rv-mini-label flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <span>RunViz analytics v5.0</span>
+                        <span>RunViz analytics v5.1</span>
                         <span>Synced with the Strava API</span>
                         <a href="https://github.com/hwong103/runviz" className="transition hover:text-foreground">
                             Project source
