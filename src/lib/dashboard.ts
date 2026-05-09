@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react"
 import {
   Activity,
   BarChart3,
+  Flame,
   LayoutDashboard,
   Map,
   Rocket,
@@ -22,6 +23,7 @@ export type DashboardWorkspace =
   | "training"
   | "race"
   | "logbook"
+  | "heatmap"
   | "tools"
 
 export type TrainingWorkspace = "health" | "fitness" | "volume" | "mechanics"
@@ -91,6 +93,15 @@ export const DASHBOARD_WORKSPACE_META: Record<
       "Filter the training log, inspect recent runs, and jump through the calendar without leaving the list.",
     icon: Activity,
   },
+  heatmap: {
+    label: "Heatmap",
+    detail: "Route density",
+    kicker: "Heatmap",
+    title: "Where the miles collect",
+    description:
+      "A Strava-style map of your completed run traces, with privacy-aware rendering and local stream caching.",
+    icon: Flame,
+  },
   tools: {
     label: "Tools",
     detail: "Plan and review",
@@ -144,6 +155,7 @@ export function isDashboardWorkspace(
     value === "training" ||
     value === "race" ||
     value === "logbook" ||
+    value === "heatmap" ||
     value === "tools"
 }
 

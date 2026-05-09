@@ -28,7 +28,7 @@ export function Badge({
     return (
         <span className={classes}>
             {icon}
-            <span>{children}</span>
+            <span className="min-w-0 truncate">{children}</span>
         </span>
     );
 }

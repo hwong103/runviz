@@ -25,6 +25,11 @@ export const ShoeTracker = lazyWithRetry(
     'shoe-tracker'
 );
 
+export const HeatmapWorkspace = lazyWithRetry(
+    () => import('@/features/heatmap/HeatmapWorkspace').then((module) => ({ default: module.HeatmapWorkspace })),
+    'heatmap-workspace'
+);
+
 export const VDOTPanel = lazyWithRetry(
     () => import('@/features/dashboard/charts/VDOTPanel').then((module) => ({ default: module.VDOTPanel })),
     'vdot-panel'

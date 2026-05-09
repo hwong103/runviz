@@ -43,7 +43,7 @@ function YearGridMonth({ mg, maxDistance, selectedDate, onSelectDay, setHoveredD
     const leadingEmpties = Array.from({ length: mg.firstDow });
 
     return (
-        <div className="min-w-0">
+        <div className="min-w-0 max-w-full">
             <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[var(--rv-text-faint)]">
                 {mg.label}
             </p>
@@ -308,8 +308,8 @@ export function CalendarHeatmap({
 
     if (!isMonthView) {
         return (
-            <div className="rv-panel rv-panel-strong px-5 py-5 sm:px-6 sm:py-6">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 md:grid-cols-4">
+            <div className="rv-panel rv-panel-strong min-w-0 overflow-hidden px-5 py-5 sm:px-6 sm:py-6">
+                <div className="grid min-w-0 grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 md:grid-cols-4">
                     {monthGrids.map((mg) => (
                         <YearGridMonth
                             key={mg.monthIndex}

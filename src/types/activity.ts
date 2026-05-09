@@ -33,22 +33,33 @@ export interface Activity {
 }
 
 export interface ActivityStreams {
-    time?: StreamData;
-    distance?: StreamData;
-    latlng?: StreamData;
-    altitude?: StreamData;
-    heartrate?: StreamData;
-    cadence?: StreamData;
-    velocity_smooth?: StreamData;
-    grade_smooth?: StreamData;
+    time?: ScalarStreamData;
+    distance?: ScalarStreamData;
+    latlng?: LatLngStreamData;
+    altitude?: ScalarStreamData;
+    heartrate?: ScalarStreamData;
+    cadence?: ScalarStreamData;
+    velocity_smooth?: ScalarStreamData;
+    grade_smooth?: ScalarStreamData;
 }
 
-export interface StreamData {
+export type LatLng = [number, number];
+
+export interface ScalarStreamData {
     data: number[];
     series_type: string;
     original_size: number;
     resolution: string;
 }
+
+export interface LatLngStreamData {
+    data: LatLng[];
+    series_type: string;
+    original_size: number;
+    resolution: string;
+}
+
+export type StreamData = ScalarStreamData | LatLngStreamData;
 
 export interface Split {
     distance: number;

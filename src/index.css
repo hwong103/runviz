@@ -237,8 +237,11 @@ textarea {
     color: var(--rv-badge-text, var(--rv-text));
     display: inline-flex;
     font-weight: 700;
+    gap: 0.38rem;
     letter-spacing: 0.18em;
     line-height: 1.2;
+    max-width: 100%;
+    min-width: 0;
     text-transform: uppercase;
 }
 
@@ -463,6 +466,29 @@ textarea {
 .rv-button-primary:active,
 .rv-button-secondary:active {
     transform: scale(0.98);
+}
+
+.runviz-heatmap-canvas {
+    mix-blend-mode: plus-lighter;
+}
+
+[data-theme="light"] .runviz-heatmap-canvas {
+    mix-blend-mode: multiply;
+}
+
+.leaflet-container {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--rv-font-body);
+}
+
+.leaflet-control-attribution {
+    background: color-mix(in srgb, var(--card) 86%, transparent) !important;
+    color: var(--muted-foreground) !important;
+}
+
+.leaflet-control-attribution a {
+    color: var(--foreground) !important;
 }
 
 .rv-kicker {
@@ -931,13 +957,13 @@ textarea {
 .range-slider::-webkit-slider-runnable-track {
     height: 6px;
     border-radius: 9999px;
-    background: linear-gradient(to right, var(--rv-blue) 0%, var(--rv-blue) var(--slider-fill, 4%), hsl(var(--muted)) var(--slider-fill, 4%), hsl(var(--muted)) 100%);
+    background: linear-gradient(to right, var(--rv-blue) 0%, var(--rv-blue) var(--slider-fill, 4%), var(--muted) var(--slider-fill, 4%), var(--muted) 100%);
 }
 
 .range-slider::-moz-range-track {
     height: 6px;
     border-radius: 9999px;
-    background: hsl(var(--muted));
+    background: var(--muted);
 }
 
 .range-slider::-moz-range-progress {
@@ -953,7 +979,7 @@ textarea {
     height: 18px;
     border-radius: 50%;
     background: var(--rv-blue);
-    border: 2px solid hsl(var(--background));
+    border: 2px solid var(--background);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     margin-top: -6px;
     transition: transform 0.15s ease;
@@ -964,7 +990,7 @@ textarea {
     height: 18px;
     border-radius: 50%;
     background: var(--rv-blue);
-    border: 2px solid hsl(var(--background));
+    border: 2px solid var(--background);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     transition: transform 0.15s ease;
 }
@@ -982,11 +1008,11 @@ textarea {
 }
 
 .range-slider:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.5), 0 1px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent), 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .range-slider:focus-visible::-moz-range-thumb {
-    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.5), 0 1px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent), 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 @theme inline {

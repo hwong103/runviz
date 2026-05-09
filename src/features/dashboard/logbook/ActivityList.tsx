@@ -67,14 +67,14 @@ export function ActivityList({
     };
 
     return (
-        <div className="rv-panel rv-reveal-subtle px-5 py-5 sm:px-7 sm:py-6" style={reveal(120)}>
+        <div className="rv-panel rv-reveal-subtle min-w-0 overflow-hidden px-5 py-5 sm:px-7 sm:py-6" style={reveal(120)}>
             <SectionHeader
                 className="mb-6"
                 kicker={kicker}
                 title={title}
                 action={selectedShoeId && selectedShoeName ? (
-                    <div className="flex items-center gap-2">
-                        <Badge tone="blue" icon={<Footprints className="h-3.5 w-3.5" />}>
+                    <div className="flex min-w-0 max-w-full items-center gap-2">
+                        <Badge tone="blue" className="min-w-0 max-w-[min(18rem,calc(100vw-8rem))]" icon={<Footprints className="h-3.5 w-3.5 shrink-0" />}>
                             {selectedShoeName}
                         </Badge>
                         <button
