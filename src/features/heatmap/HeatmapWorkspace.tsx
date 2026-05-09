@@ -46,12 +46,14 @@ const PRIVACY_OPTIONS = [
     { value: '800', label: '800 m' },
 ];
 const COLOR_THEMES: HeatmapColorTheme[] = ['ember', 'blue', 'mono'];
+type HeatmapActivityScope = 'all' | 'period';
 
 interface PersistedHeatmapSettings {
     colorTheme: HeatmapColorTheme;
     opacity: number;
     intensity: number;
     privacyRadius: number;
+    activityScope: HeatmapActivityScope;
 }
 
 const DEFAULT_HEATMAP_SETTINGS: PersistedHeatmapSettings = {
@@ -59,6 +61,7 @@ const DEFAULT_HEATMAP_SETTINGS: PersistedHeatmapSettings = {
     opacity: 0.74,
     intensity: 1,
     privacyRadius: 200,
+    activityScope: 'all',
 };
 
 function clampNumber(value: unknown, fallback: number, min: number, max: number) {
@@ -102,6 +105,9 @@ function readPersistedHeatmapSettings(): PersistedHeatmapSettings {
             privacyRadius: [0, 100, 200, 400, 800].includes(Number(parsed.privacyRadius))
                 ? Number(parsed.privacyRadius)
                 : readPersistedPrivacyRadius(),
+            activityScope: parsed.activityScope === 'period'
+                ? 'period'
+                : DEFAULT_HEATMAP_SETTINGS.activityScope,
         };
     } catch {
         return {
@@ -156,7 +162,7 @@ export function HeatmapWorkspace({
     const [settings, setSettings] = useState(readPersistedHeatmapSettings);
     const [fitRequestId, setFitRequestId] = useState(0);
     const [fitAllRequestId, setFitAllRequestId] = useState(0);
-    const { colorTheme, opacity, intensity, privacyRadius } = settings;
+    const { colorTheme, opacity, intensity, privacyRadius, activityScope } = settings;
     const {
         streamsByActivityId,
         status,
@@ -174,10 +180,10 @@ export function HeatmapWorkspace({
     const visibleActivities = useMemo(
         () => filterActivitiesForHeatmap(
             runActivities,
-            filteredActivities,
+            activityScope === 'period' ? filteredActivities : runActivities,
             shoeFilter
         ),
-        [filteredActivities, runActivities, shoeFilter]
+        [activityScope, filteredActivities, runActivities, shoeFilter]
     );
 
     const routes = useMemo(
@@ -240,6 +246,10 @@ export function HeatmapWorkspace({
 
     const setPrivacyRadius = (value: number) => {
         setSettings((previous) => ({ ...previous, privacyRadius: value }));
+    };
+
+    const setActivityScope = (value: HeatmapActivityScope) => {
+        setSettings((previous) => ({ ...previous, activityScope: value }));
     };
 
     return (
@@ -327,6 +337,19 @@ export function HeatmapWorkspace({
                             </div>
 
                             <div className="mt-4 space-y-5">
+                                <label className="grid gap-2 text-sm">
+                                    <span className="text-xs font-medium text-muted-foreground">Activities</span>
+                                    <Select value={activityScope} onValueChange={(value) => setActivityScope(value as HeatmapActivityScope)}>
+                                        <SelectTrigger className="w-full bg-background">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="z-[750]">
+                                            <SelectItem value="all">All activities</SelectItem>
+                                            <SelectItem value="period">Current time filter</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </label>
+
                                 <label className="grid gap-2 text-sm">
                                     <span className="text-xs font-medium text-muted-foreground">Colour</span>
                                     <Select value={colorTheme} onValueChange={(value) => setColorTheme(value as HeatmapColorTheme)}>
