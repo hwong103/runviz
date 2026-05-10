@@ -40,16 +40,14 @@ export function StatsOverviewPanel({
         setActiveHelp,
         activeMetric,
         setActiveMetric,
-        injuryRiskPayload,
         model,
         overviewPayload,
         overviewWindowLabel,
         persona,
         reveal,
+        riskWatchPayload,
         selectedPeriodEnd,
         showOverview,
-        trainingHealthPayload,
-        trainingHealthWindowLabel,
         weekContext,
     } = useStatsOverview({
         activities,
@@ -97,7 +95,7 @@ export function StatsOverviewPanel({
                     {mostRecentActivityId ? (
                         <section style={reveal(180)}>
                             <AIInsightCard
-                                insightType="overview"
+                                insightType="training-block"
                                 payload={overviewPayload}
                                 mostRecentActivityId={mostRecentActivityId}
                                 windowLabel={overviewWindowLabel}
@@ -108,11 +106,11 @@ export function StatsOverviewPanel({
                         </section>
                     ) : null}
 
-                    {mostRecentActivityId && injuryRiskPayload.shouldShow ? (
+                    {mostRecentActivityId && riskWatchPayload ? (
                         <section style={reveal(200)}>
                             <AIInsightCard
                                 insightType="injury-risk"
-                                payload={injuryRiskPayload}
+                                payload={riskWatchPayload}
                                 mostRecentActivityId={mostRecentActivityId}
                                 className="border-amber-500/40"
                                 windowLabel="Last 30 days"
@@ -120,6 +118,7 @@ export function StatsOverviewPanel({
                             />
                         </section>
                     ) : null}
+
                 </>
             ) : (
                 <section className="space-y-3">
@@ -155,19 +154,6 @@ export function StatsOverviewPanel({
                         metric={activeMetric}
                         maxHR={maxHR}
                     />
-                    {mostRecentActivityId ? (
-                        <div className="mt-4">
-                            <AIInsightCard
-                                insightType="training-health"
-                                payload={trainingHealthPayload}
-                                mostRecentActivityId={mostRecentActivityId}
-                                windowLabel={trainingHealthWindowLabel}
-                                persona={persona}
-                                useMemory
-                                weekContext={weekContext}
-                            />
-                        </div>
-                    ) : null}
                 </section>
             )}
         </div>

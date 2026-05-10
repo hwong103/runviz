@@ -22,6 +22,10 @@ export interface OverviewPayload extends TrainingPhaseContext {
     baselineAvgWeeklyKm: number;
     baselineLoadRatio: number;
     baselineEfficiency: number;
+    riskLoadRatio30d: number;
+    riskRampRate3Week: number;
+    recentRestDays14d: number;
+    consecutiveRunDays: number;
     recentEasyRuns14d: number;
     recentSteadyRuns14d: number;
     recentThresholdRuns14d: number;

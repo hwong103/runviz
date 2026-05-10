@@ -52,8 +52,14 @@ export function buildOverviewPayload(activities: Activity[], viewPeriod?: ViewPe
     const windowDays = viewPeriod ? viewPeriodToDays(viewPeriod) : 90;
     const windowActivities = getActivitiesInWindowEndingAt(activities, anchorDate, windowDays);
     const baselineActivities = getActivitiesInWindowEndingAt(activities, anchorDate, 180);
+    const last30Days = getActivitiesInWindowEndingAt(activities, anchorDate, 30);
+    const last14Days = getActivitiesInWindowEndingAt(activities, anchorDate, 14);
+    const riskWeeklyTotals = getWeeklyTotalsEndingAt(activities, anchorDate, 4);
     const weeklyRamp = calculateWeeklyRamp(windowActivities, anchorDate);
     const loadRatio = calculateAcwr(windowActivities, anchorDate) ?? 0;
+    const daysWithActivity14d = new Set(
+        last14Days.map((activity) => parseActivityLocalDate(activity.start_date_local).toDateString())
+    ).size;
     const baselineLoadRatio = calculateAcwr(baselineActivities, anchorDate) ?? loadRatio;
     const efficiency = calculateEfficiencyIndex(windowActivities, anchorDate, Math.min(windowDays, 28)) ?? 0;
     const baselineEfficiency = calculateEfficiencyIndex(baselineActivities, anchorDate, 28) ?? efficiency;
@@ -78,6 +84,10 @@ export function buildOverviewPayload(activities: Activity[], viewPeriod?: ViewPe
         baselineAvgWeeklyKm,
         baselineLoadRatio: roundTo(baselineLoadRatio, 2),
         baselineEfficiency: roundTo(baselineEfficiency, 2),
+        riskLoadRatio30d: roundTo(calculateAcwr(last30Days, anchorDate) ?? 0, 2),
+        riskRampRate3Week: roundTo(get3WeekRampRate(riskWeeklyTotals), 1),
+        recentRestDays14d: Math.max(0, 14 - daysWithActivity14d),
+        consecutiveRunDays: getConsecutiveRunDays(activities, anchorDate),
         recentEasyRuns14d: recentEffortMix.easy,
         recentSteadyRuns14d: recentEffortMix.steady,
         recentThresholdRuns14d: recentEffortMix.threshold,

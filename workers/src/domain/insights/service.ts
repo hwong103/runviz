@@ -126,7 +126,11 @@ async function handleGenerateInsight(
     }
 
     let weekHistoryContext = '';
-    if (useMemory && (insightType === 'overview' || insightType === 'training-health') && weekContext) {
+    if (
+        useMemory &&
+        (insightType === 'training-block' || insightType === 'overview' || insightType === 'training-health') &&
+        weekContext
+    ) {
         const qualityRuns = weekContext.thresholdRuns + weekContext.raceRuns + weekContext.intervalRuns;
         const queryParts = [
             `${weekContext.totalKm.toFixed(1)}km week`,
