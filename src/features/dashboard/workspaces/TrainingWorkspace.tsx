@@ -107,10 +107,7 @@ export function TrainingWorkspace({
                     <Suspense fallback={<PanelFallback title="Mileage" subtitle="Loading volume trends" heightClassName="h-[400px]" />}>
                         <MileageTrendChart
                             activities={activities}
-                            allActivities={activities}
                             period={viewPeriod}
-                            maxHR={maxHR}
-                            mostRecentActivityId={mostRecentActivityId}
                         />
                     </Suspense>
                     <Suspense fallback={<PanelFallback title="Weekly Ramp" subtitle="Loading weekly changes" heightClassName="h-[320px]" />}>

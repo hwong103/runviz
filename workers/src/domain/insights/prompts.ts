@@ -17,7 +17,7 @@ const OUTPUT_RULES = `Hard output rules:
 - If Training Phase is "rebuild" or "build", treat some load elevation as expected from a low or rising baseline and only recommend pulling back when multiple red flags agree.
 - If Training Phase is "down-week", treat reduced volume as intentional consolidation unless the provided data clearly says otherwise.`;
 
-export const INSIGHT_PROMPT_VERSION = 'v11';
+export const INSIGHT_PROMPT_VERSION = 'v13';
 
 export const PERSONA_NUDGES: Record<string, string> = {
     gentle: `Persona-specific guidance:
@@ -44,6 +44,11 @@ export const PERSONA_NUDGES: Record<string, string> = {
 };
 
 export const INSIGHT_TYPE_NUDGES: Record<string, string> = {
+    'training-block': `Training-block-specific guidance:
+- This is the primary dashboard coaching card, so synthesize the block rather than sounding like a narrow chart annotation.
+- Mention short-term risk signals only if they materially change the recommendation.
+- Do not repeat separate volume, training-health, or injury-risk categories; turn them into one coherent next step.
+- If a Risk Watch card would also appear, keep this card about the overall block and leave the sharper safeguard language to Risk Watch.`,
     overview: `Overview-specific guidance:
 - If the block reflects a rebuild with only a moderate load rise, say that plainly and do not call it unstable by default.
 - Use the recent session-mix fields when present so the block summary reflects whether your training is easy-heavy, quality-heavy, or long-run anchored.
@@ -71,7 +76,7 @@ export const INSIGHT_TYPE_NUDGES: Record<string, string> = {
 - Do not invent race-specific workouts or taper prescriptions unless the data directly supports them.`,
     volume: `Volume-specific guidance:
 - Use the recent session-mix fields when present so volume guidance distinguishes pure mileage growth from added quality or long-run density.
-- Keep this card focused on trajectory and sustainability rather than general fitness or injury commentary.
+- Keep this card focused on mileage trajectory only rather than general block management, fitness, or injury commentary.
 - Do not invent target weekly kilometer numbers unless they already appear in the Data.`,
     'race-prediction': `Race-prediction-specific guidance:
 - Use the recent session-mix fields when present to explain whether the recent training pattern supports the race forecast or leaves it under-supported.
@@ -83,13 +88,17 @@ export const INSIGHT_TYPE_NUDGES: Record<string, string> = {
 - Keep the recommendation tied to the next 1-2 runs rather than drifting into broader weekly planning.`,
 };
 
-export const INSIGHT_PROMPTS: Record<string, (payload: Record<string, unknown>) => string> = {
-    overview: (payload) => `Analyse your current training block - specifically your load ratio, routine consistency, weekly change trend, aerobic efficiency, recent session mix, and training phase context. Explain what state the block is in, what is most likely driving that state, and what you should do over the next 7-10 days. Use the session mix when present so the block reads as easy-heavy, quality-heavy, long-run anchored, or balanced rather than only as averages. If the block is unstable, guide the runner toward a steadier approach without sounding harsh. If Training Phase is "rebuild" or "build", do not treat a moderate rise from a low baseline as a problem by itself. Only recommend pulling back when at least two red flags agree, such as very high load ratio plus worsening efficiency, or a steep ramp plus poor routine. If the data is mixed, prefer hold-steady or gradual rebuild guidance over cutback advice. Do not just restate the numbers; interpret them into a plan.
+const buildTrainingBlockPrompt = (payload: Record<string, unknown>) => `Analyse your current training block - specifically your load ratio, routine consistency, weekly change trend, aerobic efficiency, recent session mix, training phase context, and short-term risk signals. This is the primary dashboard coaching card, so combine the useful training, health, volume, and risk interpretation into one clear recommendation instead of producing separate category-style advice. Explain what state the block is in, what is most likely driving that state, and what you should do over the next 7-10 days. Use the session mix when present so the block reads as easy-heavy, quality-heavy, long-run anchored, or balanced rather than only as averages. Use the 30-day risk load ratio, 3-week ramp, recent rest days, and consecutive run days only when they materially change the advice. If the block is unstable, guide the runner toward a steadier approach without sounding harsh. If Training Phase is "rebuild" or "build", do not treat a moderate rise from a low baseline as a problem by itself. Only recommend pulling back when at least two red flags agree, such as very high load ratio plus worsening efficiency, a steep ramp plus poor routine, or stacked intensity plus low rest. If the data is mixed, prefer hold-steady or gradual rebuild guidance over cutback advice. Do not just restate the numbers; interpret them into one plan.
 
 ${OUTPUT_RULES}
 
 Data:
-${formatPayload(payload)}`,
+${formatPayload(payload)}`;
+
+export const INSIGHT_PROMPTS: Record<string, (payload: Record<string, unknown>) => string> = {
+    'training-block': buildTrainingBlockPrompt,
+
+    overview: buildTrainingBlockPrompt,
 
     'training-health': (payload) => `Analyse your training stress, monotony, strain, load ratio, recent session mix, and training phase context. Explain what they suggest about stress distribution, why that pattern is likely happening, and what change to make in the next 7 days. Use the session mix to distinguish between easy running, quality work, and long-run density when those fields are present. Give one concrete coaching instruction about recovery, intensity, or session spacing. Do not assume that higher stress automatically means overload: if Training Phase is "rebuild" or "build", acknowledge when the pattern can simply reflect a return to structure or a planned increase. Recommend a pullback only when stress markers stack up clearly rather than from one ratio alone. Avoid injury-risk language here unless the provided data explicitly says risk. Avoid made-up precision like exact percentage cuts or recovery prescriptions unless the data directly supports them.
 

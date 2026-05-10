@@ -5,7 +5,6 @@ import type { CSSProperties } from 'react';
 import {
     buildInjuryRiskPayload,
     buildOverviewPayload,
-    buildTrainingHealthPayload,
     getInsightWindowLabel,
     viewPeriodToDays,
 } from '@/domain/insights';
@@ -75,8 +74,20 @@ export function useStatsOverview({
     );
 
     const overviewWindowLabel = getInsightWindowLabel(viewPeriodToDays(period));
-    const trainingHealthWindowLabel = getInsightWindowLabel(viewPeriodToDays(period));
-    const injuryRiskPayload = useMemo(() => buildInjuryRiskPayload(allActivities, 30), [allActivities]);
+    const riskWatchPayload = useMemo(() => {
+        const payload = buildInjuryRiskPayload(allActivities, 30);
+        if (!payload.shouldShow) return null;
+
+        const qualityRuns14d = payload.recentThresholdRuns14d + payload.recentIntervalRuns14d + payload.recentRaceRuns14d;
+        const hasDistinctRiskSignal =
+            payload.loadRatio > 1.75 ||
+            payload.rampRate3Week > 50 ||
+            (payload.loadRatio > 1.55 && payload.rampRate3Week > 35) ||
+            payload.consecutiveRunDays >= 6 ||
+            (qualityRuns14d >= 3 && payload.recentRestDays <= 2);
+
+        return hasDistinctRiskSignal ? payload : null;
+    }, [allActivities]);
     const weekContext = useMemo(
         () => buildCurrentWeekSummary(allActivities, model.stats.acwr ?? null),
         [allActivities, model.stats.acwr]
@@ -87,17 +98,15 @@ export function useStatsOverview({
         setActiveHelp,
         activeMetric,
         setActiveMetric,
-        injuryRiskPayload,
         model,
         mostRecentActivityId,
         overviewPayload: buildOverviewPayload(allActivities, period),
         overviewWindowLabel,
         persona,
         reveal,
+        riskWatchPayload,
         selectedPeriodEnd,
         showOverview: variant === 'overview',
-        trainingHealthPayload: buildTrainingHealthPayload(allActivities, period, maxHR),
-        trainingHealthWindowLabel,
         weekContext,
     };
 }

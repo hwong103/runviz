@@ -14,13 +14,10 @@ import {
 } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 import { format, subDays, startOfDay, eachDayOfInterval, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from 'date-fns';
-import { buildVolumePayload, getInsightWindowLabel, viewPeriodToDays } from '@/domain/insights';
 import { TrendingUp } from 'lucide-react';
 import type { Activity } from '@/types/activity';
 import { parseActivityLocalDate } from '@/utils/activityDate';
 import { useChartTheme } from '@/hooks/useChartTheme';
-import { AIInsightCard } from '@/components/ui/AIInsightCard';
-import { useCoachPersona } from '@/hooks/useCoachPersona';
 
 ChartJS.register(
     CategoryScale,
@@ -37,20 +34,15 @@ ChartJS.register(
 
 interface MileageTrendChartProps {
     activities: Activity[];
-    allActivities?: Activity[];
     period: {
         mode: 'all' | 'year' | 'month' | '30d' | '90d' | '365d';
         year: number;
         month: number | null;
     };
-    mostRecentActivityId?: number;
-    maxHR?: number;
 }
 
-export function MileageTrendChart({ activities, allActivities, period, mostRecentActivityId, maxHR = 185 }: MileageTrendChartProps) {
+export function MileageTrendChart({ activities, period }: MileageTrendChartProps) {
     const chartTheme = useChartTheme();
-    const { persona } = useCoachPersona();
-    void maxHR;
 
     const data = useMemo(() => {
         let startDate: Date;
@@ -231,17 +223,6 @@ export function MileageTrendChart({ activities, allActivities, period, mostRecen
                 <Chart type="bar" data={data} options={options} />
             </div>
 
-            {mostRecentActivityId && allActivities && (
-                <div className="mt-6 shrink-0">
-                    <AIInsightCard
-                        insightType="volume"
-                        payload={buildVolumePayload(allActivities, period)}
-                        mostRecentActivityId={mostRecentActivityId}
-                        windowLabel={getInsightWindowLabel(viewPeriodToDays(period))}
-                        persona={persona}
-                    />
-                </div>
-            )}
         </div>
     );
 }

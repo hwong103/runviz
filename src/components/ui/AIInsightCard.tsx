@@ -15,6 +15,7 @@ import { useInsight } from '@/hooks/useInsight';
 import { cn } from '@/lib/utils';
 
 export type InsightType =
+    | 'training-block'
     | 'overview'
     | 'training-health'
     | 'fitness'
@@ -58,11 +59,12 @@ export interface AIInsightCardProps {
 }
 
 const INSIGHT_LABELS: Record<InsightType, string> = {
+    'training-block': 'Coach Insight',
     overview: 'Training Insight',
     'training-health': 'Training Health',
     fitness: 'Fitness Insight',
     volume: 'Volume Insight',
-    'injury-risk': 'Injury Insight',
+    'injury-risk': 'Risk Watch',
     'race-prediction': 'Race Insight',
     'run-detail': 'Run Insight',
 };
