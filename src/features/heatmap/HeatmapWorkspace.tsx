@@ -14,6 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import type { Activity as RunActivity } from '@/types/activity';
@@ -54,6 +55,13 @@ const MODE_LABELS: Record<HeatmapMode, string> = {
     'heart-rate': 'Heart rate',
     'gradient-absolute': 'Gradient',
     'gradient-change': 'Uphill / downhill',
+};
+const MODE_SHORT_LABELS: Record<HeatmapMode, string> = {
+    frequency: 'Freq',
+    pace: 'Pace',
+    'heart-rate': 'HR',
+    'gradient-absolute': 'Grade',
+    'gradient-change': 'Up/down',
 };
 const LEGEND_GRADIENTS: Record<HeatmapMode, string> = {
     frequency: 'linear-gradient(to right, rgba(252,76,2,0.22), rgba(252,176,0,0.72), rgba(255,249,196,1))',
@@ -400,6 +408,31 @@ export function HeatmapWorkspace({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                    <div className="max-w-full overflow-x-auto">
+                        <ToggleGroup
+                            type="single"
+                            value={mode}
+                            onValueChange={(value) => {
+                                if (isHeatmapMode(value)) setMode(value);
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg bg-background/70 p-0.5"
+                            aria-label="Heatmap view"
+                        >
+                            {HEATMAP_MODES.map((option) => (
+                                <ToggleGroupItem
+                                    key={option}
+                                    value={option}
+                                    aria-label={MODE_LABELS[option]}
+                                    title={MODE_LABELS[option]}
+                                    className="h-10 px-3 text-xs md:h-8"
+                                >
+                                    {MODE_SHORT_LABELS[option]}
+                                </ToggleGroupItem>
+                            ))}
+                        </ToggleGroup>
+                    </div>
                     <Button
                         type="button"
                         variant="outline"
@@ -454,20 +487,6 @@ export function HeatmapWorkspace({
                             </div>
 
                             <div className="mt-4 space-y-5">
-                                <label className="grid gap-2 text-sm">
-                                    <span className="text-xs font-medium text-muted-foreground">View</span>
-                                    <Select value={mode} onValueChange={(value) => setMode(value as HeatmapMode)}>
-                                        <SelectTrigger className="w-full bg-background">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="z-[750]">
-                                            {HEATMAP_MODES.map((option) => (
-                                                <SelectItem key={option} value={option}>{MODE_LABELS[option]}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </label>
-
                                 <label className="grid gap-2 text-sm">
                                     <span className="text-xs font-medium text-muted-foreground">Activities</span>
                                     <Select value={activityScope} onValueChange={(value) => setActivityScope(value as HeatmapActivityScope)}>

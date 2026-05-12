@@ -31,6 +31,12 @@ interface ProjectedSegment {
     grade: number | null;
 }
 
+interface SegmentStroke {
+    width: number;
+    color: string;
+    alpha: number;
+}
+
 interface SegmentCache {
     routes: HeatmapRoute[];
     zoom: number;
@@ -310,6 +316,30 @@ function colorForSegment(
     return rampColor(METRIC_COLORS.gradient, normalized);
 }
 
+function buildSegmentStrokes(
+    mode: HeatmapMode,
+    strokeColor: string,
+    densityRatio: number,
+    opacity: number,
+    intensity: number
+): SegmentStroke[] {
+    if (mode === 'frequency') {
+        const alpha = Math.min(0.86, opacity * (0.5 + densityRatio * 0.88));
+        return [
+            { width: 5.2 + intensity * 1.6 + densityRatio * 2.2, color: strokeColor, alpha: alpha * 0.18 },
+            { width: 2.4 + intensity * 0.8 + densityRatio * 1.8, color: strokeColor, alpha: alpha * 0.44 },
+            { width: 0.9 + densityRatio * 1.25, color: strokeColor, alpha },
+        ];
+    }
+
+    const alpha = Math.min(0.92, opacity * intensity * (0.62 + densityRatio * 1.05));
+    return [
+        { width: 6.5 + intensity * 2.6 + densityRatio * 3.8, color: strokeColor, alpha: alpha * 0.20 },
+        { width: 3 + intensity * 1.1 + densityRatio * 2.2, color: strokeColor, alpha: alpha * 0.48 },
+        { width: 1 + densityRatio * 1.7, color: strokeColor, alpha },
+    ];
+}
+
 function drawRoutes(
     canvas: HTMLCanvasElement,
     map: L.Map,
@@ -330,7 +360,7 @@ function drawRoutes(
     ctx.clearRect(0, 0, size.x, size.y);
     if (segments.length === 0) return;
 
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = 'source-over';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
@@ -341,14 +371,8 @@ function drawRoutes(
         const densityRatio = mode === 'frequency'
             ? Math.log1p(segment.density) / Math.log1p(maxDensity)
             : segment.density / maxDensity;
-        const heatBoost = 0.7 + densityRatio * 1.45;
-        const alpha = opacity * intensity * heatBoost;
         const strokeColor = colorForSegment(segment, mode, metricRange, palette, densityRatio);
-        [
-            { width: 8 + intensity * 4 + densityRatio * 6, color: strokeColor, alpha: alpha * 0.22 },
-            { width: 3.5 + intensity * 1.6 + densityRatio * 3.6, color: strokeColor, alpha: alpha * 0.46 },
-            { width: 1.1 + densityRatio * 2.2, color: strokeColor, alpha },
-        ].forEach((stroke) => {
+        buildSegmentStrokes(mode, strokeColor, densityRatio, opacity, intensity).forEach((stroke) => {
             ctx.beginPath();
             ctx.moveTo(segment.from.x, segment.from.y);
             ctx.lineTo(segment.to.x, segment.to.y);
