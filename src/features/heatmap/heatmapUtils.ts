@@ -2,10 +2,19 @@ import type { Activity, ActivityStreams, LatLng } from '@/types/activity';
 import { parseActivityLocalDate } from '@/utils/activityDate';
 
 export type HeatmapColorTheme = 'ember' | 'blue' | 'mono';
+export type HeatmapMode = 'frequency' | 'frequency-log' | 'pace' | 'heart-rate' | 'gradient-absolute' | 'gradient-change';
+
+export interface HeatmapPoint {
+    lat: number;
+    lng: number;
+    speed: number | null;
+    heartRate: number | null;
+    grade: number | null;
+}
 
 export interface HeatmapRoute {
     activity: Activity;
-    points: LatLng[];
+    points: HeatmapPoint[];
     originalPoints: number;
     distanceMeters: number;
 }
@@ -38,6 +47,48 @@ export function extractLatLngPoints(streams?: ActivityStreams | null): LatLng[] 
     return points.filter(isValidLatLng);
 }
 
+function numberAt(values: number[] | undefined, index: number): number | null {
+    const value = values?.[index];
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function pointLatLng(point: HeatmapPoint): LatLng {
+    return [point.lat, point.lng];
+}
+
+function normalizeGrade(value: number | null): number | null {
+    if (value === null) return null;
+    return Math.abs(value) > 1 ? value / 100 : value;
+}
+
+function fallbackGrade(points: LatLng[], streams: ActivityStreams, index: number): number | null {
+    const altitude = streams.altitude?.data;
+    const previousAltitude = numberAt(altitude, index - 1);
+    const nextAltitude = numberAt(altitude, index);
+    if (previousAltitude === null || nextAltitude === null || index <= 0) return null;
+
+    const distance = haversineMeters(points[index - 1], points[index]);
+    if (distance < 1) return null;
+    return (nextAltitude - previousAltitude) / distance;
+}
+
+export function extractHeatmapPoints(streams: ActivityStreams): HeatmapPoint[] {
+    const rawPoints = streams.latlng?.data;
+    if (!Array.isArray(rawPoints)) return [];
+
+    return rawPoints.flatMap((point, index) => {
+        if (!isValidLatLng(point)) return [];
+        const streamGrade = normalizeGrade(numberAt(streams.grade_smooth?.data, index));
+        return [{
+            lat: point[0],
+            lng: point[1],
+            speed: numberAt(streams.velocity_smooth?.data, index),
+            heartRate: numberAt(streams.heartrate?.data, index),
+            grade: streamGrade ?? fallbackGrade(rawPoints, streams, index),
+        }];
+    });
+}
+
 export function haversineMeters(a: LatLng, b: LatLng): number {
     const toRadians = Math.PI / 180;
     const lat1 = a[0] * toRadians;
@@ -60,15 +111,15 @@ export function routeDistanceMeters(points: LatLng[]): number {
     return distance;
 }
 
-export function trimPrivateEndpoints(points: LatLng[], radiusMeters: number): LatLng[] {
+export function trimPrivateEndpoints(points: HeatmapPoint[], radiusMeters: number): HeatmapPoint[] {
     if (radiusMeters <= 0 || points.length < 3) return points;
 
-    const start = points[0];
-    const end = points[points.length - 1];
+    const start = pointLatLng(points[0]);
+    const end = pointLatLng(points[points.length - 1]);
 
     return points.filter((point) =>
-        haversineMeters(start, point) > radiusMeters &&
-        haversineMeters(end, point) > radiusMeters
+        haversineMeters(start, pointLatLng(point)) > radiusMeters &&
+        haversineMeters(end, pointLatLng(point)) > radiusMeters
     );
 }
 
@@ -93,7 +144,7 @@ function perpendicularDistanceMeters(point: LatLng, start: LatLng, end: LatLng):
     return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
-export function simplifyRoute(points: LatLng[], toleranceMeters: number): LatLng[] {
+export function simplifyRoute(points: HeatmapPoint[], toleranceMeters: number): HeatmapPoint[] {
     if (points.length <= 2 || toleranceMeters <= 0) return points;
 
     let maxDistance = 0;
@@ -102,7 +153,7 @@ export function simplifyRoute(points: LatLng[], toleranceMeters: number): LatLng
     const last = points[points.length - 1];
 
     for (let index = 1; index < points.length - 1; index++) {
-        const distance = perpendicularDistanceMeters(points[index], first, last);
+        const distance = perpendicularDistanceMeters(pointLatLng(points[index]), pointLatLng(first), pointLatLng(last));
         if (distance > maxDistance) {
             maxDistance = distance;
             splitIndex = index;
@@ -123,7 +174,7 @@ export function buildHeatmapRoute(
     streams: ActivityStreams,
     privacyRadiusMeters: number
 ): HeatmapRoute | null {
-    const rawPoints = extractLatLngPoints(streams);
+    const rawPoints = extractHeatmapPoints(streams);
     if (rawPoints.length < 2) return null;
 
     const privateTrimmed = trimPrivateEndpoints(rawPoints, privacyRadiusMeters);
@@ -134,7 +185,7 @@ export function buildHeatmapRoute(
         activity,
         points: simplified,
         originalPoints: rawPoints.length,
-        distanceMeters: routeDistanceMeters(privateTrimmed),
+        distanceMeters: routeDistanceMeters(privateTrimmed.map(pointLatLng)),
     };
 }
 
@@ -145,11 +196,11 @@ export function calculateHeatmapBounds(routes: HeatmapRoute[]): HeatmapBounds | 
     let west = Infinity;
 
     routes.forEach((route) => {
-        route.points.forEach(([lat, lng]) => {
-            north = Math.max(north, lat);
-            south = Math.min(south, lat);
-            east = Math.max(east, lng);
-            west = Math.min(west, lng);
+        route.points.forEach((point) => {
+            north = Math.max(north, point.lat);
+            south = Math.min(south, point.lat);
+            east = Math.max(east, point.lng);
+            west = Math.min(west, point.lng);
         });
     });
 
@@ -177,8 +228,8 @@ function routeCentroid(route: HeatmapRoute): LatLng | null {
 
     const sums = route.points.reduce(
         (total, point) => ({
-            lat: total.lat + point[0],
-            lng: total.lng + point[1],
+            lat: total.lat + point.lat,
+            lng: total.lng + point.lng,
         }),
         { lat: 0, lng: 0 }
     );

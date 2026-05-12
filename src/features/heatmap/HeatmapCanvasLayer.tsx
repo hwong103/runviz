@@ -5,11 +5,12 @@ import { useMap } from 'react-leaflet';
 
 import type { ResolvedTheme } from '@/hooks/useTheme';
 
-import type { HeatmapColorTheme, HeatmapRoute } from './heatmapUtils';
+import type { HeatmapColorTheme, HeatmapMode, HeatmapPoint, HeatmapRoute } from './heatmapUtils';
 
 interface HeatmapCanvasLayerProps {
     routes: HeatmapRoute[];
     colorTheme: HeatmapColorTheme;
+    mode: HeatmapMode;
     resolvedTheme: ResolvedTheme;
     opacity: number;
     intensity: number;
@@ -25,6 +26,9 @@ interface ProjectedSegment {
     from: L.Point;
     to: L.Point;
     density: number;
+    speed: number | null;
+    heartRate: number | null;
+    grade: number | null;
 }
 
 interface SegmentCache {
@@ -33,6 +37,11 @@ interface SegmentCache {
     centerKey: string;
     sizeKey: string;
     segments: ProjectedSegment[];
+}
+
+interface ValueRange {
+    min: number;
+    max: number;
 }
 
 const DENSITY_CELL_SIZE_PX = 18;
@@ -49,6 +58,14 @@ const FALLBACK_COLORS = {
         light: '#18181b',
         dark: '#f4f4f5',
     },
+};
+
+const METRIC_COLORS = {
+    pace: ['#06143f', '#154fd7', '#3c91ff', '#cfe1ff'],
+    heartRate: ['#4c0710', '#b91c1c', '#fb7185', '#ffe4e6'],
+    gradient: ['#18181b', '#71717a', '#f4f4f5'],
+    descent: '#22c55e',
+    climb: '#d946ef',
 };
 
 function readCssColor(variableName: string, fallback: string): string {
@@ -74,6 +91,26 @@ function withAlpha(color: string, alpha: number, fallback: string): string {
     if (!rgb) return fallback;
 
     return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+}
+
+function mixColor(left: string, right: string, amount: number): string {
+    const leftRgb = hexToRgb(left);
+    const rightRgb = hexToRgb(right);
+    if (!leftRgb || !rightRgb) return right;
+
+    const t = Math.max(0, Math.min(1, amount));
+    const channel = (a: number, b: number) => Math.round(a + (b - a) * t);
+    return `rgb(${channel(leftRgb.r, rightRgb.r)}, ${channel(leftRgb.g, rightRgb.g)}, ${channel(leftRgb.b, rightRgb.b)})`;
+}
+
+function rampColor(colors: string[], value: number): string {
+    const t = Math.max(0, Math.min(1, value));
+    if (colors.length === 0) return '#ffffff';
+    if (colors.length === 1) return colors[0];
+
+    const scaled = t * (colors.length - 1);
+    const index = Math.min(colors.length - 2, Math.floor(scaled));
+    return mixColor(colors[index], colors[index + 1], scaled - index);
 }
 
 function getPalette(colorTheme: HeatmapColorTheme, resolvedTheme: ResolvedTheme): StrokePalette {
@@ -114,6 +151,15 @@ function segmentDensityKey(from: L.Point, to: L.Point): string {
     ].join(':');
 }
 
+function averageNullable(left: number | null, right: number | null): number | null {
+    if (left !== null && right !== null) return (left + right) / 2;
+    return left ?? right;
+}
+
+function projectPoint(map: L.Map, point: HeatmapPoint): L.Point {
+    return map.latLngToContainerPoint([point.lat, point.lng]);
+}
+
 function buildProjectedSegments(map: L.Map, routes: HeatmapRoute[]): ProjectedSegment[] {
     const segments: Array<ProjectedSegment & { key: string }> = [];
     const counts = new Map<string, number>();
@@ -121,13 +167,23 @@ function buildProjectedSegments(map: L.Map, routes: HeatmapRoute[]): ProjectedSe
     routes.forEach((route) => {
         if (route.points.length < 2) return;
 
-        const projected = route.points.map(([lat, lng]) => map.latLngToContainerPoint([lat, lng]));
+        const projected = route.points.map((point) => projectPoint(map, point));
         for (let index = 1; index < projected.length; index++) {
             const from = projected[index - 1];
             const to = projected[index];
+            const previousPoint = route.points[index - 1];
+            const point = route.points[index];
             const key = segmentDensityKey(from, to);
             counts.set(key, (counts.get(key) ?? 0) + 1);
-            segments.push({ from, to, key, density: 1 });
+            segments.push({
+                from,
+                to,
+                key,
+                density: 1,
+                speed: averageNullable(previousPoint.speed, point.speed),
+                heartRate: averageNullable(previousPoint.heartRate, point.heartRate),
+                grade: averageNullable(previousPoint.grade, point.grade),
+            });
         }
     });
 
@@ -135,6 +191,9 @@ function buildProjectedSegments(map: L.Map, routes: HeatmapRoute[]): ProjectedSe
         from: segment.from,
         to: segment.to,
         density: counts.get(segment.key) ?? 1,
+        speed: segment.speed,
+        heartRate: segment.heartRate,
+        grade: segment.grade,
     }));
 }
 
@@ -171,10 +230,91 @@ function ensureCanvasSize(canvas: HTMLCanvasElement, size: L.Point, dpr: number)
     if (canvas.style.height !== `${size.y}px`) canvas.style.height = `${size.y}px`;
 }
 
+function percentile(values: number[], percentage: number): number {
+    if (values.length === 0) return 0;
+    const sorted = [...values].sort((left, right) => left - right);
+    const index = (sorted.length - 1) * percentage;
+    const lower = Math.floor(index);
+    const upper = Math.ceil(index);
+    if (lower === upper) return sorted[lower];
+    return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
+}
+
+function rangeFor(values: number[]): ValueRange | null {
+    const cleanValues = values.filter((value) => Number.isFinite(value));
+    if (cleanValues.length === 0) return null;
+
+    const min = percentile(cleanValues, 0.05);
+    const max = percentile(cleanValues, 0.95);
+    if (max <= min) return {
+        min: Math.min(...cleanValues),
+        max: Math.max(...cleanValues),
+    };
+
+    return { min, max };
+}
+
+function normalize(value: number, range: ValueRange | null): number {
+    if (!range || range.max <= range.min) return 0.5;
+    return Math.max(0, Math.min(1, (value - range.min) / (range.max - range.min)));
+}
+
+function getSegmentMetric(segment: ProjectedSegment, mode: HeatmapMode): number | null {
+    if (mode === 'pace') return segment.speed;
+    if (mode === 'heart-rate') return segment.heartRate;
+    if (mode === 'gradient-absolute') return segment.grade === null ? null : Math.abs(segment.grade);
+    if (mode === 'gradient-change') return segment.grade;
+    return null;
+}
+
+function getMetricRange(segments: ProjectedSegment[], mode: HeatmapMode): ValueRange | null {
+    const values = segments.flatMap((segment) => {
+        const value = getSegmentMetric(segment, mode);
+        return value === null ? [] : [value];
+    });
+
+    if (mode === 'gradient-change') {
+        const absoluteMax = percentile(values.map(Math.abs), 0.95);
+        return absoluteMax > 0 ? { min: -absoluteMax, max: absoluteMax } : null;
+    }
+
+    return rangeFor(values);
+}
+
+function colorForSegment(
+    segment: ProjectedSegment,
+    mode: HeatmapMode,
+    range: ValueRange | null,
+    palette: StrokePalette,
+    densityRatio: number
+): string {
+    if (mode === 'frequency' || mode === 'frequency-log') {
+        if (densityRatio > 0.72) return palette.hot;
+        if (densityRatio > 0.34) return palette.mid;
+        return palette.glow;
+    }
+
+    const value = getSegmentMetric(segment, mode);
+    if (value === null) return withAlpha('#a1a1aa', 0.26, '#a1a1aa');
+
+    if (mode === 'gradient-change') {
+        const normalized = normalize(value, range);
+        return normalized >= 0.5
+            ? mixColor('#242124', METRIC_COLORS.climb, (normalized - 0.5) * 2)
+            : mixColor(METRIC_COLORS.descent, '#242124', normalized * 2);
+    }
+
+    const normalized = normalize(value, range);
+    if (mode === 'pace') return rampColor(METRIC_COLORS.pace, normalized);
+    if (mode === 'heart-rate') return rampColor(METRIC_COLORS.heartRate, normalized);
+    return rampColor(METRIC_COLORS.gradient, normalized);
+}
+
 function drawRoutes(
     canvas: HTMLCanvasElement,
     map: L.Map,
     segments: ProjectedSegment[],
+    mode: HeatmapMode,
     palette: StrokePalette,
     opacity: number,
     intensity: number
@@ -195,15 +335,20 @@ function drawRoutes(
     ctx.lineJoin = 'round';
 
     const maxDensity = Math.max(1, ...segments.map((segment) => segment.density));
+    const metricRange = getMetricRange(segments, mode);
 
     segments.forEach((segment) => {
-        const densityRatio = segment.density / maxDensity;
+        const linearDensityRatio = segment.density / maxDensity;
+        const densityRatio = mode === 'frequency-log'
+            ? Math.log1p(segment.density) / Math.log1p(maxDensity)
+            : linearDensityRatio;
         const heatBoost = 0.7 + densityRatio * 1.45;
         const alpha = opacity * intensity * heatBoost;
+        const strokeColor = colorForSegment(segment, mode, metricRange, palette, densityRatio);
         [
-            { width: 8 + intensity * 4 + densityRatio * 6, color: palette.glow, alpha: alpha * 0.36 },
-            { width: 3.5 + intensity * 1.6 + densityRatio * 3.6, color: palette.mid, alpha: alpha * 0.62 },
-            { width: 1.1 + densityRatio * 2.2, color: palette.hot, alpha },
+            { width: 8 + intensity * 4 + densityRatio * 6, color: strokeColor, alpha: alpha * 0.22 },
+            { width: 3.5 + intensity * 1.6 + densityRatio * 3.6, color: strokeColor, alpha: alpha * 0.46 },
+            { width: 1.1 + densityRatio * 2.2, color: strokeColor, alpha },
         ].forEach((stroke) => {
             ctx.beginPath();
             ctx.moveTo(segment.from.x, segment.from.y);
@@ -222,6 +367,7 @@ function drawRoutes(
 export function HeatmapCanvasLayer({
     routes,
     colorTheme,
+    mode,
     resolvedTheme,
     opacity,
     intensity,
@@ -267,7 +413,7 @@ export function HeatmapCanvasLayer({
                 const canvas = canvasRef.current;
                 if (!canvas) return;
                 const segments = getProjectedSegments(map, routes, segmentCacheRef);
-                drawRoutes(canvas, map, segments, palette, opacity, intensity);
+                drawRoutes(canvas, map, segments, mode, palette, opacity, intensity);
             });
         };
 
@@ -297,7 +443,7 @@ export function HeatmapCanvasLayer({
             map.off('moveend zoomend viewreset', scheduleDraw);
             map.off('resize', scheduleResizeDraw);
         };
-    }, [intensity, map, opacity, palette, routes]);
+    }, [intensity, map, mode, opacity, palette, routes]);
 
     return null;
 }
