@@ -17,7 +17,6 @@ interface HeatmapCanvasLayerProps {
 }
 
 interface StrokePalette {
-    base: string;
     glow: string;
     mid: string;
     hot: string;
@@ -36,7 +35,6 @@ interface SegmentStroke {
     width: number;
     color: string;
     alpha: number;
-    composite?: GlobalCompositeOperation;
 }
 
 interface SegmentCache {
@@ -130,19 +128,19 @@ function getPalette(colorTheme: HeatmapColorTheme, resolvedTheme: ResolvedTheme)
 
     if (colorTheme === 'blue') {
         return resolvedTheme === 'light'
-            ? { base: themeColor, glow: withAlpha(themeColor, 0.11, fallback), mid: withAlpha(themeColor, 0.23, fallback), hot: withAlpha(themeColor, 0.44, fallback) }
-            : { base: themeColor, glow: withAlpha(themeColor, 0.13, fallback), mid: withAlpha(themeColor, 0.26, fallback), hot: withAlpha(themeColor, 0.54, fallback) };
+            ? { glow: withAlpha(themeColor, 0.11, fallback), mid: withAlpha(themeColor, 0.23, fallback), hot: withAlpha(themeColor, 0.44, fallback) }
+            : { glow: withAlpha(themeColor, 0.13, fallback), mid: withAlpha(themeColor, 0.26, fallback), hot: withAlpha(themeColor, 0.54, fallback) };
     }
 
     if (colorTheme === 'mono') {
         return resolvedTheme === 'light'
-            ? { base: themeColor, glow: withAlpha(themeColor, 0.08, fallback), mid: withAlpha(themeColor, 0.16, fallback), hot: withAlpha(themeColor, 0.34, fallback) }
-            : { base: themeColor, glow: withAlpha(themeColor, 0.08, fallback), mid: withAlpha(themeColor, 0.18, fallback), hot: withAlpha(themeColor, 0.42, fallback) };
+            ? { glow: withAlpha(themeColor, 0.08, fallback), mid: withAlpha(themeColor, 0.16, fallback), hot: withAlpha(themeColor, 0.34, fallback) }
+            : { glow: withAlpha(themeColor, 0.08, fallback), mid: withAlpha(themeColor, 0.18, fallback), hot: withAlpha(themeColor, 0.42, fallback) };
     }
 
     return resolvedTheme === 'light'
-        ? { base: themeColor, glow: withAlpha(themeColor, 0.10, fallback), mid: withAlpha(themeColor, 0.22, fallback), hot: withAlpha(themeColor, 0.46, fallback) }
-        : { base: themeColor, glow: withAlpha(themeColor, 0.12, fallback), mid: withAlpha(themeColor, 0.26, fallback), hot: withAlpha(themeColor, 0.55, fallback) };
+        ? { glow: withAlpha(themeColor, 0.10, fallback), mid: withAlpha(themeColor, 0.22, fallback), hot: withAlpha(themeColor, 0.46, fallback) }
+        : { glow: withAlpha(themeColor, 0.12, fallback), mid: withAlpha(themeColor, 0.26, fallback), hot: withAlpha(themeColor, 0.55, fallback) };
 }
 
 function segmentDensityKey(from: L.Point, to: L.Point): string {
@@ -321,23 +319,16 @@ function colorForSegment(
 function buildSegmentStrokes(
     mode: HeatmapMode,
     strokeColor: string,
-    palette: StrokePalette,
     densityRatio: number,
     opacity: number,
     intensity: number
 ): SegmentStroke[] {
     if (mode === 'frequency') {
-        const visualDensity = 0.24 + densityRatio * 0.76;
-        const lowColor = mixColor(palette.base, '#f59e0b', 0.3);
-        const midColor = mixColor(palette.base, '#fbbf24', 0.58);
-        const hotColor = mixColor(palette.base, '#fff1a8', 0.82);
-        const glowAlpha = Math.min(0.34, opacity * (0.16 + visualDensity * 0.10));
-        const midAlpha = Math.min(0.68, opacity * (0.32 + visualDensity * 0.24));
-        const coreAlpha = Math.min(0.92, opacity * (0.48 + visualDensity * 0.34));
+        const alpha = Math.min(0.86, opacity * (0.5 + densityRatio * 0.88));
         return [
-            { width: 5.2 + intensity * 1.3 + visualDensity * 1.3, color: lowColor, alpha: glowAlpha },
-            { width: 2.5 + intensity * 0.75 + visualDensity * 1.1, color: midColor, alpha: midAlpha },
-            { width: 1 + visualDensity * 1.05, color: hotColor, alpha: coreAlpha, composite: 'screen' },
+            { width: 5.2 + intensity * 1.6 + densityRatio * 2.2, color: strokeColor, alpha: alpha * 0.18 },
+            { width: 2.4 + intensity * 0.8 + densityRatio * 1.8, color: strokeColor, alpha: alpha * 0.44 },
+            { width: 0.9 + densityRatio * 1.25, color: strokeColor, alpha },
         ];
     }
 
@@ -381,11 +372,10 @@ function drawRoutes(
             ? Math.log1p(segment.density) / Math.log1p(maxDensity)
             : segment.density / maxDensity;
         const strokeColor = colorForSegment(segment, mode, metricRange, palette, densityRatio);
-        buildSegmentStrokes(mode, strokeColor, palette, densityRatio, opacity, intensity).forEach((stroke) => {
+        buildSegmentStrokes(mode, strokeColor, densityRatio, opacity, intensity).forEach((stroke) => {
             ctx.beginPath();
             ctx.moveTo(segment.from.x, segment.from.y);
             ctx.lineTo(segment.to.x, segment.to.y);
-            ctx.globalCompositeOperation = stroke.composite ?? 'source-over';
             ctx.globalAlpha = Math.min(1, stroke.alpha);
             ctx.lineWidth = stroke.width;
             ctx.strokeStyle = stroke.color;
