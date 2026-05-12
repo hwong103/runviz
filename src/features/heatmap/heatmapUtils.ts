@@ -2,7 +2,7 @@ import type { Activity, ActivityStreams, LatLng } from '@/types/activity';
 import { parseActivityLocalDate } from '@/utils/activityDate';
 
 export type HeatmapColorTheme = 'ember' | 'blue' | 'mono';
-export type HeatmapMode = 'frequency' | 'frequency-log' | 'pace' | 'heart-rate' | 'gradient-absolute' | 'gradient-change';
+export type HeatmapMode = 'frequency' | 'pace' | 'heart-rate' | 'gradient-absolute' | 'gradient-change';
 
 export interface HeatmapPoint {
     lat: number;

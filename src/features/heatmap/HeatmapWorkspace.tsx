@@ -47,10 +47,9 @@ const PRIVACY_OPTIONS = [
     { value: '800', label: '800 m' },
 ];
 const COLOR_THEMES: HeatmapColorTheme[] = ['ember', 'blue', 'mono'];
-const HEATMAP_MODES: HeatmapMode[] = ['frequency', 'frequency-log', 'pace', 'heart-rate', 'gradient-absolute', 'gradient-change'];
+const HEATMAP_MODES: HeatmapMode[] = ['frequency', 'pace', 'heart-rate', 'gradient-absolute', 'gradient-change'];
 const MODE_LABELS: Record<HeatmapMode, string> = {
     frequency: 'Frequency',
-    'frequency-log': 'Frequency, log',
     pace: 'Pace',
     'heart-rate': 'Heart rate',
     'gradient-absolute': 'Gradient',
@@ -58,7 +57,6 @@ const MODE_LABELS: Record<HeatmapMode, string> = {
 };
 const LEGEND_GRADIENTS: Record<HeatmapMode, string> = {
     frequency: 'linear-gradient(to right, rgba(252,76,2,0.22), rgba(252,176,0,0.72), rgba(255,249,196,1))',
-    'frequency-log': 'linear-gradient(to right, rgba(252,76,2,0.22), rgba(252,176,0,0.72), rgba(255,249,196,1))',
     pace: 'linear-gradient(to right, #06143f, #154fd7, #3c91ff, #cfe1ff)',
     'heart-rate': 'linear-gradient(to right, #4c0710, #b91c1c, #fb7185, #ffe4e6)',
     'gradient-absolute': 'linear-gradient(to right, #18181b, #71717a, #f4f4f5)',
@@ -92,6 +90,10 @@ function clampNumber(value: unknown, fallback: number, min: number, max: number)
         : fallback;
 }
 
+function isHeatmapMode(value: unknown): value is HeatmapMode {
+    return typeof value === 'string' && HEATMAP_MODES.includes(value as HeatmapMode);
+}
+
 function readPersistedPrivacyRadius() {
     if (typeof window === 'undefined') return 200;
 
@@ -117,10 +119,11 @@ function readPersistedHeatmapSettings(): PersistedHeatmapSettings {
             };
         }
 
-        const parsed = JSON.parse(stored) as Partial<PersistedHeatmapSettings>;
+        const parsed = JSON.parse(stored) as Partial<Omit<PersistedHeatmapSettings, 'mode'>> & { mode?: string };
+        const parsedMode = parsed.mode === 'frequency-log' ? 'frequency' : parsed.mode;
         return {
-            mode: parsed.mode && HEATMAP_MODES.includes(parsed.mode)
-                ? parsed.mode
+            mode: isHeatmapMode(parsedMode)
+                ? parsedMode
                 : DEFAULT_HEATMAP_SETTINGS.mode,
             colorTheme: parsed.colorTheme && COLOR_THEMES.includes(parsed.colorTheme)
                 ? parsed.colorTheme
@@ -205,11 +208,11 @@ function getRouteMetricValues(routes: ReturnType<typeof buildHeatmapRoute>[], mo
 }
 
 function buildLegend(routes: ReturnType<typeof buildHeatmapRoute>[], mode: HeatmapMode) {
-    if (mode === 'frequency' || mode === 'frequency-log') {
+    if (mode === 'frequency') {
         return {
             title: MODE_LABELS[mode],
             low: 'Less used',
-            high: mode === 'frequency-log' ? 'More used, log scale' : 'More used',
+            high: 'More used',
         };
     }
 

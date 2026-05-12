@@ -288,7 +288,7 @@ function colorForSegment(
     palette: StrokePalette,
     densityRatio: number
 ): string {
-    if (mode === 'frequency' || mode === 'frequency-log') {
+    if (mode === 'frequency') {
         if (densityRatio > 0.72) return palette.hot;
         if (densityRatio > 0.34) return palette.mid;
         return palette.glow;
@@ -338,10 +338,9 @@ function drawRoutes(
     const metricRange = getMetricRange(segments, mode);
 
     segments.forEach((segment) => {
-        const linearDensityRatio = segment.density / maxDensity;
-        const densityRatio = mode === 'frequency-log'
+        const densityRatio = mode === 'frequency'
             ? Math.log1p(segment.density) / Math.log1p(maxDensity)
-            : linearDensityRatio;
+            : segment.density / maxDensity;
         const heatBoost = 0.7 + densityRatio * 1.45;
         const alpha = opacity * intensity * heatBoost;
         const strokeColor = colorForSegment(segment, mode, metricRange, palette, densityRatio);
