@@ -14,6 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import type { Activity as RunActivity } from '@/types/activity';
@@ -27,6 +28,7 @@ import {
     filterActivitiesForHeatmap,
     type HeatmapBounds,
     type HeatmapColorTheme,
+    type HeatmapMode,
 } from './heatmapUtils';
 import { useHeatmapStreams } from './useHeatmapStreams';
 
@@ -46,9 +48,32 @@ const PRIVACY_OPTIONS = [
     { value: '800', label: '800 m' },
 ];
 const COLOR_THEMES: HeatmapColorTheme[] = ['ember', 'blue', 'mono'];
+const HEATMAP_MODES: HeatmapMode[] = ['frequency', 'pace', 'heart-rate', 'gradient-absolute', 'gradient-change'];
+const MODE_LABELS: Record<HeatmapMode, string> = {
+    frequency: 'Frequency',
+    pace: 'Pace',
+    'heart-rate': 'Heart rate',
+    'gradient-absolute': 'Gradient',
+    'gradient-change': 'Uphill / downhill',
+};
+const MODE_SHORT_LABELS: Record<HeatmapMode, string> = {
+    frequency: 'Freq',
+    pace: 'Pace',
+    'heart-rate': 'HR',
+    'gradient-absolute': 'Grade',
+    'gradient-change': 'Up/down',
+};
+const LEGEND_GRADIENTS: Record<HeatmapMode, string> = {
+    frequency: 'linear-gradient(to right, rgba(252,76,2,0.22), rgba(252,176,0,0.72), rgba(255,249,196,1))',
+    pace: 'linear-gradient(to right, #06143f, #154fd7, #3c91ff, #cfe1ff)',
+    'heart-rate': 'linear-gradient(to right, #4c0710, #b91c1c, #fb7185, #ffe4e6)',
+    'gradient-absolute': 'linear-gradient(to right, #18181b, #71717a, #f4f4f5)',
+    'gradient-change': 'linear-gradient(to right, #22c55e, #242124, #d946ef)',
+};
 type HeatmapActivityScope = 'all' | 'period';
 
 interface PersistedHeatmapSettings {
+    mode: HeatmapMode;
     colorTheme: HeatmapColorTheme;
     opacity: number;
     intensity: number;
@@ -58,6 +83,7 @@ interface PersistedHeatmapSettings {
 }
 
 const DEFAULT_HEATMAP_SETTINGS: PersistedHeatmapSettings = {
+    mode: 'frequency',
     colorTheme: 'ember',
     opacity: 0.74,
     intensity: 1,
@@ -70,6 +96,10 @@ function clampNumber(value: unknown, fallback: number, min: number, max: number)
     return typeof value === 'number' && Number.isFinite(value)
         ? Math.max(min, Math.min(max, value))
         : fallback;
+}
+
+function isHeatmapMode(value: unknown): value is HeatmapMode {
+    return typeof value === 'string' && HEATMAP_MODES.includes(value as HeatmapMode);
 }
 
 function readPersistedPrivacyRadius() {
@@ -97,8 +127,12 @@ function readPersistedHeatmapSettings(): PersistedHeatmapSettings {
             };
         }
 
-        const parsed = JSON.parse(stored) as Partial<PersistedHeatmapSettings>;
+        const parsed = JSON.parse(stored) as Partial<Omit<PersistedHeatmapSettings, 'mode'>> & { mode?: string };
+        const parsedMode = parsed.mode === 'frequency-log' ? 'frequency' : parsed.mode;
         return {
+            mode: isHeatmapMode(parsedMode)
+                ? parsedMode
+                : DEFAULT_HEATMAP_SETTINGS.mode,
             colorTheme: parsed.colorTheme && COLOR_THEMES.includes(parsed.colorTheme)
                 ? parsed.colorTheme
                 : DEFAULT_HEATMAP_SETTINGS.colorTheme,
@@ -128,6 +162,91 @@ function rangeFillStyle(value: number, min: number, max: number): CSSProperties 
         '--slider-fill': `${Math.max(0, Math.min(100, fill))}%`,
         '--rv-blue': 'var(--rv-orange)',
     } as CSSProperties;
+}
+
+function percentile(values: number[], percentage: number): number {
+    if (values.length === 0) return 0;
+    const sorted = [...values].sort((left, right) => left - right);
+    const index = (sorted.length - 1) * percentage;
+    const lower = Math.floor(index);
+    const upper = Math.ceil(index);
+    if (lower === upper) return sorted[lower];
+    return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
+}
+
+function formatPace(speed: number) {
+    if (speed <= 0) return '-';
+    const seconds = Math.round(1000 / speed);
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}:${String(seconds % 60).padStart(2, '0')}/km`;
+}
+
+function formatLegendValue(mode: HeatmapMode, value: number) {
+    if (mode === 'pace') return formatPace(value);
+    if (mode === 'heart-rate') return `${Math.round(value)} bpm`;
+    if (mode === 'gradient-absolute' || mode === 'gradient-change') return `${Math.round(value * 100)}%`;
+    return `${Math.round(value)}x`;
+}
+
+function getRouteMetricValues(routes: ReturnType<typeof buildHeatmapRoute>[], mode: HeatmapMode): number[] {
+    return routes.flatMap((route) => {
+        if (!route || route.points.length < 2) return [];
+
+        const values: number[] = [];
+        for (let index = 1; index < route.points.length; index++) {
+            const previous = route.points[index - 1];
+            const point = route.points[index];
+            const average = (left: number | null, right: number | null) =>
+                left !== null && right !== null ? (left + right) / 2 : left ?? right;
+            const value = mode === 'pace'
+                ? average(previous.speed, point.speed)
+                : mode === 'heart-rate'
+                    ? average(previous.heartRate, point.heartRate)
+                    : mode === 'gradient-absolute'
+                        ? Math.abs(average(previous.grade, point.grade) ?? Number.NaN)
+                        : mode === 'gradient-change'
+                            ? average(previous.grade, point.grade)
+                            : null;
+
+            if (value !== null && Number.isFinite(value)) values.push(value);
+        }
+
+        return values;
+    });
+}
+
+function buildLegend(routes: ReturnType<typeof buildHeatmapRoute>[], mode: HeatmapMode) {
+    if (mode === 'frequency') {
+        return {
+            title: MODE_LABELS[mode],
+            low: 'Less used',
+            high: 'More used',
+        };
+    }
+
+    const values = getRouteMetricValues(routes, mode);
+    if (values.length === 0) {
+        return {
+            title: MODE_LABELS[mode],
+            low: 'No stream data',
+            high: 'No stream data',
+        };
+    }
+
+    if (mode === 'gradient-change') {
+        const bound = percentile(values.map(Math.abs), 0.95);
+        return {
+            title: MODE_LABELS[mode],
+            low: `Down ${formatLegendValue(mode, bound)}`,
+            high: `Up ${formatLegendValue(mode, bound)}`,
+        };
+    }
+
+    return {
+        title: MODE_LABELS[mode],
+        low: formatLegendValue(mode, percentile(values, 0.05)),
+        high: formatLegendValue(mode, percentile(values, 0.95)),
+    };
 }
 
 function FitHeatmapBounds({
@@ -166,7 +285,7 @@ export function HeatmapWorkspace({
     const [settings, setSettings] = useState(readPersistedHeatmapSettings);
     const [fitRequestId, setFitRequestId] = useState(0);
     const [fitAllRequestId, setFitAllRequestId] = useState(0);
-    const { colorTheme, opacity, intensity, privacyRadius, activityScope, shoeFilter } = settings;
+    const { mode, colorTheme, opacity, intensity, privacyRadius, activityScope, shoeFilter } = settings;
     const {
         streamsByActivityId,
         status,
@@ -214,6 +333,7 @@ export function HeatmapWorkspace({
 
     const bounds = useMemo(() => calculateHeatmapBounds(routes), [routes]);
     const mainClusterBounds = useMemo(() => calculateMainClusterBounds(routes), [routes]);
+    const legend = useMemo(() => buildLegend(routes, mode), [mode, routes]);
     const backfillPosition = status.fetchingActivityId && status.backfillTotalThisSession > 0
         ? Math.min(status.backfillProcessedThisSession + 1, status.backfillTotalThisSession)
         : 0;
@@ -239,6 +359,10 @@ export function HeatmapWorkspace({
 
     const resetFilters = () => {
         setSettings(DEFAULT_HEATMAP_SETTINGS);
+    };
+
+    const setMode = (value: HeatmapMode) => {
+        setSettings((previous) => ({ ...previous, mode: value }));
     };
 
     const setColorTheme = (value: HeatmapColorTheme) => {
@@ -284,6 +408,31 @@ export function HeatmapWorkspace({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                    <div className="max-w-full overflow-x-auto">
+                        <ToggleGroup
+                            type="single"
+                            value={mode}
+                            onValueChange={(value) => {
+                                if (isHeatmapMode(value)) setMode(value);
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg bg-background/70 p-0.5"
+                            aria-label="Heatmap view"
+                        >
+                            {HEATMAP_MODES.map((option) => (
+                                <ToggleGroupItem
+                                    key={option}
+                                    value={option}
+                                    aria-label={MODE_LABELS[option]}
+                                    title={MODE_LABELS[option]}
+                                    className="h-10 px-3 text-xs md:h-8"
+                                >
+                                    {MODE_SHORT_LABELS[option]}
+                                </ToggleGroupItem>
+                            ))}
+                        </ToggleGroup>
+                    </div>
                     <Button
                         type="button"
                         variant="outline"
@@ -460,6 +609,7 @@ export function HeatmapWorkspace({
                             <HeatmapCanvasLayer
                                 routes={routes}
                                 colorTheme={colorTheme}
+                                mode={mode}
                                 resolvedTheme={resolved}
                                 opacity={opacity}
                                 intensity={intensity}
@@ -481,6 +631,23 @@ export function HeatmapWorkspace({
                                 {status.backfillError ? (
                                     <p className="mt-1 text-xs text-orange-500 dark:text-orange-300">{status.backfillError}</p>
                                 ) : null}
+                            </div>
+                        ) : null}
+
+                        {!emptyMessage ? (
+                            <div className="absolute bottom-4 right-4 z-[500] w-[min(17rem,calc(100%-2rem))] rounded-lg border border-white/10 bg-zinc-950/82 p-3 text-white shadow-lg backdrop-blur-md">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="truncate text-xs font-semibold">{legend.title}</p>
+                                    <p className="shrink-0 text-[11px] text-zinc-300">{routes.length.toLocaleString()} runs</p>
+                                </div>
+                                <div
+                                    className="mt-2 h-2.5 rounded-full border border-white/10"
+                                    style={{ background: LEGEND_GRADIENTS[mode] }}
+                                />
+                                <div className="mt-1.5 flex items-center justify-between gap-3 text-[11px] text-zinc-300">
+                                    <span className="truncate">{legend.low}</span>
+                                    <span className="truncate text-right">{legend.high}</span>
+                                </div>
                             </div>
                         ) : null}
                     </div>

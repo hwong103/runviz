@@ -8,9 +8,17 @@ A beautiful, mobile-friendly running stats dashboard that visualizes your Strava
 
 ## 📸 Screenshots
 
-| Personal heatmap | Dark map mode |
+| Frequency | Pace |
 |:---:|:---:|
-| <img src="public/screenshots/readme-heatmap.jpeg" width="400" /> | <img src="public/screenshots/readme-heatmap-dark.jpeg" width="400" /> |
+| <img src="public/screenshots/readme-heatmap-frequency.jpeg" width="400" /> | <img src="public/screenshots/readme-heatmap-pace.jpeg" width="400" /> |
+
+| Heart rate | Gradient |
+|:---:|:---:|
+| <img src="public/screenshots/readme-heatmap-heart-rate.jpeg" width="400" /> | <img src="public/screenshots/readme-heatmap-gradient.jpeg" width="400" /> |
+
+| Uphill / downhill | Dashboard overview |
+|:---:|:---:|
+| <img src="public/screenshots/readme-heatmap-uphill-downhill.jpeg" width="400" /> | <img src="public/screenshots/readme-overview.jpeg" width="400" /> |
 
 | Training load | Logbook and shoes |
 |:---:|:---:|
@@ -19,7 +27,7 @@ A beautiful, mobile-friendly running stats dashboard that visualizes your Strava
 ## ✨ Features
 
 - **Advanced Analytics** - GAP, HR zones, and CTL/ATL/TSB tracking
-- **Personal Heatmap** - Strava-like GPS route density map with privacy trimming, shoe filters, all-time or period-scoped views, and light/dark-aware map styling
+- **Personal Heatmap** - Strava-like GPS route density map with frequency, pace, heart rate, and gradient views, plus privacy trimming, shoe filters, all-time or period-scoped views, and light/dark-aware map styling
 - **AI Route Planner** - Generate personalized round-trip running routes based on distance
 - **Intelligent Search** - Geocoding with autocorrect and current location support
 - **PR Progress** - Track personal records over time
@@ -36,7 +44,8 @@ A beautiful, mobile-friendly running stats dashboard that visualizes your Strava
 
 RunViz 5.1 adds a map-first personal heatmap workspace between Logbook and Tools. It uses Strava activity stream GPS data for completed runs, caches streams locally in IndexedDB, and progressively backfills historical GPS traces so repeat visits get faster.
 
-Heatmap controls live in the settings popover:
+Heatmap controls are split between the map header and settings popover:
+- **View** - Switch between frequency, pace, heart rate, gradient, and uphill/downhill modes directly from the map header.
 - **Activities** - Show all activities by default, or respect the current dashboard time filter.
 - **Shoes** - Filter the heatmap by the selected pair without cluttering the map header.
 - **Colour, opacity, and intensity** - Tune the layer for light or dark mode.
