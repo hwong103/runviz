@@ -44,8 +44,33 @@ const routerBase = import.meta.env.BASE_URL.endsWith('/')
   }
 })()
 
-registerSW({
+let serviceWorkerRefreshing = false
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (serviceWorkerRefreshing) return
+    serviceWorkerRefreshing = true
+    window.location.reload()
+  })
+}
+
+const updateServiceWorker = registerSW({
   immediate: true,
+  onNeedRefresh() {
+    void updateServiceWorker(true)
+  },
+  onRegisteredSW(_swUrl, registration) {
+    if (!registration) return
+
+    const interval = window.setInterval(() => {
+      if (!navigator.onLine) return
+      void registration.update()
+    }, 60 * 60 * 1000)
+
+    window.addEventListener('beforeunload', () => {
+      window.clearInterval(interval)
+    })
+  },
 })
 
 createRoot(document.getElementById('root')!).render(
